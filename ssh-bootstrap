@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+
+# Print commands and their arguments as they are executed.
+#set -x
+
+source /etc/ssh-bootstrap.conf
+
+get_option ()
+{
+	value=$(/usr/bin/my_print_defaults "${1}" | sed -n "s/^--${2}=//p" | tail -n 1)
+	echo ${value:-$3}
+}
+
+get_password ()
+{
+	echo $(head -n 4096 /dev/urandom | tr -cd '[:alnum:]' | head -c ${1})
+}
+
+OPTS_SSH_USER_HOME_DIR="${SSH_USER_HOME_DIR:-/home/app-admin}"
+
+if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
+
+	OPTS_SSH_USER="${SSH_USER:-app-admin}"
+	OPTS_SSH_ROOT_PASSWORD="${SSH_ROOT_PASSWORD:-$(get_password 8)}"
+	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password 8)}"
+
+	# Initialise
+	echo "Initialise SSH..."
+
+	# Generate new host keys
+	ssh-keygen -q -N "" -t rsa -f /etc/ssh/ssh_host_rsa_key
+	ssh-keygen -q -N "" -t dsa -f /etc/ssh/ssh_host_dsa_key
+
+	useradd -u 500 -m -G users,wheel ${OPTS_SSH_USER}
+
+	mkdir -m 700 ${OPTS_SSH_USER_HOME_DIR}/.ssh
+	cp -f /etc/services-config/ssh/authorized_keys ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
+	chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_SSH_USER_HOME_DIR}/.ssh
+	chmod 600 ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
+
+	
+	echo $'\n# ${OPTS_SSH_USER}\nDefaults:root secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin' >> /etc/sudoers
+	#echo 'Defaults:root !requiretty' >> /etc/sudoers
+
+	# Set user passwords
+	echo "root:${OPTS_SSH_ROOT_PASSWORD}" | chpasswd
+	echo "${OPTS_SSH_USER}:${OPTS_SSH_USER_PASSWORD}" | chpasswd
+
+	echo
+	echo "-------------------------------------------------------------------------------"
+	echo "SSH Credentials: "
+	echo "root : ${OPTS_SSH_ROOT_PASSWORD}"
+	echo "${OPTS_SSH_USER} : ${OPTS_SSH_USER_PASSWORD}"
+	#echo
+	#echo "RSA Host Key: "
+	#echo "$(cat /etc/ssh/ssh_host_rsa_key)"
+	#echo
+	#echo "DSA Host Key: "
+	#echo "$(cat /etc/ssh/ssh_host_dsa_key)"
+	echo "--------------------------------------------------------------------------------"
+	echo
+
+	# Allow some time for supervisor_stdout to start
+	sleep 2
+fi
+
+exit 0
