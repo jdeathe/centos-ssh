@@ -47,14 +47,6 @@ remove_docker_container_name ()
 remove_docker_container_name ${DOCKER_NAME}
 
 # In a sub-shell set xtrace - prints the docker command to screen for reference
-# (
-# set -x
-# docker run \
-# 	-d \
-# 	--name="${DOCKER_NAME}" \
-# 	-p :22 \
-# 	${DOCKER_IMAGE_REPOSITORY_NAME}
-# )
 (
 set -x
 docker run \
