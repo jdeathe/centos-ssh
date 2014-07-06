@@ -13,10 +13,12 @@ SSH access is by public key authentication and, by default, the [Vagrant](http:/
 
 ## Quick Example
 
+Run up a container named 'ssh.pool-1.1.1' from the docker image 'jdeathe/centos-ssh' on port 2020 of your docker host.
+
 ```
 $ docker run -d \
   --name ssh.pool-1.1.1 \
-  -p :22 \
+  -p 2020:22 \
   jdeathe/centos-ssh:latest
 ```
 
@@ -99,7 +101,7 @@ $ curl -LsSO https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vag
 
 If the command ran successfully you should now have a new private SSH key installed in your home "~/.ssh" directory called "id_rsa_insecure" 
 
-Next we need to determine what port to connect to on the docker host. You can do this with ether `docker ps` or `docker inspect`. In the following example we use `docker ps` to show the list of running containers and pipe to grep to filter out the host port.
+Next, unless we specified one, we need to determine what port to connect to on the docker host. You can do this with ether `docker ps` or `docker inspect`. In the following example we use `docker ps` to show the list of running containers and pipe to grep to filter out the host port.
 
 ```
 $ docker ps | \
@@ -112,7 +114,9 @@ $ docker ps | \
 To connect to the running container use:
 
 ```
-$ ssh -p <container-port> -i ~/.ssh/id_rsa_insecure app-admin@<docker-host-ip>
+$ ssh -p <container-port> -i ~/.ssh/id_rsa_insecure \
+  app-admin@<docker-host-ip> \
+  -o StrictHostKeyChecking=no
 ```
 
 ### Custom Configuration
