@@ -17,7 +17,6 @@ SSH access is by public key authentication and, by default, the [Vagrant](http:/
 $ docker run -d \
   --name ssh.pool-1.1.1 \
   -p :22 \
-  --volumes-from volume-config.ssh.pool-1.1.1 \
   jdeathe/centos-ssh:latest
 ```
 
