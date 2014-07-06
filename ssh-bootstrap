@@ -47,7 +47,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	echo "${OPTS_SSH_USER}:${OPTS_SSH_USER_PASSWORD}" | chpasswd
 
 	echo
-	echo "-------------------------------------------------------------------------------"
+	echo "--------------------------------------------------------------------------------"
 	echo "SSH Credentials: "
 	echo "root : ${OPTS_SSH_ROOT_PASSWORD}"
 	echo "${OPTS_SSH_USER} : ${OPTS_SSH_USER_PASSWORD}"
