@@ -5,7 +5,7 @@ Docker Image of CentOS-6 6.5 x86_64
 
 The Dockerfile can be used to build a base image that is the bases for several other docker images.
 
-Included in the build is the EPEL repository and SSH, vi and sudo are installed along with python-pip, supervisor and supervisor-stdout.
+Included in the build is the EPEL repository and SSH, vi and are installed along with python-pip, supervisor and supervisor-stdout.
 
 [Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run. To enable simple viewing of stdout for the sshd subprocess, supervisor-stdout is included. This allows you to see output from the supervisord controlled subprocesses with `docker logs <docker-container-name>`.
 
@@ -14,7 +14,7 @@ SSH access is by public key authentication and, by default, the [Vagrant](http:/
 ## Quick Example
 
 ```
-$ sudo docker run -d \
+$ docker run -d \
   --name ssh.pool-1.1.1 \
   -p :22 \
   --volumes-from volume-config.ssh.pool-1.1.1 \
@@ -34,13 +34,13 @@ Make a directory on the docker host for storing container configuration files. T
 - supervisord.conf
 
 ```
-$ sudo mkdir -p /etc/services-config/ssh.pool-1
+$ mkdir -p /etc/services-config/ssh.pool-1
 ```
 
 Create the data volume, mounting our docker host's configuration directory to /etc/services-config/ssh in the docker container. Note that docker will pull the busybox:latest image if you don't already have available locally.
 
 ```
-$ sudo docker run \
+$ docker run \
   --name volume-config.ssh.pool-1.1.1 \
   -v /etc/services-config/ssh.pool-1:/etc/services-config/ssh \
   busybox:latest \
@@ -52,9 +52,9 @@ $ sudo docker run \
 To run the a docker container from this image you can use the included run.sh and run.conf scripts. The helper script will stop any running container of the same name, remove it and run a new daemonised container on an unspecified host port. Alternatively you can use the following.
 
 ```
-$ sudo docker stop ssh.pool-1.1.1
-$ sudo docker rm ssh.pool-1.1.1
-$ sudo docker run -d \
+$ docker stop ssh.pool-1.1.1
+$ docker rm ssh.pool-1.1.1
+$ docker run -d \
   --name ssh.pool-1.1.1 \
   -p :22 \
   --volumes-from volume-config.ssh.pool-1.1.1 \
@@ -70,7 +70,6 @@ $ docker logs ssh.pool-1.1.1
 The output of the logs should show the auto-generated password for the app-admin and root users, (if not try again after a few seconds).
 
 ```
-
 sshd_bootstrap stdout | Initialise SSH...
 sshd_bootstrap stdout | 
 --------------------------------------------------------------------------------
@@ -80,7 +79,6 @@ app-admin : s4pjZwT8
 --------------------------------------------------------------------------------
 
 2014-07-05 19:35:35,370 INFO exited: sshd_bootstrap (exit status 0; expected)
-
 ```
 
 ### Connect to the running container using SSH
@@ -89,14 +87,15 @@ If you have not already got one, create the .ssh directory in your home director
 
 ```
 $ mkdir -pm 700 ~/.ssh
-
 ```
 
 Get the [Vagrant](http://www.vagrantup.com/) insecure public key using curl (you could also use wget if you have that installed).
 
 
 ```
-$  curl -LsSO https://github.com/mitchellh/vagrant/blob/master/keys/vagrant && mv vagrant ~/.ssh/id_rsa_insecure && chmod 600 ~/.ssh/id_rsa_insecure
+$ curl -LsSO https://github.com/mitchellh/vagrant/blob/master/keys/vagrant && \
+  mv vagrant ~/.ssh/id_rsa_insecure && \
+  chmod 600 ~/.ssh/id_rsa_insecure
 ```
 
 If the command ran successfully you should now have a new private SSH key installed in your home "~/.ssh" directory called "id_rsa_insecure" 
@@ -104,7 +103,11 @@ If the command ran successfully you should now have a new private SSH key instal
 Next we need to determine what port to connect to on the docker host. You can do this with ether `docker ps` or `docker inspect`. In the following example we use `docker ps` to show the list of running containers and pipe to grep to filter out the host port.
 
 ```
-docker ps | grep ssh.pool-1.1.1 | grep -oe ':[0-9]*->22\/tcp' | grep -oe :[0-9]* | cut -c 2-
+$ docker ps | \
+  grep ssh.pool-1.1.1 | \
+  grep -oe ':[0-9]*->22\/tcp' | \
+  grep -oe ':[0-9]*' | \
+  cut -c 2-
 ```
 
 To connect to the running container use:
@@ -112,3 +115,35 @@ To connect to the running container use:
 ```
 $ ssh -p <container-port> -i ~/.ssh/id_rsa_insecure app-admin@<docker-host-ip>
 ```
+
+### Custom Configuration
+
+If using the optional data volume for container configuration you are able to customise the configuration. In the following examples your custom docker configuration files should be located on your local host within a "config" directory relative to your working directory - i.e: ./config/ssh.pool-1
+
+#### authorized_keys
+
+The supplied insecure private key is for demonstration/review purposes only. You should create your own private key if you don't already have one using the following command; pressing the enter key when asked for a passphrase to prevent you being prompted for a passphrase.
+
+```
+$ ssh-keygen -q -t rsa -f ~/.ssh/id_rsa
+```
+
+You should now have an SSH public key, (~/.ssh/id_rsa.pub), that can be used to replace the default one in your custom authorized_keys file.
+
+The following example shows how to copy your file to a remote docker host:
+
+```
+$ scp ~/.ssh/id_rsa.pub <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/authorized_keys
+```
+
+#### ssh-bootstrap.conf
+
+The bootstrap script sets up the sudo user and generates a random 8 character password you can override this behavior by supplying your own values in your custom ssh-bootstrap.conf file. You can also change the sudoer username to something other that the default "app-admin".
+
+#### sshd_config
+
+The SSH daemon options can be overriden with your custom sshd_config file.
+
+#### supervisord.conf
+
+The supervisor service's configuration can also be overriden by editing the custom supervisord.conf file. It shouldn't be necessary to change the existing configuration here but you could include more [program:x] sections to run additional commands at startup.
