@@ -133,7 +133,8 @@ You should now have an SSH public key, (~/.ssh/id_rsa.pub), that can be used to 
 The following example shows how to copy your file to a remote docker host:
 
 ```
-$ scp ~/.ssh/id_rsa.pub <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/authorized_keys
+$ scp ~/.ssh/id_rsa.pub \
+  <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/authorized_keys
 ```
 
 #### ssh-bootstrap.conf
