@@ -92,7 +92,7 @@ Get the [Vagrant](http://www.vagrantup.com/) insecure public key using curl (you
 
 
 ```
-$ curl -LsSO https://github.com/mitchellh/vagrant/blob/master/keys/vagrant && \
+$ curl -LsSO https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant && \
   mv vagrant ~/.ssh/id_rsa_insecure && \
   chmod 600 ~/.ssh/id_rsa_insecure
 ```
