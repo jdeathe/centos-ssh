@@ -1,11 +1,14 @@
 centos-ssh
 ==========
 
-Docker Image of CentOS-6 6.5 x86_64
+Docker Image of CentOS-7
+
+Version 2.0 is based on CentOS-7 7.0.1406 x86_64
+Version 1.0 is based on CentOS-6 6.5 x86_64
 
 The Dockerfile can be used to build a base image that is the bases for several other docker images.
 
-Included in the build is the EPEL repository and SSH, vi and are installed along with python-pip, supervisor and supervisor-stdout.
+Included in the build is the (Beta) [EPEL repository](http://dl.fedoraproject.org/pub/epel/beta/7/x86_64/) SSH and vi are installed along with python-pip, supervisor and supervisor-stdout.
 
 [Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run. To enable simple viewing of stdout for the sshd subprocess, supervisor-stdout is included. This allows you to see output from the supervisord controlled subprocesses with `docker logs <docker-container-name>`.
 

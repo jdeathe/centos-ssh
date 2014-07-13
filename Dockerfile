@@ -1,16 +1,16 @@
-FROM centos:centos6
+FROM centos:centos7
 
 MAINTAINER James Deathe <james.deathe@gmail.com>
 
 # Add a "Message of the Day" to help identify container when logging in via SSH
-RUN echo '[ CentOS ]' > /etc/motd
+RUN echo '[ CentOS-7 ]' > /etc/motd
 
-# Import the Centos-6 RPM GPG key to prevent warnings 
-RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6
+# Import the CentOS-7 RPM GPG key to prevent warnings
+RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-7
 
-# Add EPEL Repository
-RUN rpm --import http://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-6
-RUN rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+# Add EPEL-7 Repository (Beta)
+RUN rpm --import http://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7
+RUN rpm -Uvh http://dl.fedoraproject.org/pub/epel/beta/7/x86_64//epel-release-7-0.2.noarch.rpm
 
 RUN yum -y install \
 	vim-minimal \
