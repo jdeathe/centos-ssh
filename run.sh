@@ -43,6 +43,18 @@ remove_docker_container_name ()
 	fi
 }
 
+# Configuration volume
+if [ ! "${VOLUME_CONFIG_NAME}" == "$(docker ps -a | grep -v -e \"${VOLUME_CONFIG_NAME}/.*,.*\" | grep -e '[ ]\{1,\}'${VOLUME_CONFIG_NAME} | grep -o ${VOLUME_CONFIG_NAME})" ]; then
+(
+set -x
+docker run \
+	--name ${VOLUME_CONFIG_NAME} \
+	-v ${MOUNT_PATH_CONFIG}/${SERVICE_UNIT_NAME}.${SERVICE_UNIT_SHARED_GROUP}:/etc/services-config/ssh \
+	busybox:latest \
+	/bin/true;
+)
+fi
+
 # Force replace container of same name if found to exist
 remove_docker_container_name ${DOCKER_NAME}
 
@@ -53,7 +65,7 @@ docker run \
 	-d \
 	--name ${DOCKER_NAME} \
 	-p :22 \
-	--volumes-from ${VOLUME_CONFIG} \
+	--volumes-from ${VOLUME_CONFIG_NAME} \
 	${DOCKER_IMAGE_REPOSITORY_NAME}
 )
 
