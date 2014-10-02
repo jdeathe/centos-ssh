@@ -121,7 +121,7 @@ $ ssh -p <container-port> -i ~/.ssh/id_rsa_insecure \
 
 ### Custom Configuration
 
-If using the optional data volume for container configuration you are able to customise the configuration. In the following examples your custom docker configuration files should be located on your local host within a "config" directory relative to your working directory - i.e: ./config/ssh.pool-1
+If using the optional data volume for container configuration you are able to customise the configuration. In the following examples your custom docker configuration files should be located on the Docker host under the directory ```/etc/service-config/<container-name>/``` where ```<container-name>``` should match the applicable container name such as "ssh.pool-1.1.1" or, if the configuration is common across a group of containers, simply "ssh.pool-1" for the given examples.
 
 #### authorized_keys
 
