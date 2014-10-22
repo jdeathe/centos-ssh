@@ -1,5 +1,5 @@
 # =============================================================================
-# jdeathe/centos-ssh-apache-php
+# jdeathe/centos-ssh
 #
 # CentOS-6 6.5 x86_64 / EPEL Repo. / OpenSSH / Supervisor.
 # 
@@ -68,12 +68,11 @@ RUN mkdir -p /etc/services-config/{supervisor,ssh}
 # -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
-ADD ssh-bootstrap /etc/
-ADD authorized_keys /etc/services-config/ssh/
-ADD sshd_config /etc/services-config/ssh/
-ADD ssh-bootstrap.conf /etc/services-config/ssh/
-ADD supervisord.conf /etc/services-config/supervisor/
-
+ADD etc/ssh-bootstrap /etc/
+ADD etc/services-config/ssh/authorized_keys /etc/services-config/ssh/
+ADD etc/services-config/ssh/sshd_config /etc/services-config/ssh/
+ADD etc/services-config/ssh/ssh-bootstrap.conf /etc/services-config/ssh/
+ADD etc/services-config/supervisor/supervisord.conf /etc/services-config/supervisor/
 
 RUN chmod 600 /etc/services-config/ssh/sshd_config \
 	&& chmod +x /etc/ssh-bootstrap \
