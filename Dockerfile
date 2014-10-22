@@ -1,5 +1,5 @@
 # =============================================================================
-# jdeathe/centos-ssh-apache-php
+# jdeathe/centos-ssh
 #
 # CentOS-6 6.5 x86_64 / EPEL Repo. / OpenSSH / Supervisor.
 # 
@@ -25,6 +25,7 @@ RUN yum -y install \
 	openssh-server \
 	openssh-clients \
 	python-pip \
+	&& yum -y update bash \
 	&& rm -rf /var/cache/yum/* \
 	&& yum clean all
 
@@ -68,11 +69,11 @@ RUN mkdir -p /etc/services-config/{supervisor,ssh}
 # -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
-ADD authorized_keys /etc/services-config/ssh/
-ADD supervisord.conf /etc/services-config/supervisor/
-ADD sshd_config /etc/services-config/ssh/
-ADD ssh-bootstrap.conf /etc/services-config/ssh/
-ADD ssh-bootstrap /etc/
+ADD etc/ssh-bootstrap /etc/
+ADD etc/services-config/ssh/authorized_keys /etc/services-config/ssh/
+ADD etc/services-config/ssh/sshd_config /etc/services-config/ssh/
+ADD etc/services-config/ssh/ssh-bootstrap.conf /etc/services-config/ssh/
+ADD etc/services-config/supervisor/supervisord.conf /etc/services-config/supervisor/
 
 RUN chmod 600 /etc/services-config/ssh/sshd_config \
 	&& chmod +x /etc/ssh-bootstrap \
@@ -86,8 +87,7 @@ RUN chmod 600 /etc/services-config/ssh/sshd_config \
 RUN rm -rf /etc/ld.so.cache \ 
 	; rm -rf /sbin/sln \
 	; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,gnome/help,cracklib,il8n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
-	; rm -rf /var/cache/ldconfig/* \
-	; rm -rf /var/cache/yum/*
+	; rm -rf /var/cache/{ldconfig,yum}/*
 
 EXPOSE 22
 
