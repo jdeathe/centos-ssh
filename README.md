@@ -123,7 +123,7 @@ $ ssh -p <container-port> -i ~/.ssh/id_rsa_insecure \
 
 If using the optional data volume for container configuration you are able to customise the configuration. In the following examples your custom docker configuration files should be located on the Docker host under the directory ```/etc/service-config/<container-name>/``` where ```<container-name>``` should match the applicable container name such as "ssh.pool-1.1.1" or, if the configuration is common across a group of containers, simply "ssh.pool-1" for the given examples.
 
-#### authorized_keys
+#### [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/authorized_keys)
 
 The supplied insecure private key is for demonstration/review purposes only. You should create your own private key if you don't already have one using the following command; pressing the enter key when asked for a passphrase to prevent you being prompted for a passphrase.
 
@@ -140,14 +140,14 @@ $ scp ~/.ssh/id_rsa.pub \
   <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/authorized_keys
 ```
 
-#### ssh-bootstrap.conf
+#### [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
 
 The bootstrap script sets up the sudo user and generates a random 8 character password you can override this behavior by supplying your own values in your custom ssh-bootstrap.conf file. You can also change the sudoer username to something other that the default "app-admin".
 
-#### sshd_config
+#### [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/sshd_config)
 
 The SSH daemon options can be overriden with your custom sshd_config file.
 
-#### supervisord.conf
+#### [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor/supervisord.conf)
 
 The supervisor service's configuration can also be overriden by editing the custom supervisord.conf file. It shouldn't be necessary to change the existing configuration here but you could include more [program:x] sections to run additional commands at startup.
