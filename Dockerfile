@@ -68,11 +68,12 @@ RUN mkdir -p /etc/services-config/{supervisor,ssh}
 # -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
+ADD ssh-bootstrap /etc/
 ADD authorized_keys /etc/services-config/ssh/
-ADD supervisord.conf /etc/services-config/supervisor/
 ADD sshd_config /etc/services-config/ssh/
 ADD ssh-bootstrap.conf /etc/services-config/ssh/
-ADD ssh-bootstrap /etc/
+ADD supervisord.conf /etc/services-config/supervisor/
+
 
 RUN chmod 600 /etc/services-config/ssh/sshd_config \
 	&& chmod +x /etc/ssh-bootstrap \
