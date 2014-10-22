@@ -25,6 +25,7 @@ RUN yum -y install \
 	openssh-server \
 	openssh-clients \
 	python-pip \
+	&& yum -y update bash \
 	&& rm -rf /var/cache/yum/* \
 	&& yum clean all
 
