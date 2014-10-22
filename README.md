@@ -53,9 +53,9 @@ $ docker run \
 To run the a docker container from this image you can use the included run.sh and run.conf scripts. The helper script will stop any running container of the same name, remove it and run a new daemonised container on an unspecified host port. Alternatively you can use the following.
 
 ```
-$ docker stop ssh.pool-1.1.1
-$ docker rm ssh.pool-1.1.1
-$ docker run -d \
+$ docker stop ssh.pool-1.1.1 \
+  && docker rm ssh.pool-1.1.1 \
+  ; docker run -d \
   --name ssh.pool-1.1.1 \
   -p :22 \
   --volumes-from volume-config.ssh.pool-1.1.1 \
