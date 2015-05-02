@@ -3,6 +3,8 @@ centos-ssh
 
 Docker Image of CentOS-6 6.6 x86_64
 
+Includes public key authentication, Automated password generation, supports custom configuration via a configuration data volume.
+
 ## Overview & links
 
 The [Dockerfile](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile) can be used to build a base image that is the bases for several other docker images.
