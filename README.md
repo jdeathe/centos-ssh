@@ -1,7 +1,7 @@
 centos-ssh
 ==========
 
-Docker Image of CentOS-6 6.5 x86_64
+Docker Image of CentOS-6 6.6 x86_64
 
 The Dockerfile can be used to build a base image that is the bases for several other docker images.
 

@@ -1,10 +1,10 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-6 6.5 x86_64 / EPEL Repo. / OpenSSH / Supervisor.
+# CentOS-6 6.6 x86_64 / EPEL Repo. / OpenSSH / Supervisor.
 # 
 # =============================================================================
-FROM centos:centos6
+FROM centos:centos6.6
 
 MAINTAINER James Deathe <james.deathe@gmail.com>
 
