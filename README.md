@@ -3,7 +3,9 @@ centos-ssh
 
 Docker Image of CentOS-6 6.6 x86_64
 
-The Dockerfile can be used to build a base image that is the bases for several other docker images.
+## Overview & links
+
+The [Dockerfile](https://github.com/jdeathe/centos-ssh/blob/master/Dockerfile) can be used to build a base image that is the bases for several other docker images.
 
 Included in the build is the EPEL repository and SSH, vi and are installed along with python-pip, supervisor and supervisor-stdout.
 
