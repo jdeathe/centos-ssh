@@ -5,7 +5,7 @@ Docker Image of CentOS-6 6.6 x86_64
 
 ## Overview & links
 
-The [Dockerfile](https://github.com/jdeathe/centos-ssh/blob/master/Dockerfile) can be used to build a base image that is the bases for several other docker images.
+The [Dockerfile](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile) can be used to build a base image that is the bases for several other docker images.
 
 Included in the build is the EPEL repository and SSH, vi and are installed along with python-pip, supervisor and supervisor-stdout.
 
@@ -13,7 +13,7 @@ Included in the build is the EPEL repository and SSH, vi and are installed along
 
 SSH access is by public key authentication and, by default, the [Vagrant](http://www.vagrantup.com/) [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant) is required.
 
-SSH is not required in order to access a terminal for the running container the prefered method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/master/command-keys.md) for details on how to set this up.
+SSH is not required in order to access a terminal for the running container the prefered method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-6/command-keys.md) for details on how to set this up.
 
 ## Quick Example
 
@@ -127,7 +127,7 @@ $ ssh -p <container-port> -i ~/.ssh/id_rsa_insecure \
 
 If using the optional data volume for container configuration you are able to customise the configuration. In the following examples your custom docker configuration files should be located on the Docker host under the directory ```/etc/service-config/<container-name>/``` where ```<container-name>``` should match the applicable container name such as "ssh.pool-1.1.1" or, if the configuration is common across a group of containers, simply "ssh.pool-1" for the given examples.
 
-#### [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/master/etc/services-config/ssh/authorized_keys)
+#### [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/authorized_keys)
 
 The supplied insecure private key is for demonstration/review purposes only. You should create your own private key if you don't already have one using the following command; pressing the enter key when asked for a passphrase to prevent you being prompted for a passphrase.
 
@@ -144,14 +144,14 @@ $ scp ~/.ssh/id_rsa.pub \
   <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/authorized_keys
 ```
 
-#### [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/master/etc/services-config/ssh/ssh-bootstrap.conf)
+#### [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
 
 The bootstrap script sets up the sudo user and generates a random 8 character password you can override this behavior by supplying your own values in your custom ssh-bootstrap.conf file. You can also change the sudoer username to something other that the default "app-admin".
 
-#### [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/master/etc/services-config/ssh/sshd_config)
+#### [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/sshd_config)
 
 The SSH daemon options can be overriden with your custom sshd_config file.
 
-#### [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/master/etc/services-config/supervisor/supervisord.conf)
+#### [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor/supervisord.conf)
 
 The supervisor service's configuration can also be overriden by editing the custom supervisord.conf file. It shouldn't be necessary to change the existing configuration here but you could include more [program:x] sections to run additional commands at startup.
