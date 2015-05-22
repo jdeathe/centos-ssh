@@ -30,6 +30,12 @@ RUN yum -y install \
 	&& yum clean all
 
 # -----------------------------------------------------------------------------
+# Force SSH host-keys to be generated
+# -----------------------------------------------------------------------------
+RUN service sshd start
+RUN service sshd stop
+
+# -----------------------------------------------------------------------------
 # Install supervisord (required to run more than a single process in a container)
 # Note: EPEL package lacks /usr/bin/pidproxy
 # We require supervisor-stdout to allow output of services started by 
