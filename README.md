@@ -15,7 +15,7 @@ Included in the build is the EPEL repository and SSH, vi and are installed along
 
 SSH access is by public key authentication and, by default, the [Vagrant](http://www.vagrantup.com/) [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant) is required.
 
-SSH is not required in order to access a terminal for the running container the prefered method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-6/command-keys.md) for details on how to set this up.
+SSH is not required in order to access a terminal for the running container the preferred method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-6/command-keys.md) for details on how to set this up.
 
 ## Quick Example
 
@@ -148,12 +148,12 @@ $ scp ~/.ssh/id_rsa.pub \
 
 #### [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
 
-The bootstrap script sets up the sudo user and generates a random 8 character password you can override this behavior by supplying your own values in your custom ssh-bootstrap.conf file. You can also change the sudoer username to something other that the default "app-admin".
+The bootstrap script sets up the sudo user and generates a random 8 character password you can override this behaviour by supplying your own values in your custom ssh-bootstrap.conf file. You can also change the sudoer username to something other that the default "app-admin".
 
 #### [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/sshd_config)
 
-The SSH daemon options can be overriden with your custom sshd_config file.
+The SSH daemon options can be overridden with your custom sshd_config file.
 
 #### [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor/supervisord.conf)
 
-The supervisor service's configuration can also be overriden by editing the custom supervisord.conf file. It shouldn't be necessary to change the existing configuration here but you could include more [program:x] sections to run additional commands at startup.
+The supervisor service's configuration can also be overridden by editing the custom supervisord.conf file. It shouldn't be necessary to change the existing configuration here but you could include more [program:x] sections to run additional commands at startup.
