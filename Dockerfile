@@ -13,7 +13,9 @@ MAINTAINER James Deathe <james.deathe@gmail.com>
 # -----------------------------------------------------------------------------
 RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6 \
 	&& rpm --import http://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-6 \
-	&& rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+	&& rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm \
+	&& rpm --import https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY \
+	&& rpm -Uvh https://dl.iuscommunity.org/pub/ius/stable/CentOS/6/x86_64/ius-release-1.0-14.ius.centos6.noarch.rpm
 
 # -----------------------------------------------------------------------------
 # Base Install
