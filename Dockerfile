@@ -1,7 +1,7 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-6 6.6 x86_64 / EPEL Repo. / OpenSSH / Supervisor.
+# CentOS-6 6.6 x86_64 / EPEL/IUS Repos. / OpenSSH / Supervisor.
 # 
 # =============================================================================
 FROM centos:centos6.6
@@ -9,7 +9,7 @@ FROM centos:centos6.6
 MAINTAINER James Deathe <james.deathe@gmail.com>
 
 # -----------------------------------------------------------------------------
-# Import the Centos-6 RPM GPG key to prevent warnings and Add EPEL Repository
+# Import the RPM GPG keys and install Repositories
 # -----------------------------------------------------------------------------
 RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6 \
 	&& rpm --import http://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-6 \
