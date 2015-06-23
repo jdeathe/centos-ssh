@@ -1,1 +1,1 @@
-CentOS-6 6.6 x86_64 / EPEL Repo. / OpenSSH / Supervisor.
+CentOS-6 6.6 x86_64 / EPEL/IUS Repos / OpenSSH / Supervisor.
