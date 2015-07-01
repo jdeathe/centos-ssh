@@ -11,7 +11,7 @@ have_docker_container_name ()
 {
 	NAME=$1
 
-	if [[ -n $(docker ps -a | awk '{ print $NF; }' | grep -e "^${NAME}$") ]]; then
+	if [[ -n $(docker ps -a | awk -v pattern="^${DOCKER_NAME}$" '$NF ~ pattern { print $NF; }') ]]; then
 		return 0
 	else
 		return 1
@@ -22,7 +22,7 @@ is_docker_container_name_running ()
 {
 	NAME=$1
 
-	if [[ -n $(docker ps | awk '{ print $NF; }' | grep -e "^${NAME}$") ]]; then
+	if [[ -n $(docker ps | awk -v pattern="^${DOCKER_NAME}$" '$NF ~ pattern { print $NF; }') ]]; then
 		return 0
 	else
 		return 1
@@ -99,6 +99,6 @@ docker run \
 )
 
 if is_docker_container_name_running ${DOCKER_NAME} ; then
-	docker ps | grep -v -e "${DOCKER_NAME}/.*,.*" | grep ${DOCKER_NAME}
+	docker ps | awk -v pattern="${DOCKER_NAME}$" '$NF ~ pattern { print $0 ; }'
 	echo " ---> Docker container running."
 fi
