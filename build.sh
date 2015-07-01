@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Change working directory
-DIR_PATH="$( cd "$( echo "${0%/*}" )"; pwd )"
+DIR_PATH="$( cd "$( echo "${0%/*}" >> /dev/null )"; pwd )"
 if [[ $DIR_PATH == */* ]]; then
 	cd $DIR_PATH
 fi
