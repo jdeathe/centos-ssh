@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-DIR_PATH="$( cd "$( echo "${0%/*}" >> /dev/null )"; pwd )"
-if [[ $DIR_PATH == */* ]]; then
+DIR_PATH="$( if [ "$( echo "${0%/*}" )" != "$( echo "${0}" )" ] ; then cd "$( echo "${0%/*}" )"; fi; pwd )"
+if [[ $DIR_PATH == */* ]] && [[ $DIR_PATH != "$( pwd )" ]] ; then
 	cd $DIR_PATH
 fi
 
