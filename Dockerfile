@@ -28,7 +28,6 @@ RUN yum -y install \
 	openssh-clients-5.3p1-104.el6_6.1 \
 	python-pip-1.3.1-4.el6 \
 	yum-plugin-versionlock-1.1.30-30.el6 \
-	&& yum -y update bash \
 	&& yum versionlock add \
 	vim-minimal \
 	sudo \
