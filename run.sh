@@ -48,11 +48,7 @@ if [ ! "${VOLUME_CONFIG_NAME}" == "$(docker ps -a | grep -v -e \"${VOLUME_CONFIG
 (
 CONTAINER_MOUNT_PATH_CONFIG=${MOUNT_PATH_CONFIG}/${SERVICE_UNIT_NAME}.${SERVICE_UNIT_SHARED_GROUP}
 
-# The Docker Host needs the target configuration directory
-if [ ! -d ${HOST_PATH_CONFIG} ]; then
-       CMD=$(mkdir -p ${HOST_PATH_CONFIG})
-       $CMD || sudo $CMD
-fi
+# The Docker Host needs the target configuration directories
 
 if [ ! -d ${CONTAINER_MOUNT_PATH_CONFIG}/ssh ]; then
        CMD=$(mkdir -p ${CONTAINER_MOUNT_PATH_CONFIG}/ssh)
