@@ -144,7 +144,7 @@ The following example shows how to copy your file to a remote docker host:
 
 ```
 $ scp ~/.ssh/id_rsa.pub \
-  <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/authorized_keys
+  <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/ssh/authorized_keys
 ```
 
 #### [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
