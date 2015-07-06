@@ -35,10 +35,10 @@ $ docker run -d \
 Create a "data volume" for configuration, this allows you to share the same configuration between multiple docker containers and, by mounting a host directory into the data volume you can override the default configuration files provided.
 
 Make a directory on the docker host for storing container configuration files. This directory needs to contain at least the following files:
-- authorized_keys
-- ssh-bootstrap.conf
-- sshd_config
-- supervisord.conf
+- [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/authorized_keys)
+- [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
+- [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/sshd_config)
+- [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor/supervisord.conf)
 
 ```
 $ mkdir -p /etc/services-config/ssh.pool-1
@@ -50,6 +50,7 @@ Create the data volume, mounting our docker host's configuration directory to /e
 $ docker run \
   --name volume-config.ssh.pool-1.1.1 \
   -v /etc/services-config/ssh.pool-1/ssh:/etc/services-config/ssh \
+  -v /etc/services-config/ssh.pool-1/supervisor:/etc/services-config/supervisor \
   busybox:latest \
   /bin/true
 ```
