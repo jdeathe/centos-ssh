@@ -49,7 +49,7 @@ Create the data volume, mounting our docker host's configuration directory to /e
 ```
 $ docker run \
   --name volume-config.ssh.pool-1.1.1 \
-  -v /etc/services-config/ssh.pool-1:/etc/services-config/ssh \
+  -v /etc/services-config/ssh.pool-1/ssh:/etc/services-config/ssh \
   busybox:latest \
   /bin/true
 ```
