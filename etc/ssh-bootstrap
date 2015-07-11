@@ -28,8 +28,13 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	echo "Initialise SSH..."
 
 	# Generate new host keys
-	ssh-keygen -q -N "" -t rsa -f /etc/ssh/ssh_host_rsa_key
-	ssh-keygen -q -N "" -t dsa -f /etc/ssh/ssh_host_dsa_key
+	rm -f /etc/ssh/{ssh_host_rsa_key,ssh_host_rsa_key.pub,ssh_host_dsa_key,ssh_host_dsa_key.pub}
+	ssh-keygen -q -C "" -N "" -t rsa -f /etc/ssh/ssh_host_rsa_key
+	ssh-keygen -q -C "" -N "" -t dsa -f /etc/ssh/ssh_host_dsa_key
+	if [ -x /sbin/restorecon ]; then
+		/sbin/restorecon /etc/ssh/ssh_host_rsa_key.pub
+		/sbin/restorecon /etc/ssh/ssh_host_dsa_key.pub
+	fi
 
 	useradd -u 500 -m -G users,wheel ${OPTS_SSH_USER}
 

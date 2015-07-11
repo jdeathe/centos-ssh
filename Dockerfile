@@ -1,7 +1,7 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-6 6.6 x86_64 / EPEL Repo. / OpenSSH / Supervisor.
+# CentOS-6 6.6 x86_64 / EPEL/IUS Repos. / OpenSSH / Supervisor.
 # 
 # =============================================================================
 FROM centos:centos6.6
@@ -9,23 +9,33 @@ FROM centos:centos6.6
 MAINTAINER James Deathe <james.deathe@gmail.com>
 
 # -----------------------------------------------------------------------------
-# Import the Centos-6 RPM GPG key to prevent warnings and Add EPEL Repository
+# Import the RPM GPG keys and install Repositories
 # -----------------------------------------------------------------------------
 RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6 \
 	&& rpm --import http://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-6 \
-	&& rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+	&& rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm \
+	&& rpm --import https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY \
+	&& rpm -Uvh https://dl.iuscommunity.org/pub/ius/stable/CentOS/6/x86_64/ius-release-1.0-14.ius.centos6.noarch.rpm
 
 # -----------------------------------------------------------------------------
 # Base Install
 # -----------------------------------------------------------------------------
 RUN yum -y install \
+	vim-minimal-7.2.411-1.8.el6 \
+	sudo-1.8.6p3-15.el6 \
+	openssh-5.3p1-104.el6_6.1 \
+	openssh-server-5.3p1-104.el6_6.1 \
+	openssh-clients-5.3p1-104.el6_6.1 \
+	python-pip-1.3.1-4.el6 \
+	yum-plugin-versionlock-1.1.30-30.el6 \
+	&& yum versionlock add \
 	vim-minimal \
 	sudo \
 	openssh \
 	openssh-server \
 	openssh-clients \
 	python-pip \
-	&& yum -y update bash \
+	yum-plugin-versionlock \
 	&& rm -rf /var/cache/yum/* \
 	&& yum clean all
 
@@ -35,7 +45,7 @@ RUN yum -y install \
 # We require supervisor-stdout to allow output of services started by 
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
-RUN pip install --upgrade 'pip >= 1.4, < 1.5' \
+RUN pip install --upgrade 'pip == 1.4.1' \
 	&& pip install --upgrade supervisor supervisor-stdout \
 	&& mkdir -p /var/log/supervisor/
 

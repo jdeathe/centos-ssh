@@ -9,7 +9,7 @@ Includes public key authentication, Automated password generation, supports cust
 
 The [Dockerfile](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile) can be used to build a base image that is the bases for several other docker images.
 
-Included in the build is the EPEL repository and SSH, vi and are installed along with python-pip, supervisor and supervisor-stdout.
+Included in the build is the EPEL repository, the IUS repository and SSH, vi and are installed along with python-pip, supervisor and supervisor-stdout.
 
 [Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run. To enable simple viewing of stdout for the sshd subprocess, supervisor-stdout is included. This allows you to see output from the supervisord controlled subprocesses with `docker logs <docker-container-name>`.
 
@@ -35,10 +35,10 @@ $ docker run -d \
 Create a "data volume" for configuration, this allows you to share the same configuration between multiple docker containers and, by mounting a host directory into the data volume you can override the default configuration files provided.
 
 Make a directory on the docker host for storing container configuration files. This directory needs to contain at least the following files:
-- authorized_keys
-- ssh-bootstrap.conf
-- sshd_config
-- supervisord.conf
+- [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/authorized_keys)
+- [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
+- [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/sshd_config)
+- [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor/supervisord.conf)
 
 ```
 $ mkdir -p /etc/services-config/ssh.pool-1
@@ -49,7 +49,8 @@ Create the data volume, mounting our docker host's configuration directory to /e
 ```
 $ docker run \
   --name volume-config.ssh.pool-1.1.1 \
-  -v /etc/services-config/ssh.pool-1:/etc/services-config/ssh \
+  -v /etc/services-config/ssh.pool-1/ssh:/etc/services-config/ssh \
+  -v /etc/services-config/ssh.pool-1/supervisor:/etc/services-config/supervisor \
   busybox:latest \
   /bin/true
 ```
@@ -143,7 +144,7 @@ The following example shows how to copy your file to a remote docker host:
 
 ```
 $ scp ~/.ssh/id_rsa.pub \
-  <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/authorized_keys
+  <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/ssh/authorized_keys
 ```
 
 #### [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
