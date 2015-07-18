@@ -108,14 +108,10 @@ $ curl -LsSO https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vag
 
 If the command ran successfully you should now have a new private SSH key installed in your home "~/.ssh" directory called "id_rsa_insecure" 
 
-Next, unless we specified one, we need to determine what port to connect to on the docker host. You can do this with ether `docker ps` or `docker inspect`. In the following example we use `docker ps` to show the list of running containers and pipe to grep to filter out the host port.
+Next, unless we specified one, we need to determine what port to connect to on the docker host. You can do this with either `docker ps` or `docker inspect` but the simplest method is to use `docker port`.
 
 ```
-$ docker ps | \
-  grep ssh.pool-1.1.1 | \
-  grep -oe ':[0-9]*->22\/tcp' | \
-  grep -oe ':[0-9]*' | \
-  cut -c 2-
+$ docker port ssh.pool-1.1.1 22
 ```
 
 To connect to the running container use:
