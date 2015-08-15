@@ -2,8 +2,8 @@ volumeConfigSshPool111:
   image: "busybox:latest"
   container_name: "volume-config.ssh.pool-1.1.1"
   volumes:
-    - "~/services-config/ssh.pool-1/ssh:/etc/services-config/ssh"
-    - "~/services-config/ssh.pool-1/supervisor:/etc/services-config/supervisor"
+    - "./etc/services-config/ssh:/etc/services-config/ssh"
+    - "./etc/services-config/supervisor:/etc/services-config/supervisor"
   command: /bin/true
 sshPool111:
   image: "jdeathe/centos-ssh:latest"
