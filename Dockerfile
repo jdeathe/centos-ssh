@@ -72,11 +72,6 @@ RUN sed -i \
 RUN sed -i 's/^# %wheel\tALL=(ALL)\tALL/%wheel\tALL=(ALL)\tALL/g' /etc/sudoers
 
 # -----------------------------------------------------------------------------
-# Make the custom configuration directory
-# -----------------------------------------------------------------------------
-RUN mkdir -p /etc/services-config/{supervisor,ssh}
-
-# -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
 ADD etc/ssh-bootstrap /etc/
