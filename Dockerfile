@@ -96,4 +96,11 @@ RUN rm -rf /etc/ld.so.cache \
 
 EXPOSE 22
 
+# -----------------------------------------------------------------------------
+# Set default environment variables
+# -----------------------------------------------------------------------------
+ENV SSH_USER_PASSWORD ""
+ENV SSH_USER "app-admin"
+ENV SSH_USER_HOME_DIR "/home/app-admin"
+
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
