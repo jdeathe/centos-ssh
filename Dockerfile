@@ -92,7 +92,8 @@ RUN chmod 600 /etc/services-config/ssh/sshd_config \
 RUN rm -rf /etc/ld.so.cache \ 
 	; rm -rf /sbin/sln \
 	; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,gnome/help,cracklib,il8n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
-	; rm -rf /var/cache/{ldconfig,yum}/*
+	; rm -rf /var/cache/{ldconfig,yum}/* \
+	; > /etc/sysconfig/i18n
 
 EXPOSE 22
 

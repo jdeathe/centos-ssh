@@ -15,7 +15,17 @@ Included in the build is the EPEL repository, the IUS repository and SSH, vi and
 
 SSH access is by public key authentication and, by default, the [Vagrant](http://www.vagrantup.com/) [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant) is required.
 
-SSH is not required in order to access a terminal for the running container the preferred method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-6/command-keys.md) for details on how to set this up.
+### SSH Alternatives
+
+SSH is not required in order to access a terminal for the running container. The simplest method is to use the docker exec command to run bash (or sh) as follows: 
+
+```
+$ docker exec -it <docker-name-or-id> bash
+```
+
+For cases where access to docker exec is not possible the preferred method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-6/command-keys.md) for details on how to set this up.
+
+
 
 ## Quick Example
 
