@@ -44,32 +44,32 @@ remove_docker_container_name ()
 }
 
 # Configuration volume
-if [ ! "${VOLUME_CONFIG_NAME}" == "$(docker ps -a | grep -v -e \"${VOLUME_CONFIG_NAME}/.*,.*\" | grep -e '[ ]\{1,\}'${VOLUME_CONFIG_NAME} | grep -o ${VOLUME_CONFIG_NAME})" ]; then
+if ! have_docker_container_name ${VOLUME_CONFIG_NAME} ; then
+
+	CONTAINER_MOUNT_PATH_CONFIG=${MOUNT_PATH_CONFIG}/${SERVICE_UNIT_NAME}.${SERVICE_UNIT_SHARED_GROUP}
+
+	# The Docker Host needs the target configuration directories
+
+	if [ ! -d ${CONTAINER_MOUNT_PATH_CONFIG}/ssh ]; then
+	       CMD=$(mkdir -p ${CONTAINER_MOUNT_PATH_CONFIG}/ssh)
+	       $CMD || sudo $CMD
+	fi
+
+	if [[ ! -n $(find ${CONTAINER_MOUNT_PATH_CONFIG}/ssh -maxdepth 1 -type f) ]]; then
+	       CMD=$(cp -R etc/services-config/ssh ${CONTAINER_MOUNT_PATH_CONFIG}/)
+	       $CMD || sudo $CMD
+	fi
+
+	if [ ! -d ${CONTAINER_MOUNT_PATH_CONFIG}/supervisor ]; then
+	       CMD=$(mkdir -p ${CONTAINER_MOUNT_PATH_CONFIG}/supervisor)
+	       $CMD || sudo $CMD
+	fi
+
+	if [[ ! -n $(find ${CONTAINER_MOUNT_PATH_CONFIG}/supervisor -maxdepth 1 -type f) ]]; then
+	       CMD=$(cp -R etc/services-config/supervisor ${CONTAINER_MOUNT_PATH_CONFIG}/)
+	       $CMD || sudo $CMD
+	fi
 (
-CONTAINER_MOUNT_PATH_CONFIG=${MOUNT_PATH_CONFIG}/${SERVICE_UNIT_NAME}.${SERVICE_UNIT_SHARED_GROUP}
-
-# The Docker Host needs the target configuration directories
-
-if [ ! -d ${CONTAINER_MOUNT_PATH_CONFIG}/ssh ]; then
-       CMD=$(mkdir -p ${CONTAINER_MOUNT_PATH_CONFIG}/ssh)
-       $CMD || sudo $CMD
-fi
-
-if [[ ! -n $(find ${CONTAINER_MOUNT_PATH_CONFIG}/ssh -maxdepth 1 -type f) ]]; then
-       CMD=$(cp -R etc/services-config/ssh ${CONTAINER_MOUNT_PATH_CONFIG}/)
-       $CMD || sudo $CMD
-fi
-
-if [ ! -d ${CONTAINER_MOUNT_PATH_CONFIG}/supervisor ]; then
-       CMD=$(mkdir -p ${CONTAINER_MOUNT_PATH_CONFIG}/supervisor)
-       $CMD || sudo $CMD
-fi
-
-if [[ ! -n $(find ${CONTAINER_MOUNT_PATH_CONFIG}/supervisor -maxdepth 1 -type f) ]]; then
-       CMD=$(cp -R etc/services-config/supervisor ${CONTAINER_MOUNT_PATH_CONFIG}/)
-       $CMD || sudo $CMD
-fi
-
 set -x
 docker run \
 	--name ${VOLUME_CONFIG_NAME} \
