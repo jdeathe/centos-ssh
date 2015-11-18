@@ -12,11 +12,11 @@ source build.conf
 
 show_docker_image ()
 {
-	NAME=$1
-	NAME_PARTS=(${NAME//:/ })
+	local NAME=$1
+	local NAME_PARTS=(${NAME//:/ })
 
 	# Set 'latest' tag if no tag requested
-	if [ ${#NAME_PART[@]} == 1 ]; then
+	if [ ${#NAME_PARTS[@]} == 1 ]; then
 		NAME_PARTS[1]='latest'
 	fi
 

@@ -15,7 +15,17 @@ Included in the build is the EPEL repository, the IUS repository and SSH, vi and
 
 SSH access is by public key authentication and, by default, the [Vagrant](http://www.vagrantup.com/) [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant) is required.
 
-SSH is not required in order to access a terminal for the running container the preferred method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-6/command-keys.md) for details on how to set this up.
+### SSH Alternatives
+
+SSH is not required in order to access a terminal for the running container. The simplest method is to use the docker exec command to run bash (or sh) as follows: 
+
+```
+$ docker exec -it <docker-name-or-id> bash
+```
+
+For cases where access to docker exec is not possible the preferred method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-6/command-keys.md) for details on how to set this up.
+
+
 
 ## Quick Example
 
@@ -57,7 +67,28 @@ $ docker run \
 
 ### Running
 
-To run the a docker container from this image you can use the included run.sh and run.conf scripts. The helper script will stop any running container of the same name, remove it and run a new daemonised container on an unspecified host port. Alternatively you can use the following.
+To run the a docker container from this image you can use the included run.sh and run.conf scripts. The helper script will stop any running container of the same name, remove it and run a new daemonised container on an unspecified host port. Alternatively you can use the following methods.
+
+#### Using environment variables
+
+The following example overrides the default "app-admin" SSH username and home directory path with "app-user". The same technique could also be applied to set the SSH_USER_PASSWORD value.
+
+*Note: Settings applied by environment variables will override those set with configuration volumes.*
+
+```
+$ docker stop ssh.pool-1.1.1 \
+  && docker rm ssh.pool-1.1.1 \
+  ; docker run -d \
+  --name ssh.pool-1.1.1 \
+  -p :22 \
+  --env "SSH_USER=app-user" \
+  --env "SSH_USER_HOME_DIR=/home/app-user" \
+  jdeathe/centos-ssh:latest
+```
+
+#### Using configuration volume
+
+The following example uses the settings from the optonal configuration volume volume-config.ssh.pool-1.1.1.
 
 ```
 $ docker stop ssh.pool-1.1.1 \
@@ -80,8 +111,9 @@ The output of the logs should show the auto-generated password for the app-admin
 ```
 sshd_bootstrap stdout | Initialise SSH...
 sshd_bootstrap stdout | 
---------------------------------------------------------------------------------
-SSH Credentials: 
+================================================================================
+SSH Credentials
+-------------------------------------------------------------------------------- 
 root : ut5vZhb5
 app-admin : s4pjZwT8
 --------------------------------------------------------------------------------

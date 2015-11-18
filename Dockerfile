@@ -72,11 +72,6 @@ RUN sed -i \
 RUN sed -i 's/^# %wheel\tALL=(ALL)\tALL/%wheel\tALL=(ALL)\tALL/g' /etc/sudoers
 
 # -----------------------------------------------------------------------------
-# Make the custom configuration directory
-# -----------------------------------------------------------------------------
-RUN mkdir -p /etc/services-config/{supervisor,ssh}
-
-# -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
 ADD etc/ssh-bootstrap /etc/
@@ -97,8 +92,16 @@ RUN chmod 600 /etc/services-config/ssh/sshd_config \
 RUN rm -rf /etc/ld.so.cache \ 
 	; rm -rf /sbin/sln \
 	; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,gnome/help,cracklib,il8n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
-	; rm -rf /var/cache/{ldconfig,yum}/*
+	; rm -rf /var/cache/{ldconfig,yum}/* \
+	; > /etc/sysconfig/i18n
 
 EXPOSE 22
+
+# -----------------------------------------------------------------------------
+# Set default environment variables
+# -----------------------------------------------------------------------------
+ENV SSH_USER_PASSWORD ""
+ENV SSH_USER "app-admin"
+ENV SSH_USER_HOME_DIR "/home/app-admin"
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
