@@ -25,8 +25,6 @@ $ docker exec -it <docker-name-or-id> bash
 
 For cases where access to docker exec is not possible the preferred method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-6/command-keys.md) for details on how to set this up.
 
-
-
 ## Quick Example
 
 Run up a container named 'ssh.pool-1.1.1' from the docker image 'jdeathe/centos-ssh' on port 2020 of your docker host.
@@ -73,7 +71,7 @@ To run the a docker container from this image you can use the included run.sh an
 
 The following example overrides the default "app-admin" SSH username and home directory path with "app-user". The same technique could also be applied to set the SSH_USER_PASSWORD value.
 
-*Note: Settings applied by environment variables will override those set with configuration volumes.*
+*Note:* Settings applied by environment variables will override those set within configuration volumes from release 1.3.1. Existing installations that use the ssh-bootstrap.conf saved on a configuration "data" volume will not allow override by the environment variables. Also users can update ssh-bootstrap.conf to prevent the value being replaced by that set using the environment variable.
 
 ```
 $ docker stop ssh.pool-1.1.1 \
