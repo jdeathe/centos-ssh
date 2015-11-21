@@ -1,7 +1,7 @@
 centos-ssh
 ==========
 
-Docker Image of CentOS-6 6.6 x86_64
+Docker Image of CentOS-6 6.7 x86_64
 
 Includes public key authentication, Automated password generation, supports custom configuration via a configuration data volume.
 
