@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
 
-# Print commands and their arguments as they are executed.
-#set -x
-
 source /etc/ssh-bootstrap.conf
 
 get_option ()
 {
-	value=$(/usr/bin/my_print_defaults "${1}" | sed -n "s/^--${2}=//p" | tail -n 1)
+	local value=$(/usr/bin/my_print_defaults "${1}" | sed -n "s/^--${2}=//p" | tail -n 1)
 	echo ${value:-$3}
 }
 
@@ -43,27 +40,22 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_SSH_USER_HOME_DIR}/.ssh
 	chmod 600 ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 
-	
 	echo $'\n# ${OPTS_SSH_USER}\nDefaults:root secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin' >> /etc/sudoers
-	#echo 'Defaults:root !requiretty' >> /etc/sudoers
 
 	# Set user passwords
 	echo "root:${OPTS_SSH_ROOT_PASSWORD}" | chpasswd
 	echo "${OPTS_SSH_USER}:${OPTS_SSH_USER_PASSWORD}" | chpasswd
 
-	echo
-	echo "--------------------------------------------------------------------------------"
-	echo "SSH Credentials: "
-	echo "root : ${OPTS_SSH_ROOT_PASSWORD}"
-	echo "${OPTS_SSH_USER} : ${OPTS_SSH_USER_PASSWORD}"
-	#echo
-	#echo "RSA Host Key: "
-	#echo "$(cat /etc/ssh/ssh_host_rsa_key)"
-	#echo
-	#echo "DSA Host Key: "
-	#echo "$(cat /etc/ssh/ssh_host_dsa_key)"
-	echo "--------------------------------------------------------------------------------"
-	echo
+	cat <<-EOT
+
+		================================================================================
+		SSH Credentials
+		--------------------------------------------------------------------------------
+		root : ${OPTS_SSH_ROOT_PASSWORD}
+		${OPTS_SSH_USER} : ${OPTS_SSH_USER_PASSWORD}
+		--------------------------------------------------------------------------------
+		
+	EOT
 
 	# Allow some time for supervisor_stdout to start
 	sleep 2

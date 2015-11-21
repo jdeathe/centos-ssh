@@ -15,7 +15,15 @@ Included in the build is the EPEL repository, the IUS repository and SSH, vi and
 
 SSH access is by public key authentication and, by default, the [Vagrant](http://www.vagrantup.com/) [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant) is required.
 
-SSH is not required in order to access a terminal for the running container the preferred method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-6/command-keys.md) for details on how to set this up.
+### SSH Alternatives
+
+SSH is not required in order to access a terminal for the running container. The simplest method is to use the docker exec command to run bash (or sh) as follows: 
+
+```
+$ docker exec -it <docker-name-or-id> bash
+```
+
+For cases where access to docker exec is not possible the preferred method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-6/command-keys.md) for details on how to set this up.
 
 ## Quick Example
 
@@ -57,7 +65,28 @@ $ docker run \
 
 ### Running
 
-To run the a docker container from this image you can use the included run.sh and run.conf scripts. The helper script will stop any running container of the same name, remove it and run a new daemonised container on an unspecified host port. Alternatively you can use the following.
+To run the a docker container from this image you can use the included run.sh and run.conf scripts. The helper script will stop any running container of the same name, remove it and run a new daemonised container on an unspecified host port. Alternatively you can use the following methods.
+
+#### Using environment variables
+
+The following example overrides the default "app-admin" SSH username and home directory path with "app-user". The same technique could also be applied to set the SSH_USER_PASSWORD value.
+
+*Note:* Settings applied by environment variables will override those set within configuration volumes from release 1.3.1. Existing installations that use the ssh-bootstrap.conf saved on a configuration "data" volume will not allow override by the environment variables. Also users can update ssh-bootstrap.conf to prevent the value being replaced by that set using the environment variable.
+
+```
+$ docker stop ssh.pool-1.1.1 \
+  && docker rm ssh.pool-1.1.1 \
+  ; docker run -d \
+  --name ssh.pool-1.1.1 \
+  -p :22 \
+  --env "SSH_USER=app-user" \
+  --env "SSH_USER_HOME_DIR=/home/app-user" \
+  jdeathe/centos-ssh:latest
+```
+
+#### Using configuration volume
+
+The following example uses the settings from the optonal configuration volume volume-config.ssh.pool-1.1.1.
 
 ```
 $ docker stop ssh.pool-1.1.1 \
@@ -80,8 +109,9 @@ The output of the logs should show the auto-generated password for the app-admin
 ```
 sshd_bootstrap stdout | Initialise SSH...
 sshd_bootstrap stdout | 
---------------------------------------------------------------------------------
-SSH Credentials: 
+================================================================================
+SSH Credentials
+-------------------------------------------------------------------------------- 
 root : ut5vZhb5
 app-admin : s4pjZwT8
 --------------------------------------------------------------------------------
@@ -108,14 +138,10 @@ $ curl -LsSO https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vag
 
 If the command ran successfully you should now have a new private SSH key installed in your home "~/.ssh" directory called "id_rsa_insecure" 
 
-Next, unless we specified one, we need to determine what port to connect to on the docker host. You can do this with ether `docker ps` or `docker inspect`. In the following example we use `docker ps` to show the list of running containers and pipe to grep to filter out the host port.
+Next, unless we specified one, we need to determine what port to connect to on the docker host. You can do this with either `docker ps` or `docker inspect` but the simplest method is to use `docker port`.
 
 ```
-$ docker ps | \
-  grep ssh.pool-1.1.1 | \
-  grep -oe ':[0-9]*->22\/tcp' | \
-  grep -oe ':[0-9]*' | \
-  cut -c 2-
+$ docker port ssh.pool-1.1.1 22
 ```
 
 To connect to the running container use:
