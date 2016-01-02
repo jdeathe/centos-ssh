@@ -1,4 +1,9 @@
 # -----------------------------------------------------------------------------
+# Setup: 
+#     Edit volume-config.ssh.pool-1.1.1/volumes with the appropriate 
+#     host_path:container_path where the host_path must exist on the docker
+#     host filesystem.
+#
 # Run in background: 
 #     docker-compose up -d
 #
@@ -14,6 +19,10 @@ volume-config.ssh.pool-1.1.1:
   volumes:
     - "./etc/services-config/ssh:/etc/services-config/ssh"
     - "./etc/services-config/supervisor:/etc/services-config/supervisor"
+    # - "/etc/services-config/ssh.pool-1/ssh:/etc/services-config/ssh"
+    # - "/etc/services-config/ssh.pool-1/supervisor:/etc/services-config/supervisor"
+    # - "~/services-config/ssh.pool-1/ssh:/etc/services-config/ssh"
+    # - "~/services-config/ssh.pool-1/supervisor:/etc/services-config/supervisor"
   command: /bin/true
 ssh.pool-1.1.1:
   image: "jdeathe/centos-ssh:latest"
