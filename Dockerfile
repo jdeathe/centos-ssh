@@ -1,10 +1,10 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-6 6.6 x86_64 / EPEL/IUS Repos. / OpenSSH / Supervisor.
+# CentOS-6 6.7 x86_64 / EPEL/IUS Repos. / OpenSSH / Supervisor.
 # 
 # =============================================================================
-FROM centos:centos6.6
+FROM centos:centos6.7
 
 MAINTAINER James Deathe <james.deathe@gmail.com>
 
@@ -21,12 +21,12 @@ RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6 \
 # Base Install
 # -----------------------------------------------------------------------------
 RUN yum -y install \
-	vim-minimal-7.2.411-1.8.el6 \
-	sudo-1.8.6p3-15.el6 \
-	openssh-5.3p1-104.el6_6.1 \
-	openssh-server-5.3p1-104.el6_6.1 \
-	openssh-clients-5.3p1-104.el6_6.1 \
-	python-pip-1.3.1-4.el6 \
+	vim-minimal-7.4.629-5.el6 \
+	sudo-1.8.6p3-20.el6_7 \
+	openssh-5.3p1-112.el6_7 \
+	openssh-server-5.3p1-112.el6_7 \
+	openssh-clients-5.3p1-112.el6_7 \
+	python-pip-7.1.0-1.el6 \
 	yum-plugin-versionlock-1.1.30-30.el6 \
 	&& yum versionlock add \
 	vim-minimal \
@@ -46,7 +46,7 @@ RUN yum -y install \
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
 RUN pip install --upgrade 'pip == 1.4.1' \
-	&& pip install --upgrade supervisor supervisor-stdout \
+	&& pip install --upgrade 'supervisor == 3.1.3' 'supervisor-stdout == 0.1.1' \
 	&& mkdir -p /var/log/supervisor/
 
 # -----------------------------------------------------------------------------
