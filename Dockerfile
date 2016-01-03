@@ -28,7 +28,7 @@ RUN rpm --rebuilddb \
 	openssh-5.3p1-112.el6_7 \
 	openssh-server-5.3p1-112.el6_7 \
 	openssh-clients-5.3p1-112.el6_7 \
-	python-pip-7.1.0-1.el6 \
+	python-setuptools-0.6.10-3.el6 \
 	yum-plugin-versionlock-1.1.30-30.el6 \
 	&& yum versionlock add \
 	vim-minimal \
@@ -36,7 +36,7 @@ RUN rpm --rebuilddb \
 	openssh \
 	openssh-server \
 	openssh-clients \
-	python-pip \
+	python-setuptools \
 	yum-plugin-versionlock \
 	&& rm -rf /var/cache/yum/* \
 	&& yum clean all
@@ -47,9 +47,9 @@ RUN rpm --rebuilddb \
 # We require supervisor-stdout to allow output of services started by 
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
-RUN pip install --upgrade 'pip == 1.4.1' \
-	&& pip install --upgrade 'supervisor == 3.1.3' 'supervisor-stdout == 0.1.1' \
+RUN easy_install 'supervisor == 3.2.0' 'supervisor-stdout == 0.1.1' \
 	&& mkdir -p /var/log/supervisor/
+
 
 # -----------------------------------------------------------------------------
 # UTC Timezone & Networking
@@ -94,7 +94,7 @@ RUN chmod 600 /etc/services-config/ssh/sshd_config \
 RUN rm -rf /etc/ld.so.cache \ 
 	; rm -rf /sbin/sln \
 	; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,gnome/help,cracklib,il8n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
-	; rm -rf /var/cache/{ldconfig,yum}/* \
+	; rm -rf /{root,tmp,var/cache/{ldconfig,yum}}/* \
 	; > /etc/sysconfig/i18n
 
 EXPOSE 22
