@@ -17,6 +17,8 @@ OPTS_SSH_USER_HOME_DIR="${SSH_USER_HOME_DIR:-/home/app-admin}"
 
 if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 
+	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
+	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
 	OPTS_SSH_USER="${SSH_USER:-app-admin}"
 	OPTS_SSH_ROOT_PASSWORD="${SSH_ROOT_PASSWORD:-$(get_password 8)}"
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password 8)}"
@@ -35,12 +37,20 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 
 	useradd -u 500 -m -G users,wheel ${OPTS_SSH_USER}
 
+	if [[ ${DEFAULT_SSH_SUDO} != ${OPTS_SSH_SUDO} ]]; then
+		sed -i "s~^%wheel\\t.*$~%wheel\\t${OPTS_SSH_SUDO}~g" /etc/sudoers
+	fi
+
 	mkdir -m 700 ${OPTS_SSH_USER_HOME_DIR}/.ssh
 	cp -f /etc/services-config/ssh/authorized_keys ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 	chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_SSH_USER_HOME_DIR}/.ssh
 	chmod 600 ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 
-	echo $'\n# ${OPTS_SSH_USER}\nDefaults:root secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin' >> /etc/sudoers
+	tee -a /etc/sudoers > /dev/null <<-EOT
+
+		# ${OPTS_SSH_USER}
+		Defaults:root secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
+	EOT
 
 	# Set user passwords
 	echo "root:${OPTS_SSH_ROOT_PASSWORD}" | chpasswd
@@ -53,6 +63,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		--------------------------------------------------------------------------------
 		root : ${OPTS_SSH_ROOT_PASSWORD}
 		${OPTS_SSH_USER} : ${OPTS_SSH_USER_PASSWORD}
+		sudo : ${OPTS_SSH_SUDO}
 		--------------------------------------------------------------------------------
 		
 	EOT

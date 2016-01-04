@@ -119,6 +119,50 @@ app-admin : s4pjZwT8
 2014-07-05 19:35:35,370 INFO exited: sshd_bootstrap (exit status 0; expected)
 ```
 
+#### Runtime Environment Variables
+
+There are several environmental variables defined at runtime these allow the operator to customise the running container.
+
+##### 1. SSH_USER
+
+On first run the SSH user is created with the default username of "app-admin". If you require an alternative username ```SSH_USER``` can be used when running the container.
+
+```
+...
+  --env "SSH_USER=app-1" \
+...
+```
+
+##### 2. SSH_USER_HOME_DIR
+
+On first run the SSH user is created with the default HOME directory of "/home/app-admin". If you require an alternative HOME directory ```SSH_USER_HOME_DIR``` can be used when running the container.
+
+```
+...
+  --env "SSH_USER_HOME_DIR=/home/app-1" \
+...
+```
+
+##### 3. SSH_USER_PASSWORD
+
+On first run the SSH user is created with a generated password. If you require a specific password ```SSH_USER_PASSWORD``` can be used when running the container.
+
+```
+...
+  --env "SSH_USER_PASSWORD=Passw0rd!" \
+...
+```
+
+##### 4. SSH_SUDO
+
+On first run the SSH user is created with a the sudo rule ```ALL=(ALL)  ALL``` which allows the user to run all commands but a password is required. If you want to limit the access to specific commands or allow sudo without a password prompt ```SSH_SUDO``` can be used.
+
+```
+...
+  --env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
+...
+```
+
 ### Connect to the running container using SSH
 
 If you have not already got one, create the .ssh directory in your home directory with the permissions required by SSH.
@@ -166,11 +210,25 @@ $ ssh-keygen -q -t rsa -f ~/.ssh/id_rsa
 
 You should now have an SSH public key, (~/.ssh/id_rsa.pub), that can be used to replace the default one in your custom authorized_keys file.
 
-The following example shows how to copy your file to a remote docker host:
+The following example shows how to copy your file to a remote docker host for cases where using a configuration volume mapping the path "/etc/services-config/ssh.pool-1/ssh/authorized_keys" to "/etc/services-config/ssh/authorized_keys":
 
 ```
 $ scp ~/.ssh/id_rsa.pub \
   <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/ssh/authorized_keys
+```
+
+To replace the autorized_keys directly on a running container with the ```SSH_USER``` app-admin:
+
+```
+$ cat ~/.ssh/id_rsa.pub | ssh -p <container-port> -i ~/.vagrant.d/insecure_private_key \
+  app-admin@<docker-host-ip> "mkdir -p ~/.ssh && cat > ~/.ssh/authorized_keys"
+```
+
+To connect to the running container use:
+
+```
+$ ssh -p <container-port> app-admin@<docker-host-ip> \
+  -o StrictHostKeyChecking=no
 ```
 
 #### [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)

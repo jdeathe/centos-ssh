@@ -59,17 +59,17 @@ RUN ln -sf /usr/share/zoneinfo/UTC /etc/localtime \
 # Configure SSH for non-root public key authentication
 # -----------------------------------------------------------------------------
 RUN sed -i \
-	-e 's/^UsePAM yes/#UsePAM yes/g' \
-	-e 's/^#UsePAM no/UsePAM no/g' \
-	-e 's/^PasswordAuthentication yes/PasswordAuthentication no/g' \
-	-e 's/^#PermitRootLogin yes/PermitRootLogin no/g' \
-	-e 's/^#UseDNS yes/UseDNS no/g' \
+	-e 's~^UsePAM yes~#UsePAM yes~g' \
+	-e 's~^#UsePAM no~UsePAM no~g' \
+	-e 's~^PasswordAuthentication yes~PasswordAuthentication no~g' \
+	-e 's~^#PermitRootLogin yes~PermitRootLogin no~g' \
+	-e 's~^#UseDNS yes~UseDNS no~g' \
 	/etc/ssh/sshd_config
 
 # -----------------------------------------------------------------------------
 # Enable the wheel sudoers group
 # -----------------------------------------------------------------------------
-RUN sed -i 's/^# %wheel\tALL=(ALL)\tALL/%wheel\tALL=(ALL)\tALL/g' /etc/sudoers
+RUN sed -i 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' /etc/sudoers
 
 # -----------------------------------------------------------------------------
 # Copy files into place
@@ -100,6 +100,7 @@ EXPOSE 22
 # -----------------------------------------------------------------------------
 # Set default environment variables
 # -----------------------------------------------------------------------------
+ENV SSH_SUDO "ALL=(ALL) ALL"
 ENV SSH_USER_PASSWORD ""
 ENV SSH_USER "app-admin"
 ENV SSH_USER_HOME_DIR "/home/app-admin"
