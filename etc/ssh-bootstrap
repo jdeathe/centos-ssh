@@ -13,10 +13,25 @@ get_password ()
 	echo $(head -n 4096 /dev/urandom | tr -cd '[:alnum:]' | head -c ${1})
 }
 
+validate_ssh_user ()
+{
+	local SAFE_USERNAME='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
+
+	if [[ ${SSH_USER} == "" ]] || [[ ${SSH_USER} =~ ${SAFE_USERNAME} ]] && [[ ${SSH_USER} != root ]]; then
+		return 0
+	else
+		echo "Invalid username detected. Resetting to default."
+		SSH_USER=
+	fi
+
+	return 1
+}
+
 OPTS_SSH_USER_HOME_DIR="${SSH_USER_HOME_DIR:-/home/app-admin}"
 
 if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 
+	validate_ssh_user
 	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
 	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
 	OPTS_SSH_USER="${SSH_USER:-app-admin}"
