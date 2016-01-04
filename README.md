@@ -161,6 +161,7 @@ On first run the SSH user is created with a default shell of "/bin/bash". If you
 ...
   --env "SSH_USER_SHELL=/bin/sh" \
 ...
+```
 
 ##### 5. SSH_SUDO
 
