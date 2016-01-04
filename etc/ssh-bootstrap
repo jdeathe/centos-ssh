@@ -27,16 +27,35 @@ validate_ssh_user ()
 	return 1
 }
 
+validate_ssh_shell ()
+{
+	local SHELLS=$(chsh --list-shells)
+	local SHELL=
+
+	for SHELL in ${SHELLS}; do
+		if [[ ${SHELL} == ${SSH_USER_SHELL} ]]; then
+			return 0
+		fi
+	done
+
+	echo "Invalid shell detected. Resetting to default."
+	SSH_USER_SHELL=
+
+	return 1
+}
+
 OPTS_SSH_USER_HOME_DIR="${SSH_USER_HOME_DIR:-/home/app-admin}"
 
 if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 
 	validate_ssh_user
+	validate_ssh_shell
 	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
 	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
 	OPTS_SSH_USER="${SSH_USER:-app-admin}"
 	OPTS_SSH_ROOT_PASSWORD="${SSH_ROOT_PASSWORD:-$(get_password 8)}"
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password 8)}"
+	OPTS_SSH_USER_SHELL="${SSH_USER_SHELL:-/bin/bash}"
 
 	# Initialise
 	echo "Initialise SSH..."
@@ -50,7 +69,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		/sbin/restorecon /etc/ssh/ssh_host_dsa_key.pub
 	fi
 
-	useradd -u 500 -m -G users,wheel ${OPTS_SSH_USER}
+	useradd -u 500 -m -G users,wheel -s ${OPTS_SSH_USER_SHELL} ${OPTS_SSH_USER}
 
 	if [[ ${DEFAULT_SSH_SUDO} != ${OPTS_SSH_SUDO} ]]; then
 		sed -i "s~^%wheel\\t.*$~%wheel\\t${OPTS_SSH_SUDO}~g" /etc/sudoers
