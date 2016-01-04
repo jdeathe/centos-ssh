@@ -103,6 +103,7 @@ docker run \
 # 	-p :22 \
 # 	--env "SSH_USER=app-admin" \
 # 	--env "SSH_USER_HOME_DIR=/home/app-admin" \
+# 	--env "SSH_USER_SHELL=/bin/sh" \
 # 	${DOCKER_IMAGE_REPOSITORY_NAME}
 # )
 

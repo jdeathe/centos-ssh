@@ -153,7 +153,16 @@ On first run the SSH user is created with a generated password. If you require a
 ...
 ```
 
-##### 4. SSH_SUDO
+##### 4. SSH_USER_SHELL
+
+On first run the SSH user is created with a default shell of "/bin/bash". If you require a specific shell ```SSH_USER_SHELL``` can be used when running the container. You could use "/sbin/nologin" to prevent login with the user account.
+
+```
+...
+  --env "SSH_USER_SHELL=/bin/sh" \
+...
+
+##### 5. SSH_SUDO
 
 On first run the SSH user is created with a the sudo rule ```ALL=(ALL)  ALL``` which allows the user to run all commands but a password is required. If you want to limit the access to specific commands or allow sudo without a password prompt ```SSH_SUDO``` can be used.
 

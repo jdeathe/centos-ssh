@@ -104,5 +104,6 @@ ENV SSH_SUDO "ALL=(ALL) ALL"
 ENV SSH_USER_PASSWORD ""
 ENV SSH_USER "app-admin"
 ENV SSH_USER_HOME_DIR "/home/app-admin"
+ENV SSH_USER_SHELL "/bin/bash"
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
