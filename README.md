@@ -217,6 +217,20 @@ $ scp ~/.ssh/id_rsa.pub \
   <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/ssh/authorized_keys
 ```
 
+To replace the autorized_keys directly on a running container with the ```SSH_USER``` app-admin:
+
+```
+$ cat ~/.ssh/id_rsa.pub | ssh -p <container-port> -i ~/.vagrant.d/insecure_private_key \
+  app-admin@<docker-host-ip> "mkdir -p ~/.ssh && cat > ~/.ssh/authorized_keys"
+```
+
+To connect to the running container use:
+
+```
+$ ssh -p <container-port> app-admin@<docker-host-ip> \
+  -o StrictHostKeyChecking=no
+```
+
 #### [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
 
 The bootstrap script sets up the sudo user and generates a random 8 character password you can override this behaviour by supplying your own values in your custom ssh-bootstrap.conf file. You can also change the sudoer username to something other that the default "app-admin".
