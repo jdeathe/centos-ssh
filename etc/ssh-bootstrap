@@ -46,7 +46,11 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_SSH_USER_HOME_DIR}/.ssh
 	chmod 600 ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 
-	echo $'\n# ${OPTS_SSH_USER}\nDefaults:root secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin' >> /etc/sudoers
+	tee -a /etc/sudoers > /dev/null <<-EOT
+
+		# ${OPTS_SSH_USER}
+		Defaults:root secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
+	EOT
 
 	# Set user passwords
 	echo "root:${OPTS_SSH_ROOT_PASSWORD}" | chpasswd
