@@ -44,6 +44,29 @@ validate_ssh_shell ()
 	return 1
 }
 
+validate_ssh_keys ()
+{
+	local SSH_KEY=
+	local INVALID_KEY_PATTERN='^/dev/stdin is not a public key file.$'
+	local TEST_AUTHORIZED_KEYS_PATH=/tmp/authorized_keys
+
+	if [[ ${SSH_AUTHORIZED_KEYS} == "" ]]; then
+		cp -f /etc/services-config/ssh/authorized_keys ${TEST_AUTHORIZED_KEYS_PATH}
+	else
+		echo "${SSH_AUTHORIZED_KEYS}" > ${TEST_AUTHORIZED_KEYS_PATH}
+	fi
+
+	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
+		if [[ ${SSH_KEY} != "" ]] && [[ $(ssh-keygen -lf /dev/stdin <<< ${SSH_KEY}) =~ ${INVALID_KEY_PATTERN} ]]; then
+			return 1
+		fi
+	done < "${TEST_AUTHORIZED_KEYS_PATH}"
+
+	rm -f ${TEST_AUTHORIZED_KEYS_PATH}
+
+	return 0
+}
+
 OPTS_SSH_USER_HOME_DIR="${SSH_USER_HOME_DIR:-/home/app-admin}"
 
 if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
@@ -51,6 +74,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	validate_ssh_user
 	validate_ssh_shell
 	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
+	OPTS_SSH_AUTHORIZED_KEYS="${SSH_AUTHORIZED_KEYS:-}"
 	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
 	OPTS_SSH_USER="${SSH_USER:-app-admin}"
 	OPTS_SSH_ROOT_PASSWORD="${SSH_ROOT_PASSWORD:-$(get_password 8)}"
@@ -76,9 +100,20 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	fi
 
 	mkdir -m 700 ${OPTS_SSH_USER_HOME_DIR}/.ssh
-	cp -f /etc/services-config/ssh/authorized_keys ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
+	touch ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 	chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_SSH_USER_HOME_DIR}/.ssh
 	chmod 600 ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
+
+	if ! validate_ssh_keys; then
+		echo "ERROR: Public key validation failed. Unable to populate ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_key"
+	else
+		if [[ ${OPTS_SSH_AUTHORIZED_KEYS} != "" ]]; then
+			echo "Replacing insecure public key."
+			echo "${OPTS_SSH_AUTHORIZED_KEYS}" > ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
+		else
+			cat /etc/services-config/ssh/authorized_keys > ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
+		fi
+	fi
 
 	tee -a /etc/sudoers > /dev/null <<-EOT
 
