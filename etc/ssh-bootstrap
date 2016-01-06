@@ -128,7 +128,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		/sbin/restorecon /etc/ssh/ssh_host_dsa_key.pub
 	fi
 
-	useradd -u 500 -m -G users,wheel -s ${OPTS_SSH_USER_SHELL} ${OPTS_SSH_USER}
+	useradd -u 500 -m -G users,wheel -d ${OPTS_SSH_USER_HOME_DIR} -s ${OPTS_SSH_USER_SHELL} ${OPTS_SSH_USER}
 
 	if [[ ${DEFAULT_SSH_SUDO} != ${OPTS_SSH_SUDO} ]]; then
 		sed -i "s~^%wheel\\t.*$~%wheel\\t${OPTS_SSH_SUDO}~g" /etc/sudoers
