@@ -13,73 +13,108 @@ get_password ()
 	echo $(head -n 4096 /dev/urandom | tr -cd '[:alnum:]' | head -c ${1})
 }
 
-validate_ssh_user ()
+is_valid_ssh_user ()
 {
+	local USERNAME=${1}
 	local SAFE_USERNAME='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
 
-	if [[ ${SSH_USER} == "" ]] || [[ ${SSH_USER} =~ ${SAFE_USERNAME} ]] && [[ ${SSH_USER} != root ]]; then
+	if [[ ${USERNAME} != root ]] && [[ ${USERNAME} =~ ${SAFE_USERNAME} ]]; then
 		return 0
-	else
-		echo "Invalid username detected. Resetting to default."
-		SSH_USER=
 	fi
 
 	return 1
 }
 
-validate_ssh_shell ()
+is_valid_ssh_shell ()
 {
-	local SHELLS=$(chsh --list-shells)
-	local SHELL=
+	local SHELL=${1}
+	local VALID_SHELL=
+	local VALID_SHELLS=$(chsh --list-shells)
 
-	for SHELL in ${SHELLS}; do
-		if [[ ${SHELL} == ${SSH_USER_SHELL} ]]; then
+	if [[ -z ${SHELL} ]]; then
+		return 1
+	fi
+
+	for VALID_SHELL in ${VALID_SHELLS}; do
+		if [[ ${VALID_SHELL} == ${SHELL} ]]; then
 			return 0
 		fi
 	done
 
-	echo "Invalid shell detected. Resetting to default."
-	SSH_USER_SHELL=
-
 	return 1
 }
 
-validate_ssh_keys ()
+is_valid_ssh_authorized_keys ()
 {
-	local SSH_KEY=
+	local AUTHORIZED_KEYS="${1:-}"
+	local IFS=
 	local INVALID_KEY_PATTERN='^/dev/stdin is not a public key file.$'
-	local TEST_AUTHORIZED_KEYS_PATH=/tmp/authorized_keys
+	local SSH_KEY=
 
-	if [[ ${SSH_AUTHORIZED_KEYS} == "" ]]; then
-		cp -f /etc/services-config/ssh/authorized_keys ${TEST_AUTHORIZED_KEYS_PATH}
-	else
-		echo "${SSH_AUTHORIZED_KEYS}" > ${TEST_AUTHORIZED_KEYS_PATH}
+	if [[ -z ${AUTHORIZED_KEYS} ]]; then
+		return 1
 	fi
 
 	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
-		if [[ ${SSH_KEY} != "" ]] && [[ $(ssh-keygen -lf /dev/stdin <<< ${SSH_KEY}) =~ ${INVALID_KEY_PATTERN} ]]; then
+		if [[ -n ${SSH_KEY} ]] && [[ $(ssh-keygen -lf /dev/stdin <<< ${SSH_KEY}) =~ ${INVALID_KEY_PATTERN} ]]; then
 			return 1
 		fi
-	done < "${TEST_AUTHORIZED_KEYS_PATH}"
-
-	rm -f ${TEST_AUTHORIZED_KEYS_PATH}
+	done <<< "${AUTHORIZED_KEYS}"
 
 	return 0
+}
+
+get_ssh_authorized_keys ()
+{
+	local DEFAULT_PATH="${1:-/etc/services-config/ssh/authorized_keys}"
+	local VALUE="${SSH_AUTHORIZED_KEYS:-}"
+
+	if [[ -z ${VALUE} ]] && [[ -s ${DEFAULT_PATH} ]]; then
+		VALUE="$(cat ${DEFAULT_PATH})"
+	fi
+
+	printf "%s" "${VALUE}"
+}
+
+get_ssh_user ()
+{
+	local DEFAULT_VALUE="${1:-app-admin}"
+	local VALUE="${SSH_USER:-}"
+
+	if [[ -z ${VALUE} ]]; then
+		VALUE="${DEFAULT_VALUE}"
+	elif ! is_valid_ssh_user "${VALUE}"; then
+		VALUE="${DEFAULT_VALUE}"
+	fi
+
+	printf "%s" "${VALUE}"
+}
+
+get_ssh_user_shell ()
+{
+	local DEFAULT_VALUE="${1:-/bin/bash}"
+	local VALUE="${SSH_USER_SHELL:-}"
+
+	if [[ -z ${VALUE} ]]; then
+		VALUE="${DEFAULT_VALUE}"
+	elif ! is_valid_ssh_shell "${VALUE}"; then
+		VALUE="${DEFAULT_VALUE}"
+	fi
+
+	printf "%s" "${VALUE}"
 }
 
 OPTS_SSH_USER_HOME_DIR="${SSH_USER_HOME_DIR:-/home/app-admin}"
 
 if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 
-	validate_ssh_user
-	validate_ssh_shell
 	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
-	OPTS_SSH_AUTHORIZED_KEYS="${SSH_AUTHORIZED_KEYS:-}"
-	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
-	OPTS_SSH_USER="${SSH_USER:-app-admin}"
+	OPTS_SSH_AUTHORIZED_KEYS="$(get_ssh_authorized_keys /etc/services-config/ssh/authorized_keys)"
 	OPTS_SSH_ROOT_PASSWORD="${SSH_ROOT_PASSWORD:-$(get_password 8)}"
+	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
+	OPTS_SSH_USER="$(get_ssh_user app-admin)"
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password 8)}"
-	OPTS_SSH_USER_SHELL="${SSH_USER_SHELL:-/bin/bash}"
+	OPTS_SSH_USER_SHELL="$(get_ssh_user_shell /bin/bash)"
 
 	# Initialise
 	echo "Initialise SSH..."
@@ -104,15 +139,10 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_SSH_USER_HOME_DIR}/.ssh
 	chmod 600 ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 
-	if ! validate_ssh_keys; then
+	if ! is_valid_ssh_authorized_keys "${OPTS_SSH_AUTHORIZED_KEYS}"; then
 		echo "ERROR: Public key validation failed. Unable to populate ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_key"
 	else
-		if [[ ${OPTS_SSH_AUTHORIZED_KEYS} != "" ]]; then
-			echo "Replacing insecure public key."
-			echo "${OPTS_SSH_AUTHORIZED_KEYS}" > ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
-		else
-			cat /etc/services-config/ssh/authorized_keys > ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
-		fi
+		printf "%s" "${OPTS_SSH_AUTHORIZED_KEYS}" > ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 	fi
 
 	tee -a /etc/sudoers > /dev/null <<-EOT
