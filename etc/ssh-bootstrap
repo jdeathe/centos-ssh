@@ -13,16 +13,24 @@ get_password ()
 	echo $(head -n 4096 /dev/urandom | tr -cd '[:alnum:]' | head -c ${1})
 }
 
-is_valid_ssh_user ()
+is_valid_ssh_authorized_keys ()
 {
-	local USERNAME=${1}
-	local SAFE_USERNAME='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
+	local AUTHORIZED_KEYS="${1:-}"
+	local IFS=
+	local INVALID_KEY_PATTERN='^/dev/stdin is not a public key file.$'
+	local SSH_KEY=
 
-	if [[ ${USERNAME} != root ]] && [[ ${USERNAME} =~ ${SAFE_USERNAME} ]]; then
-		return 0
+	if [[ -z ${AUTHORIZED_KEYS} ]]; then
+		return 1
 	fi
 
-	return 1
+	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
+		if [[ -n ${SSH_KEY} ]] && [[ $(ssh-keygen -lf /dev/stdin <<< ${SSH_KEY}) =~ ${INVALID_KEY_PATTERN} ]]; then
+			return 1
+		fi
+	done <<< "${AUTHORIZED_KEYS}"
+
+	return 0
 }
 
 is_valid_ssh_shell ()
@@ -44,24 +52,16 @@ is_valid_ssh_shell ()
 	return 1
 }
 
-is_valid_ssh_authorized_keys ()
+is_valid_ssh_user ()
 {
-	local AUTHORIZED_KEYS="${1:-}"
-	local IFS=
-	local INVALID_KEY_PATTERN='^/dev/stdin is not a public key file.$'
-	local SSH_KEY=
+	local USERNAME=${1}
+	local SAFE_USERNAME='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
 
-	if [[ -z ${AUTHORIZED_KEYS} ]]; then
-		return 1
+	if [[ ${USERNAME} != root ]] && [[ ${USERNAME} =~ ${SAFE_USERNAME} ]]; then
+		return 0
 	fi
 
-	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
-		if [[ -n ${SSH_KEY} ]] && [[ $(ssh-keygen -lf /dev/stdin <<< ${SSH_KEY}) =~ ${INVALID_KEY_PATTERN} ]]; then
-			return 1
-		fi
-	done <<< "${AUTHORIZED_KEYS}"
-
-	return 0
+	return 1
 }
 
 get_ssh_authorized_keys ()
