@@ -100,6 +100,7 @@ EXPOSE 22
 # -----------------------------------------------------------------------------
 # Set default environment variables
 # -----------------------------------------------------------------------------
+ENV SSH_AUTHORIZED_KEYS ""
 ENV SSH_SUDO "ALL=(ALL) ALL"
 ENV SSH_USER_PASSWORD ""
 ENV SSH_USER "app-admin"
