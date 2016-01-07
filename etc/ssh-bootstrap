@@ -13,16 +13,24 @@ get_password ()
 	echo $(head -n 4096 /dev/urandom | tr -cd '[:alnum:]' | head -c ${1})
 }
 
-is_valid_ssh_user ()
+is_valid_ssh_authorized_keys ()
 {
-	local USERNAME=${1}
-	local SAFE_USERNAME='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
+	local AUTHORIZED_KEYS="${1:-}"
+	local IFS=
+	local INVALID_KEY_PATTERN='^/dev/stdin is not a public key file.$'
+	local SSH_KEY=
 
-	if [[ ${USERNAME} != root ]] && [[ ${USERNAME} =~ ${SAFE_USERNAME} ]]; then
-		return 0
+	if [[ -z ${AUTHORIZED_KEYS} ]]; then
+		return 1
 	fi
 
-	return 1
+	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
+		if [[ -n ${SSH_KEY} ]] && [[ $(ssh-keygen -lf /dev/stdin <<< ${SSH_KEY}) =~ ${INVALID_KEY_PATTERN} ]]; then
+			return 1
+		fi
+	done <<< "${AUTHORIZED_KEYS}"
+
+	return 0
 }
 
 is_valid_ssh_shell ()
@@ -44,24 +52,28 @@ is_valid_ssh_shell ()
 	return 1
 }
 
-is_valid_ssh_authorized_keys ()
+is_valid_ssh_user ()
 {
-	local AUTHORIZED_KEYS="${1:-}"
-	local IFS=
-	local INVALID_KEY_PATTERN='^/dev/stdin is not a public key file.$'
-	local SSH_KEY=
+	local USERNAME=${1}
+	local SAFE_USERNAME='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
 
-	if [[ -z ${AUTHORIZED_KEYS} ]]; then
-		return 1
+	if [[ ${USERNAME} != root ]] && [[ ${USERNAME} =~ ${SAFE_USERNAME} ]]; then
+		return 0
 	fi
 
-	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
-		if [[ -n ${SSH_KEY} ]] && [[ $(ssh-keygen -lf /dev/stdin <<< ${SSH_KEY}) =~ ${INVALID_KEY_PATTERN} ]]; then
-			return 1
-		fi
-	done <<< "${AUTHORIZED_KEYS}"
+	return 1
+}
 
-	return 0
+is_valid_ssh_user_home_dir ()
+{
+	local HOME_DIRECTORY="${1:-}"
+	local SAFE_DIRECTORY='^\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+$'
+
+	if [[ -n $(grep -oP ${SAFE_DIRECTORY} <<< ${HOME_DIRECTORY}) ]]; then
+		return 0
+	fi
+
+	return 1
 }
 
 get_ssh_authorized_keys ()
@@ -81,9 +93,7 @@ get_ssh_user ()
 	local DEFAULT_VALUE="${1:-app-admin}"
 	local VALUE="${SSH_USER:-}"
 
-	if [[ -z ${VALUE} ]]; then
-		VALUE="${DEFAULT_VALUE}"
-	elif ! is_valid_ssh_user "${VALUE}"; then
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user "${VALUE}"; then
 		VALUE="${DEFAULT_VALUE}"
 	fi
 
@@ -95,16 +105,27 @@ get_ssh_user_shell ()
 	local DEFAULT_VALUE="${1:-/bin/bash}"
 	local VALUE="${SSH_USER_SHELL:-}"
 
-	if [[ -z ${VALUE} ]]; then
-		VALUE="${DEFAULT_VALUE}"
-	elif ! is_valid_ssh_shell "${VALUE}"; then
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_shell "${VALUE}"; then
 		VALUE="${DEFAULT_VALUE}"
 	fi
 
 	printf "%s" "${VALUE}"
 }
 
-OPTS_SSH_USER_HOME_DIR="${SSH_USER_HOME_DIR:-/home/app-admin}"
+get_ssh_user_home_dir ()
+{
+	local DEFAULT_VALUE="${1:-/home/app-admin}"
+	local VALUE="${SSH_USER_HOME_DIR:-}"
+
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_home_dir "${VALUE}"; then
+		VALUE="${DEFAULT_VALUE}"
+	fi
+
+	printf "%s" "${VALUE}"
+}
+
+OPTS_SSH_USER="$(get_ssh_user app-admin)"
+OPTS_SSH_USER_HOME_DIR="$(get_ssh_user_home_dir /home/${OPTS_SSH_USER})"
 
 if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 
@@ -112,7 +133,6 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	OPTS_SSH_AUTHORIZED_KEYS="$(get_ssh_authorized_keys /etc/services-config/ssh/authorized_keys)"
 	OPTS_SSH_ROOT_PASSWORD="${SSH_ROOT_PASSWORD:-$(get_password 8)}"
 	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
-	OPTS_SSH_USER="$(get_ssh_user app-admin)"
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password 8)}"
 	OPTS_SSH_USER_SHELL="$(get_ssh_user_shell /bin/bash)"
 
@@ -128,7 +148,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		/sbin/restorecon /etc/ssh/ssh_host_dsa_key.pub
 	fi
 
-	useradd -u 500 -m -G users,wheel -s ${OPTS_SSH_USER_SHELL} ${OPTS_SSH_USER}
+	useradd -u 500 -m -G users,wheel -d ${OPTS_SSH_USER_HOME_DIR} -s ${OPTS_SSH_USER_SHELL} ${OPTS_SSH_USER}
 
 	if [[ ${DEFAULT_SSH_SUDO} != ${OPTS_SSH_SUDO} ]]; then
 		sed -i "s~^%wheel\\t.*$~%wheel\\t${OPTS_SSH_SUDO}~g" /etc/sudoers
