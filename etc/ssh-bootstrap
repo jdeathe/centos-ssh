@@ -93,9 +93,7 @@ get_ssh_user ()
 	local DEFAULT_VALUE="${1:-app-admin}"
 	local VALUE="${SSH_USER:-}"
 
-	if [[ -z ${VALUE} ]]; then
-		VALUE="${DEFAULT_VALUE}"
-	elif ! is_valid_ssh_user "${VALUE}"; then
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user "${VALUE}"; then
 		VALUE="${DEFAULT_VALUE}"
 	fi
 
@@ -107,9 +105,7 @@ get_ssh_user_shell ()
 	local DEFAULT_VALUE="${1:-/bin/bash}"
 	local VALUE="${SSH_USER_SHELL:-}"
 
-	if [[ -z ${VALUE} ]]; then
-		VALUE="${DEFAULT_VALUE}"
-	elif ! is_valid_ssh_shell "${VALUE}"; then
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_shell "${VALUE}"; then
 		VALUE="${DEFAULT_VALUE}"
 	fi
 
