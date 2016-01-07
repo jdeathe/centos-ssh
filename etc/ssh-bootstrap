@@ -64,6 +64,18 @@ is_valid_ssh_user ()
 	return 1
 }
 
+is_valid_ssh_user_home_dir ()
+{
+	local HOME_DIRECTORY="${1:-}"
+	local SAFE_DIRECTORY='^\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+$'
+
+	if [[ -n $(grep -oP ${SAFE_DIRECTORY} <<< ${HOME_DIRECTORY}) ]]; then
+		return 0
+	fi
+
+	return 1
+}
+
 get_ssh_authorized_keys ()
 {
 	local DEFAULT_PATH="${1:-/etc/services-config/ssh/authorized_keys}"
@@ -104,7 +116,20 @@ get_ssh_user_shell ()
 	printf "%s" "${VALUE}"
 }
 
-OPTS_SSH_USER_HOME_DIR="${SSH_USER_HOME_DIR:-/home/app-admin}"
+get_ssh_user_home_dir ()
+{
+	local DEFAULT_VALUE="${1:-/home/app-admin}"
+	local VALUE="${SSH_USER_HOME_DIR:-}"
+
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_home_dir "${VALUE}"; then
+		VALUE="${DEFAULT_VALUE}"
+	fi
+
+	printf "%s" "${VALUE}"
+}
+
+OPTS_SSH_USER="$(get_ssh_user app-admin)"
+OPTS_SSH_USER_HOME_DIR="$(get_ssh_user_home_dir /home/${OPTS_SSH_USER})"
 
 if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 
@@ -112,7 +137,6 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	OPTS_SSH_AUTHORIZED_KEYS="$(get_ssh_authorized_keys /etc/services-config/ssh/authorized_keys)"
 	OPTS_SSH_ROOT_PASSWORD="${SSH_ROOT_PASSWORD:-$(get_password 8)}"
 	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
-	OPTS_SSH_USER="$(get_ssh_user app-admin)"
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password 8)}"
 	OPTS_SSH_USER_SHELL="$(get_ssh_user_shell /bin/bash)"
 
