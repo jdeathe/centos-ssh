@@ -75,9 +75,10 @@ RUN sed -i 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' /etc/sudoers
 # Copy files into place
 # -----------------------------------------------------------------------------
 ADD etc/ssh-bootstrap /etc/
-ADD etc/services-config/ssh/authorized_keys /etc/services-config/ssh/
-ADD etc/services-config/ssh/sshd_config /etc/services-config/ssh/
-ADD etc/services-config/ssh/ssh-bootstrap.conf /etc/services-config/ssh/
+ADD etc/services-config/ssh/authorized_keys \
+	etc/services-config/ssh/sshd_config \
+	etc/services-config/ssh/ssh-bootstrap.conf \
+	/etc/services-config/ssh/
 ADD etc/services-config/supervisor/supervisord.conf /etc/services-config/supervisor/
 
 RUN chmod 600 /etc/services-config/ssh/sshd_config \
