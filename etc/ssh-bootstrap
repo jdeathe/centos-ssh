@@ -143,7 +143,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	rm -f /etc/ssh/{ssh_host_rsa_key,ssh_host_rsa_key.pub,ssh_host_dsa_key,ssh_host_dsa_key.pub}
 	ssh-keygen -q -C "" -N "" -t rsa -f /etc/ssh/ssh_host_rsa_key
 	ssh-keygen -q -C "" -N "" -t dsa -f /etc/ssh/ssh_host_dsa_key
-	if [ -x /sbin/restorecon ]; then
+	if [[ -x /sbin/restorecon ]]; then
 		/sbin/restorecon /etc/ssh/ssh_host_rsa_key.pub
 		/sbin/restorecon /etc/ssh/ssh_host_dsa_key.pub
 	fi
