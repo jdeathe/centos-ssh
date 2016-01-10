@@ -14,14 +14,14 @@
 #     docker-compose logs ssh.pool-1.1.1
 # -----------------------------------------------------------------------------
 # volume-config.ssh:
-#   image: "busybox:latest"
+#   image: "jdeathe/centos-ssh:latest"
 #   container_name: "volume-config.ssh"
 #   volumes:
 #     - "./etc/services-config/ssh:/etc/services-config/ssh"
 #     - "./etc/services-config/supervisor:/etc/services-config/supervisor"
 #   command: /bin/true
 # volume-config.ssh.pool-1:
-#   image: "busybox:latest"
+#   image: "jdeathe/centos-ssh:latest"
 #   container_name: "volume-config.ssh.pool-1"
 #   volumes:
 #     # - "/etc/services-config/ssh.pool-1/ssh:/etc/services-config/ssh"

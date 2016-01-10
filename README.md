@@ -52,14 +52,14 @@ Make a directory on the docker host for storing container configuration files. T
 $ mkdir -p /etc/services-config/ssh.pool-1
 ```
 
-Create the data volume, mounting our docker host's configuration directory to /etc/services-config/ssh in the docker container. Note that docker will pull the busybox:latest image if you don't already have available locally.
+Create the data volume, mounting our docker host's configuration directory to /etc/services-config/ssh in the docker container. Note that docker we use the same image as for the application container to reduce the number of images/layers required.
 
 ```
 $ docker run \
   --name volume-config.ssh.pool-1.1.1 \
   -v /etc/services-config/ssh.pool-1/ssh:/etc/services-config/ssh \
   -v /etc/services-config/ssh.pool-1/supervisor:/etc/services-config/supervisor \
-  busybox:latest \
+  "jdeathe/centos-ssh:latest" \
   /bin/true
 ```
 
