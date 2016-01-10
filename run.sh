@@ -81,7 +81,7 @@ if [[ ${VOLUME_CONFIG_ENABLED} == "true" ]] && ! have_docker_container_name ${VO
 		--name ${VOLUME_CONFIG_NAME} \
 		-v ${CONTAINER_MOUNT_PATH_CONFIG}/ssh:/etc/services-config/ssh \
 		-v ${CONTAINER_MOUNT_PATH_CONFIG}/supervisor:/etc/services-config/supervisor \
-		busybox:latest \
+		${DOCKER_IMAGE_REPOSITORY_NAME} \
 		/bin/true;
 	)
 fi
