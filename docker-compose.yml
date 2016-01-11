@@ -1,8 +1,24 @@
 # -----------------------------------------------------------------------------
 # Setup: 
-#     Edit volume-config.ssh.pool-1.1.1/volumes with the appropriate 
-#     host_path:container_path where the host_path must exist on the docker
-#     host filesystem.
+#     Use of a configuration volumes is optional and allow configuration 
+#     changes to persist and be re-applied to a new container instance.
+#
+#     1. If configuration volumes are required, choose an appropriate naming 
+#     scheme depending on how the configuration is intended to be applied on 
+#     the docker host:
+#
+#       - volume-config.ssh fo configuration of all "ssh" container instances.
+#       - volume-config.ssh.pool-1 for configuration of all "ssh" container 
+#       instances in the "pool-1" group.
+#       - volume-config.ssh.pool-1.1.1 for configuration of the container named 
+#       ssh.pool-1.1.1 specifically.
+#
+#     2. Edit volume_name/container_name, volume_name/volumes with the  
+#     appropriate volume_name:container_path mapping or leave as container_path  
+#     to let docker handle the volume naming within /var/lib/docker/volumes/ on
+#     the docker host.
+#
+#     3. Edit ssh.pool-1.1.1/volumes_from to apply the required volume_name.
 #
 # Run in background: 
 #     docker-compose up -d
@@ -13,21 +29,18 @@
 # View logs of service ssh.pool-1.1.1: 
 #     docker-compose logs ssh.pool-1.1.1
 # -----------------------------------------------------------------------------
-# volume-config.ssh:
+# volume-config.ssh.pool-1.1.1:
+# # volume-config.ssh.pool-1:
+# # volume-config.ssh:
 #   image: "jdeathe/centos-ssh:latest"
-#   container_name: "volume-config.ssh"
+#   container_name: "volume-config.ssh.pool-1.1.1"
+#   # container_name: "volume-config.ssh.pool-1"
+#   # container_name: "volume-config.ssh"
 #   volumes:
-#     - "./etc/services-config/ssh:/etc/services-config/ssh"
-#     - "./etc/services-config/supervisor:/etc/services-config/supervisor"
-#   command: /bin/true
-# volume-config.ssh.pool-1:
-#   image: "jdeathe/centos-ssh:latest"
-#   container_name: "volume-config.ssh.pool-1"
-#   volumes:
-#     # - "/etc/services-config/ssh.pool-1/ssh:/etc/services-config/ssh"
-#     # - "/etc/services-config/ssh.pool-1/supervisor:/etc/services-config/supervisor"
-#     # - "~/services-config/ssh.pool-1/ssh:/etc/services-config/ssh"
-#     # - "~/services-config/ssh.pool-1/supervisor:/etc/services-config/supervisor"
+#     - "/etc/services-config"
+#     # - "volume-config.ssh.pool-1.1.1:/etc/services-config"
+#     # - "volume-config.ssh.pool-1:/etc/services-config"
+#     # - "volume-config.ssh:/etc/services-config"
 #   command: /bin/true
 ssh.pool-1.1.1:
   image: "jdeathe/centos-ssh:latest"
@@ -35,5 +48,6 @@ ssh.pool-1.1.1:
   ports:
     - "2020:22"
   # volumes_from:
-  #   - volume-config.ssh
+  #   - volume-config.ssh.pool-1.1.1
   #   # - volume-config.ssh.pool-1
+  #   # - volume-config.ssh

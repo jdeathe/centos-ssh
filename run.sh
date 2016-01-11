@@ -53,34 +53,20 @@ remove_docker_container_name ()
 }
 
 # Configuration volume
-# The Docker Host needs the target configuration directories
-if [[ ${VOLUME_CONFIG_ENABLED} == "true" ]] && ! have_docker_container_name ${VOLUME_CONFIG_NAME}; then
-	if [[ ! -d ${CONTAINER_MOUNT_PATH_CONFIG}/ssh ]]; then
-		CMD=$(mkdir -p ${CONTAINER_MOUNT_PATH_CONFIG}/ssh)
-		$CMD || sudo $CMD
-	fi
+if [[ ${VOLUME_CONFIG_ENABLED} == true ]] && ! have_docker_container_name ${VOLUME_CONFIG_NAME}; then
 
-	if [[ -z $(find ${CONTAINER_MOUNT_PATH_CONFIG}/ssh -maxdepth 1 -type f) ]]; then
-		CMD=$(cp -R etc/services-config/ssh ${CONTAINER_MOUNT_PATH_CONFIG}/)
-		$CMD || sudo $CMD
-	fi
-
-	if [[ ! -d ${CONTAINER_MOUNT_PATH_CONFIG}/supervisor ]]; then
-		CMD=$(mkdir -p ${CONTAINER_MOUNT_PATH_CONFIG}/supervisor)
-		$CMD || sudo $CMD
-	fi
-
-	if [[ -z $(find ${CONTAINER_MOUNT_PATH_CONFIG}/supervisor -maxdepth 1 -type f) ]]; then
-		CMD=$(cp -R etc/services-config/supervisor ${CONTAINER_MOUNT_PATH_CONFIG}/)
-		$CMD || sudo $CMD
+	echo "Creating configuration volume."
+	if [[ ${VOLUME_CONFIG_NAMED} == true ]]; then
+		DOCKER_VOLUMES="-v ${VOLUME_CONFIG_NAME}:/etc/services-config"
+	else
+		DOCKER_VOLUMES="-v /etc/services-config"
 	fi
 
 	(
 	set -x
 	docker run \
 		--name ${VOLUME_CONFIG_NAME} \
-		-v ${CONTAINER_MOUNT_PATH_CONFIG}/ssh:/etc/services-config/ssh \
-		-v ${CONTAINER_MOUNT_PATH_CONFIG}/supervisor:/etc/services-config/supervisor \
+		-v ${VOLUME_CONFIG_NAME}:/etc/services-config \
 		${DOCKER_IMAGE_REPOSITORY_NAME} \
 		/bin/true;
 	)
@@ -105,7 +91,7 @@ else
 fi
 
 if [[ ${VOLUME_CONFIG_ENABLED} == "true" ]] && have_docker_container_name ${VOLUME_CONFIG_NAME}; then
-	VOLUMES_FROM="--volumes-from ${VOLUME_CONFIG_NAME}"
+	DOCKER_VOLUMES_FROM="--volumes-from ${VOLUME_CONFIG_NAME}"
 fi
 
 # In a sub-shell set xtrace - prints the docker command to screen for reference
@@ -115,7 +101,7 @@ docker run \
 	${DOCKER_OPERATOR_OPTIONS} \
 	--name ${DOCKER_NAME} \
 	-p :22 \
-	${VOLUMES_FROM:-} \
+	${DOCKER_VOLUMES_FROM:-} \
 	${DOCKER_IMAGE_REPOSITORY_NAME} -c "${DOCKER_COMMAND}"
 )
 
