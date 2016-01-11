@@ -52,7 +52,7 @@ $ docker run \
   /bin/true
 ```
 
-To make changes to the configuration files you need a running container that uses the volumes from the configuration volume. To edit a single file you could use the following or you could run a ```bash``` shell and then make the changes required using vi. On exiting the container it will be removed since we specify the ```--rm``` parameter.
+To make changes to the configuration files you need a running container that uses the volumes from the configuration volume. To edit a single file you could use the following or you could run a ```bash``` shell and then make the changes required using ```vi```. On exiting the container it will be removed since we specify the ```--rm``` parameter.
 
 ```
 $ docker run --rm -it \
