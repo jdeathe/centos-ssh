@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Change working directory
-DIR_PATH="$( if [[ $( echo "${0%/*}" ) != $( echo "${0}" ) ]] ; then cd "$( echo "${0%/*}" )"; fi; pwd )"
-if [[ ${DIR_PATH} == */* ]] && [[ ${DIR_PATH} != $( pwd ) ]] ; then
+DIR_PATH="$( if [[ $( echo "${0%/*}" ) != $( echo "${0}" ) ]]; then cd "$( echo "${0%/*}" )"; fi; pwd )"
+if [[ ${DIR_PATH} == */* ]] && [[ ${DIR_PATH} != $( pwd ) ]]; then
 	cd ${DIR_PATH}
 fi
 
@@ -42,8 +42,8 @@ remove_docker_container_name ()
 {
 	local NAME=$1
 
-	if have_docker_container_name ${NAME} ; then
-		if is_docker_container_name_running ${NAME} ; then
+	if have_docker_container_name ${NAME}; then
+		if is_docker_container_name_running ${NAME}; then
 			echo "Stopping container ${NAME}"
 			(docker stop ${NAME})
 		fi
@@ -90,7 +90,7 @@ else
 	DOCKER_COMMAND="${@}"
 fi
 
-if [[ ${VOLUME_CONFIG_ENABLED} == "true" ]] && have_docker_container_name ${VOLUME_CONFIG_NAME}; then
+if [[ ${VOLUME_CONFIG_ENABLED} == true ]] && have_docker_container_name ${VOLUME_CONFIG_NAME}; then
 	DOCKER_VOLUMES_FROM="--volumes-from ${VOLUME_CONFIG_NAME}"
 fi
 
@@ -122,7 +122,7 @@ docker run \
 # 	${DOCKER_IMAGE_REPOSITORY_NAME} -c "${DOCKER_COMMAND}"
 # )
 
-if is_docker_container_name_running ${DOCKER_NAME} ; then
+if is_docker_container_name_running ${DOCKER_NAME}; then
 	docker ps | awk -v pattern="${DOCKER_NAME}$" '$NF ~ pattern { print $0 ; }'
 	echo " ---> Docker container running."
 fi
