@@ -40,27 +40,47 @@ $ docker run -d \
 
 ### (Optional) Configuration Data Volume
 
-Create a "data volume" for configuration, this allows you to share the same configuration between multiple docker containers and, by mounting a host directory into the data volume you can override the default configuration files provided.
+A configuration "data volume" allows you to share the same configuration files between multiple docker containers. Docker mounts a host directory into the data volume allowing you to edit the default configuration files and have those changes persist.
 
-Make a directory on the docker host for storing container configuration files. This directory needs to contain at least the following files:
-- [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/authorized_keys)
-- [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
-- [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/sshd_config)
-- [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor/supervisord.conf)
+#### Standard volume
 
-```
-$ mkdir -p /etc/services-config/ssh.pool-1
-```
-
-Create the data volume, mounting our docker host's configuration directory to /etc/services-config/ssh in the docker container. Note that docker will pull the busybox:latest image if you don't already have available locally.
+Naming of the volume is optional, it is possible to leave the naming up to Docker by simply specifying the container path only.
 
 ```
 $ docker run \
   --name volume-config.ssh.pool-1.1.1 \
-  -v /etc/services-config/ssh.pool-1/ssh:/etc/services-config/ssh \
-  -v /etc/services-config/ssh.pool-1/supervisor:/etc/services-config/supervisor \
-  busybox:latest \
+  -v /etc/services-config \
+  jdeathe/centos-ssh:latest \
   /bin/true
+```
+
+To identify the docker host file path to the Volume's within the container volume-config.ssh.pool-1.1.1 you can use ```docker inspect``` to view the Mounts.
+
+```
+$ docker inspect --format '{{json .Mounts }}' volume-config.ssh.pool-1.1.1
+```
+
+#### Named volume
+
+To create a named data volume, mounting our docker host's configuration directory /var/lib/docker/volumes/volume-config.ssh.pool-1.1.1 to /etc/services-config in the docker container use the following run command. Note that we use the same image as for the application container to reduce the number of images/layers required.
+
+```
+$ docker run \
+  --name volume-config.ssh.pool-1.1.1 \
+  -v volume-config.ssh.pool-1.1.1:/etc/services-config \
+  jdeathe/centos-ssh:latest \
+  /bin/true
+```
+
+#### Editing configuration
+
+To make changes to the configuration files you need a running container that uses the volumes from the configuration volume. To edit a single file you could use the following or you could run a ```bash``` shell and then make the changes required using ```vi```. On exiting the container it will be removed since we specify the ```--rm``` parameter.
+
+```
+$ docker run --rm -it \
+  jdeathe/centos-ssh:latest \
+  --volumes-from=volume-config.ssh.pool-1.1.1 \
+  vi /etc/services-config/<path_to_file>
 ```
 
 ### Running
