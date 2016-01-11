@@ -42,6 +42,26 @@ $ docker run -d \
 
 A configuration "data volume" allows you to share the same configuration files between multiple docker containers. Docker mounts a host directory into the data volume allowing you to edit the default configuration files and have those changes persist.
 
+#### Standard volume
+
+Naming of the volume is optional, it is possible to leave the naming up to Docker by simply specifying the container path only.
+
+```
+$ docker run \
+  --name volume-config.ssh.pool-1.1.1 \
+  -v /etc/services-config \
+  jdeathe/centos-ssh:latest \
+  /bin/true
+```
+
+To identify the docker host file path to the Volume's within the container volume-config.ssh.pool-1.1.1 you can use ```docker inspect``` to view the Mounts.
+
+```
+$ docker inspect --format '{{json .Mounts }}' volume-config.ssh.pool-1.1.1
+```
+
+#### Named volume
+
 To create a named data volume, mounting our docker host's configuration directory /var/lib/docker/volumes/volume-config.ssh.pool-1.1.1 to /etc/services-config in the docker container use the following run command. Note that we use the same image as for the application container to reduce the number of images/layers required.
 
 ```
@@ -51,6 +71,8 @@ $ docker run \
   jdeathe/centos-ssh:latest \
   /bin/true
 ```
+
+#### Editing configuration
 
 To make changes to the configuration files you need a running container that uses the volumes from the configuration volume. To edit a single file you could use the following or you could run a ```bash``` shell and then make the changes required using ```vi```. On exiting the container it will be removed since we specify the ```--rm``` parameter.
 
