@@ -54,10 +54,12 @@ $ docker run \
   /bin/true
 ```
 
-To identify the docker host file path to the Volume's within the container volume-config.ssh.pool-1.1.1 you can use ```docker inspect``` to view the Mounts.
+To identify the docker host directory path to the volume within the container volume-config.ssh.pool-1.1.1 you can use ```docker inspect``` to view the Mounts.
 
 ```
-$ docker inspect --format '{{json .Mounts }}' volume-config.ssh.pool-1.1.1
+$ docker inspect \
+  --format '{{ json (index .Mounts 0).Source }}' \
+  volume-config.ssh.pool-1.1.1
 ```
 
 #### Named volume
@@ -72,14 +74,22 @@ $ docker run \
   /bin/true
 ```
 
+When using named volumes the directory path from the docker host mounts the path on the container so we need to upload the configuration files. The simplest method of achieving this is to upload the contents of the [etc/services-config](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/) directory using ```docker cp```.
+
+```
+$ docker cp \
+  ./etc/services-config/. \
+  volume-config.ssh.pool-1.1.1:/etc/services-config
+```
+
 #### Editing configuration
 
 To make changes to the configuration files you need a running container that uses the volumes from the configuration volume. To edit a single file you could use the following or you could run a ```bash``` shell and then make the changes required using ```vi```. On exiting the container it will be removed since we specify the ```--rm``` parameter.
 
 ```
 $ docker run --rm -it \
-  jdeathe/centos-ssh:latest \
   --volumes-from=volume-config.ssh.pool-1.1.1 \
+  jdeathe/centos-ssh:latest \
   vi /etc/services-config/<path_to_file>
 ```
 
@@ -234,14 +244,15 @@ $ docker port ssh.pool-1.1.1 22
 To connect to the running container use:
 
 ```
-$ ssh -p <container-port> -i ~/.ssh/id_rsa_insecure \
+$ ssh -p <container-port> \
+  -i ~/.ssh/id_rsa_insecure \
   app-admin@<docker-host-ip> \
   -o StrictHostKeyChecking=no
 ```
 
 ### Custom Configuration
 
-If using the optional data volume for container configuration you are able to customise the configuration. In the following examples your custom docker configuration files should be located on the Docker host under the directory ```/etc/service-config/<container-name>/``` where ```<container-name>``` should match the applicable container name such as "ssh.pool-1.1.1" or, if the configuration is common across a group of containers, simply "ssh.pool-1" for the given examples.
+If using the optional data volume for container configuration you are able to customise the configuration. In the following examples your custom docker configuration files should be located on the Docker host under the directory ```/var/lib/docker/volumes/<volume-name>/``` where ```<volume-name>``` should identify the applicable container name such as "volume-config.ssh.pool-1.1.1" if using named volumes or will be an ID generated automatically by Docker. To identify the correct path on the Docker host use the ```docker inspect``` command.
 
 #### [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/authorized_keys)
 
@@ -253,24 +264,27 @@ $ ssh-keygen -q -t rsa -f ~/.ssh/id_rsa
 
 You should now have an SSH public key, (~/.ssh/id_rsa.pub), that can be used to replace the default one in your custom authorized_keys file.
 
-The following example shows how to copy your file to a remote docker host for cases where using a configuration volume mapping the path "/etc/services-config/ssh.pool-1/ssh/authorized_keys" to "/etc/services-config/ssh/authorized_keys":
+To copy your file to a remote docker host where using a configuration volume mapping of "volume-config.ssh.pool-1.1.1:/etc/services-config" linked to a running container named "ssh.pool-1.1.1" use:
 
 ```
-$ scp ~/.ssh/id_rsa.pub \
-  <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/ssh/authorized_keys
+$ docker cp ~/.ssh/id_rsa.pub \
+  ssh.pool-1.1.1:/var/lib/docker/volumes/etc/services-config/ssh/authorized_keys
 ```
 
-To replace the autorized_keys directly on a running container with the ```SSH_USER``` app-admin:
+Alternatively, to replace the autorized_keys directly on a running container with the ```SSH_USER``` app-admin using SSH use:
 
 ```
-$ cat ~/.ssh/id_rsa.pub | ssh -p <container-port> -i ~/.vagrant.d/insecure_private_key \
-  app-admin@<docker-host-ip> "mkdir -p ~/.ssh && cat > ~/.ssh/authorized_keys"
+$ cat ~/.ssh/id_rsa.pub | ssh -p <container-port> \
+  -i ~/.vagrant.d/insecure_private_key \
+  app-admin@<docker-host-ip> \
+  "cat > ~/.ssh/authorized_keys"
 ```
 
 To connect to the running container use:
 
 ```
-$ ssh -p <container-port> app-admin@<docker-host-ip> \
+$ ssh -p <container-port> \
+  app-admin@<docker-host-ip> \
   -o StrictHostKeyChecking=no
 ```
 
