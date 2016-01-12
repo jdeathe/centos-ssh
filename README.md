@@ -273,11 +273,11 @@ $ ssh-keygen -q -t rsa -f ~/.ssh/id_rsa
 
 You should now have an SSH public key, (~/.ssh/id_rsa.pub), that can be used to replace the default one in your custom authorized_keys file.
 
-To copy your file to a remote docker host where using a configuration volume mapping of "volume-config.ssh.pool-1.1.1:/etc/services-config" linked to a running container named "ssh.pool-1.1.1" use:
+To copy your file to a remote docker host where using a configuration "data" volume container named "volume-config.ssh.pool-1.1.1" with a volume mapping of "volume-config.ssh.pool-1.1.1:/etc/services-config" use:
 
 ```
 $ docker cp ~/.ssh/id_rsa.pub \
-  ssh.pool-1.1.1:/var/lib/docker/volumes/etc/services-config/ssh/authorized_keys
+  volume-config.ssh.pool-1.1.1:/etc/services-config/ssh/authorized_keys
 ```
 
 Alternatively, to replace the autorized_keys directly on a running container with the ```SSH_USER``` app-admin using SSH use:
