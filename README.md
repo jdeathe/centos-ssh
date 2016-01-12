@@ -88,7 +88,7 @@ To make changes to the configuration files you need a running container that use
 
 ```
 $ docker run --rm -it \
-  --volumes-from=volume-config.ssh.pool-1.1.1 \
+  --volumes-from volume-config.ssh.pool-1.1.1 \
   jdeathe/centos-ssh:latest \
   vi /etc/services-config/<path_to_file>
 ```
