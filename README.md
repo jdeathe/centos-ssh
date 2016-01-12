@@ -94,6 +94,9 @@ $ docker run --rm -it \
 ```
 
 ##### Required configuration files
+
+The following configuration files are required to run the applicatiobn container and should be located in the directory /etc/services-config/.
+
 - [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/authorized_keys)
 - [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
 - [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/sshd_config)
