@@ -78,7 +78,7 @@ if [[ ${VOLUME_CONFIG_ENABLED} == true ]] && ! have_docker_container_name ${VOLU
 		set -x
 		docker cp \
 			./etc/services-config/. \
-			${DOCKER_VOLUMES_MAPPING};
+			${DOCKER_VOLUME_MAPPING};
 		)
 	fi
 fi
