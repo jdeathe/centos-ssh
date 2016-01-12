@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 # Setup: 
-#     Use of a configuration volumes is optional and allow configuration 
+#     Use of a configuration "data" volumes is optional and allow configuration 
 #     changes to persist and be re-applied to a new container instance.
 #
 #     1. If configuration volumes are required, choose an appropriate naming 
@@ -18,7 +18,12 @@
 #     to let docker handle the volume naming within /var/lib/docker/volumes/ on
 #     the docker host.
 #
-#     3. Edit ssh.pool-1.1.1/volumes_from to apply the required volume_name.
+#     3. If using a named volume you need to copy the contents of the 
+#     configuration directory into the volume container. The simplest way to do
+#     this is with docker cp as follows: 
+#         docker cp ./etc/services-config/. volume_name:/etc/services-config
+#
+#     4. Edit ssh.pool-1.1.1/volumes_from to apply the required volume_name.
 #
 # Run in background: 
 #     docker-compose up -d
