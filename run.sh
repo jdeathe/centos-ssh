@@ -57,19 +57,30 @@ if [[ ${VOLUME_CONFIG_ENABLED} == true ]] && ! have_docker_container_name ${VOLU
 
 	echo "Creating configuration volume."
 	if [[ ${VOLUME_CONFIG_NAMED} == true ]]; then
-		DOCKER_VOLUMES="-v ${VOLUME_CONFIG_NAME}:/etc/services-config"
+		DOCKER_VOLUME_MAPPING=${VOLUME_CONFIG_NAME}:/etc/services-config
 	else
-		DOCKER_VOLUMES="-v /etc/services-config"
+		DOCKER_VOLUME_MAPPING=/etc/services-config
 	fi
 
 	(
 	set -x
 	docker run \
 		--name ${VOLUME_CONFIG_NAME} \
-		${DOCKER_VOLUMES} \
+		-v ${DOCKER_VOLUME_MAPPING} \
 		${DOCKER_IMAGE_REPOSITORY_NAME} \
 		/bin/true;
 	)
+
+	# Named data volumes require files to be copied into place.
+	if [[ ${VOLUME_CONFIG_NAMED} == true ]]; then
+		echo "Populating configuration volume."
+		(
+		set -x
+		docker cp \
+			./etc/services-config/. \
+			${DOCKER_VOLUMES_MAPPING};
+		)
+	fi
 fi
 
 # Application container
