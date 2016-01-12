@@ -66,7 +66,7 @@ if [[ ${VOLUME_CONFIG_ENABLED} == true ]] && ! have_docker_container_name ${VOLU
 	set -x
 	docker run \
 		--name ${VOLUME_CONFIG_NAME} \
-		-v ${VOLUME_CONFIG_NAME}:/etc/services-config \
+		${DOCKER_VOLUMES} \
 		${DOCKER_IMAGE_REPOSITORY_NAME} \
 		/bin/true;
 	)
