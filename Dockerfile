@@ -1,7 +1,7 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-6 6.7 x86_64 / EPEL/IUS Repos. / OpenSSH / Supervisor.
+# CentOS-6 6.7 x86_64 / SCL/EPEL/IUS Repos. / OpenSSH / Supervisor.
 # 
 # =============================================================================
 FROM centos:centos6.7
@@ -13,13 +13,15 @@ MAINTAINER James Deathe <james.deathe@gmail.com>
 # -----------------------------------------------------------------------------
 RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6 \
 	&& rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-6 \
-	&& rpm --import https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY
+	&& rpm --import https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY \
+	&& rpm --rebuilddb
 
 # -----------------------------------------------------------------------------
 # Base Install
 # -----------------------------------------------------------------------------
-RUN rpm --rebuilddb \
-	&& yum -y install \
+RUN yum -y install \
+	centos-release-scl \
+	epel-release \
 	https://centos6.iuscommunity.org/ius-release.rpm \
 	vim-minimal-7.4.629-5.el6 \
 	sudo-1.8.6p3-20.el6_7 \
