@@ -9,7 +9,7 @@ Includes public key authentication, Automated password generation, supports cust
 
 The [Dockerfile](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile) can be used to build a base image that is the bases for several other docker images.
 
-Included in the build is the EPEL repository, the IUS repository and SSH, vi and are installed along with python-pip, supervisor and supervisor-stdout.
+Included in the build are the [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include ssh, sudo and vi along with python-setuptools, supervisor and supervisor-stdout.
 
 [Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run. To enable simple viewing of stdout for the sshd subprocess, supervisor-stdout is included. This allows you to see output from the supervisord controlled subprocesses with `docker logs <docker-container-name>`.
 
@@ -40,28 +40,67 @@ $ docker run -d \
 
 ### (Optional) Configuration Data Volume
 
-Create a "data volume" for configuration, this allows you to share the same configuration between multiple docker containers and, by mounting a host directory into the data volume you can override the default configuration files provided.
+A configuration "data volume" allows you to share the same configuration files between multiple docker containers. Docker mounts a host directory into the data volume allowing you to edit the default configuration files and have those changes persist.
 
-Make a directory on the docker host for storing container configuration files. This directory needs to contain at least the following files:
-- [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/authorized_keys)
-- [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
-- [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/sshd_config)
-- [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor/supervisord.conf)
+#### Standard volume
 
-```
-$ mkdir -p /etc/services-config/ssh.pool-1
-```
-
-Create the data volume, mounting our docker host's configuration directory to /etc/services-config/ssh in the docker container. Note that docker will pull the busybox:latest image if you don't already have available locally.
+Naming of the volume is optional, it is possible to leave the naming up to Docker by simply specifying the container path only.
 
 ```
 $ docker run \
   --name volume-config.ssh.pool-1.1.1 \
-  -v /etc/services-config/ssh.pool-1/ssh:/etc/services-config/ssh \
-  -v /etc/services-config/ssh.pool-1/supervisor:/etc/services-config/supervisor \
-  busybox:latest \
+  -v /etc/services-config \
+  jdeathe/centos-ssh:latest \
   /bin/true
 ```
+
+To identify the docker host directory path to the volume within the container volume-config.ssh.pool-1.1.1 you can use ```docker inspect``` to view the Mounts.
+
+```
+$ docker inspect \
+  --format '{{ json (index .Mounts 0).Source }}' \
+  volume-config.ssh.pool-1.1.1
+```
+
+#### Named volume
+
+To create a named data volume, mounting our docker host's configuration directory /var/lib/docker/volumes/volume-config.ssh.pool-1.1.1 to /etc/services-config in the docker container use the following run command. Note that we use the same image as for the application container to reduce the number of images/layers required.
+
+```
+$ docker run \
+  --name volume-config.ssh.pool-1.1.1 \
+  -v volume-config.ssh.pool-1.1.1:/etc/services-config \
+  jdeathe/centos-ssh:latest \
+  /bin/true
+```
+
+When using named volumes the directory path from the docker host mounts the path on the container so we need to upload the configuration files. The simplest method of achieving this is to upload the contents of the [etc/services-config](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/) directory using ```docker cp```.
+
+```
+$ docker cp \
+  ./etc/services-config/. \
+  volume-config.ssh.pool-1.1.1:/etc/services-config
+```
+
+#### Editing configuration
+
+To make changes to the configuration files you need a running container that uses the volumes from the configuration volume. To edit a single file you could use the following, where <path_to_file> can be one of the [required configuration files](https://github.com/jdeathe/centos-ssh/blob/centos-6/README.md#required-configuration-files), or you could run a ```bash``` shell and then make the changes required using ```vi```. On exiting the container it will be removed since we specify the ```--rm``` parameter.
+
+```
+$ docker run --rm -it \
+  --volumes-from volume-config.ssh.pool-1.1.1 \
+  jdeathe/centos-ssh:latest \
+  vi /etc/services-config/<path_to_file>
+```
+
+##### Required configuration files
+
+The following configuration files are required to run the applicatiobn container and should be located in the directory /etc/services-config/.
+
+- [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/authorized_keys)
+- [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
+- [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/sshd_config)
+- [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor/supervisord.conf)
 
 ### Running
 
@@ -214,14 +253,15 @@ $ docker port ssh.pool-1.1.1 22
 To connect to the running container use:
 
 ```
-$ ssh -p <container-port> -i ~/.ssh/id_rsa_insecure \
+$ ssh -p <container-port> \
+  -i ~/.ssh/id_rsa_insecure \
   app-admin@<docker-host-ip> \
   -o StrictHostKeyChecking=no
 ```
 
 ### Custom Configuration
 
-If using the optional data volume for container configuration you are able to customise the configuration. In the following examples your custom docker configuration files should be located on the Docker host under the directory ```/etc/service-config/<container-name>/``` where ```<container-name>``` should match the applicable container name such as "ssh.pool-1.1.1" or, if the configuration is common across a group of containers, simply "ssh.pool-1" for the given examples.
+If using the optional data volume for container configuration you are able to customise the configuration. In the following examples your custom docker configuration files should be located on the Docker host under the directory ```/var/lib/docker/volumes/<volume-name>/``` where ```<volume-name>``` should identify the applicable container name such as "volume-config.ssh.pool-1.1.1" if using named volumes or will be an ID generated automatically by Docker. To identify the correct path on the Docker host use the ```docker inspect``` command.
 
 #### [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/authorized_keys)
 
@@ -233,24 +273,27 @@ $ ssh-keygen -q -t rsa -f ~/.ssh/id_rsa
 
 You should now have an SSH public key, (~/.ssh/id_rsa.pub), that can be used to replace the default one in your custom authorized_keys file.
 
-The following example shows how to copy your file to a remote docker host for cases where using a configuration volume mapping the path "/etc/services-config/ssh.pool-1/ssh/authorized_keys" to "/etc/services-config/ssh/authorized_keys":
+To copy your file to a remote docker host where using a configuration "data" volume container named "volume-config.ssh.pool-1.1.1" with a volume mapping of "volume-config.ssh.pool-1.1.1:/etc/services-config" use:
 
 ```
-$ scp ~/.ssh/id_rsa.pub \
-  <docker-host-user>@<docker-host-ip>:/etc/services-config/ssh.pool-1/ssh/authorized_keys
+$ docker cp ~/.ssh/id_rsa.pub \
+  volume-config.ssh.pool-1.1.1:/etc/services-config/ssh/authorized_keys
 ```
 
-To replace the autorized_keys directly on a running container with the ```SSH_USER``` app-admin:
+Alternatively, to replace the autorized_keys directly on a running container with the ```SSH_USER``` app-admin using SSH use:
 
 ```
-$ cat ~/.ssh/id_rsa.pub | ssh -p <container-port> -i ~/.vagrant.d/insecure_private_key \
-  app-admin@<docker-host-ip> "mkdir -p ~/.ssh && cat > ~/.ssh/authorized_keys"
+$ cat ~/.ssh/id_rsa.pub | ssh -p <container-port> \
+  -i ~/.vagrant.d/insecure_private_key \
+  app-admin@<docker-host-ip> \
+  "cat > ~/.ssh/authorized_keys"
 ```
 
 To connect to the running container use:
 
 ```
-$ ssh -p <container-port> app-admin@<docker-host-ip> \
+$ ssh -p <container-port> \
+  app-admin@<docker-host-ip> \
   -o StrictHostKeyChecking=no
 ```
 
