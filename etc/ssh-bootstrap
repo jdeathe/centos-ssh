@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
 
-# Print commands and their arguments as they are executed.
-#set -x
-
 source /etc/ssh-bootstrap.conf
 
 get_option ()
 {
-	value=$(/usr/bin/my_print_defaults "${1}" | sed -n "s/^--${2}=//p" | tail -n 1)
+	local value=$(/usr/bin/my_print_defaults "${1}" | sed -n "s/^--${2}=//p" | tail -n 1)
 	echo ${value:-$3}
 }
 
@@ -16,49 +13,179 @@ get_password ()
 	echo $(head -n 4096 /dev/urandom | tr -cd '[:alnum:]' | head -c ${1})
 }
 
-OPTS_SSH_USER_HOME_DIR="${SSH_USER_HOME_DIR:-/home/app-admin}"
+is_valid_ssh_authorized_keys ()
+{
+	local AUTHORIZED_KEYS="${1:-}"
+	local IFS=
+	local INVALID_KEY_PATTERN='^/dev/stdin is not a public key file.$'
+	local SSH_KEY=
+
+	if [[ -z ${AUTHORIZED_KEYS} ]]; then
+		return 1
+	fi
+
+	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
+		if [[ -n ${SSH_KEY} ]] && [[ $(ssh-keygen -lf /dev/stdin <<< ${SSH_KEY}) =~ ${INVALID_KEY_PATTERN} ]]; then
+			return 1
+		fi
+	done <<< "${AUTHORIZED_KEYS}"
+
+	return 0
+}
+
+is_valid_ssh_shell ()
+{
+	local SHELL=${1}
+	local VALID_SHELL=
+	local VALID_SHELLS=$(chsh --list-shells)
+
+	if [[ -z ${SHELL} ]]; then
+		return 1
+	fi
+
+	for VALID_SHELL in ${VALID_SHELLS}; do
+		if [[ ${VALID_SHELL} == ${SHELL} ]]; then
+			return 0
+		fi
+	done
+
+	return 1
+}
+
+is_valid_ssh_user ()
+{
+	local USERNAME=${1}
+	local SAFE_USERNAME='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
+
+	if [[ ${USERNAME} != root ]] && [[ ${USERNAME} =~ ${SAFE_USERNAME} ]]; then
+		return 0
+	fi
+
+	return 1
+}
+
+is_valid_ssh_user_home_dir ()
+{
+	local HOME_DIRECTORY="${1:-}"
+	local SAFE_DIRECTORY='^\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+$'
+
+	if [[ -n $(grep -oP ${SAFE_DIRECTORY} <<< ${HOME_DIRECTORY}) ]]; then
+		return 0
+	fi
+
+	return 1
+}
+
+get_ssh_authorized_keys ()
+{
+	local DEFAULT_PATH="${1:-/etc/services-config/ssh/authorized_keys}"
+	local VALUE="${SSH_AUTHORIZED_KEYS:-}"
+
+	if [[ -z ${VALUE} ]] && [[ -s ${DEFAULT_PATH} ]]; then
+		VALUE="$(cat ${DEFAULT_PATH})"
+	fi
+
+	printf "%s" "${VALUE}"
+}
+
+get_ssh_user ()
+{
+	local DEFAULT_VALUE="${1:-app-admin}"
+	local VALUE="${SSH_USER:-}"
+
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user "${VALUE}"; then
+		VALUE="${DEFAULT_VALUE}"
+	fi
+
+	printf "%s" "${VALUE}"
+}
+
+get_ssh_user_shell ()
+{
+	local DEFAULT_VALUE="${1:-/bin/bash}"
+	local VALUE="${SSH_USER_SHELL:-}"
+
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_shell "${VALUE}"; then
+		VALUE="${DEFAULT_VALUE}"
+	fi
+
+	printf "%s" "${VALUE}"
+}
+
+get_ssh_user_home_dir ()
+{
+	local DEFAULT_VALUE="${1:-/home/app-admin}"
+	local VALUE="${SSH_USER_HOME_DIR:-}"
+
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_home_dir "${VALUE}"; then
+		VALUE="${DEFAULT_VALUE}"
+	fi
+
+	printf "%s" "${VALUE}"
+}
+
+OPTS_SSH_USER="$(get_ssh_user app-admin)"
+OPTS_SSH_USER_HOME_DIR="$(get_ssh_user_home_dir /home/${OPTS_SSH_USER})"
 
 if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 
-	OPTS_SSH_USER="${SSH_USER:-app-admin}"
+	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
+	OPTS_SSH_AUTHORIZED_KEYS="$(get_ssh_authorized_keys /etc/services-config/ssh/authorized_keys)"
 	OPTS_SSH_ROOT_PASSWORD="${SSH_ROOT_PASSWORD:-$(get_password 8)}"
+	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password 8)}"
+	OPTS_SSH_USER_SHELL="$(get_ssh_user_shell /bin/bash)"
 
 	# Initialise
 	echo "Initialise SSH..."
 
 	# Generate new host keys
-	ssh-keygen -q -N "" -t rsa -f /etc/ssh/ssh_host_rsa_key
-	ssh-keygen -q -N "" -t dsa -f /etc/ssh/ssh_host_dsa_key
+	rm -f /etc/ssh/{ssh_host_rsa_key,ssh_host_rsa_key.pub,ssh_host_dsa_key,ssh_host_dsa_key.pub}
+	ssh-keygen -q -C "" -N "" -t rsa -f /etc/ssh/ssh_host_rsa_key
+	ssh-keygen -q -C "" -N "" -t dsa -f /etc/ssh/ssh_host_dsa_key
+	if [[ -x /sbin/restorecon ]]; then
+		/sbin/restorecon /etc/ssh/ssh_host_rsa_key.pub
+		/sbin/restorecon /etc/ssh/ssh_host_dsa_key.pub
+	fi
 
-	useradd -u 500 -m -G users,wheel ${OPTS_SSH_USER}
+	useradd -u 500 -m -G users,wheel -d ${OPTS_SSH_USER_HOME_DIR} -s ${OPTS_SSH_USER_SHELL} ${OPTS_SSH_USER}
+
+	if [[ ${DEFAULT_SSH_SUDO} != ${OPTS_SSH_SUDO} ]]; then
+		sed -i "s~^%wheel\\t.*$~%wheel\\t${OPTS_SSH_SUDO}~g" /etc/sudoers
+	fi
 
 	mkdir -m 700 ${OPTS_SSH_USER_HOME_DIR}/.ssh
-	cp -f /etc/services-config/ssh/authorized_keys ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
+	touch ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 	chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_SSH_USER_HOME_DIR}/.ssh
 	chmod 600 ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 
-	
-	echo $'\n# ${OPTS_SSH_USER}\nDefaults:root secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin' >> /etc/sudoers
-	#echo 'Defaults:root !requiretty' >> /etc/sudoers
+	if ! is_valid_ssh_authorized_keys "${OPTS_SSH_AUTHORIZED_KEYS}"; then
+		echo "ERROR: Public key validation failed. Unable to populate ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_key"
+	else
+		printf "%s" "${OPTS_SSH_AUTHORIZED_KEYS}" > ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
+	fi
+
+	tee -a /etc/sudoers > /dev/null <<-EOT
+
+		# ${OPTS_SSH_USER}
+		Defaults:root secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
+	EOT
 
 	# Set user passwords
 	echo "root:${OPTS_SSH_ROOT_PASSWORD}" | chpasswd
 	echo "${OPTS_SSH_USER}:${OPTS_SSH_USER_PASSWORD}" | chpasswd
 
-	echo
-	echo "--------------------------------------------------------------------------------"
-	echo "SSH Credentials: "
-	echo "root : ${OPTS_SSH_ROOT_PASSWORD}"
-	echo "${OPTS_SSH_USER} : ${OPTS_SSH_USER_PASSWORD}"
-	#echo
-	#echo "RSA Host Key: "
-	#echo "$(cat /etc/ssh/ssh_host_rsa_key)"
-	#echo
-	#echo "DSA Host Key: "
-	#echo "$(cat /etc/ssh/ssh_host_dsa_key)"
-	echo "--------------------------------------------------------------------------------"
-	echo
+	cat <<-EOT
+
+		================================================================================
+		SSH Credentials
+		--------------------------------------------------------------------------------
+		root : ${OPTS_SSH_ROOT_PASSWORD}
+		${OPTS_SSH_USER} : ${OPTS_SSH_USER_PASSWORD}
+		sudo : ${OPTS_SSH_SUDO}
+		--------------------------------------------------------------------------------
+		
+	EOT
 
 	# Allow some time for supervisor_stdout to start
 	sleep 2
