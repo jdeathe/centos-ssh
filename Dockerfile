@@ -13,13 +13,13 @@ MAINTAINER James Deathe <james.deathe@gmail.com>
 # -----------------------------------------------------------------------------
 RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6 \
 	&& rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-6 \
-	&& rpm --import https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY \
-	&& rpm --rebuilddb
+	&& rpm --import https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY
 
 # -----------------------------------------------------------------------------
 # Base Install
 # -----------------------------------------------------------------------------
-RUN yum -y install \
+RUN rpm --rebuilddb \
+	&& yum -y install \
 	centos-release-scl \
 	centos-release-scl-rh \
 	epel-release \
