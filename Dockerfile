@@ -21,6 +21,7 @@ RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6 \
 # -----------------------------------------------------------------------------
 RUN yum -y install \
 	centos-release-scl \
+	centos-release-scl-rh \
 	epel-release \
 	https://centos6.iuscommunity.org/ius-release.rpm \
 	vim-minimal-7.4.629-5.el6 \
