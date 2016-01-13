@@ -9,7 +9,7 @@ Includes public key authentication, Automated password generation, supports cust
 
 The [Dockerfile](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile) can be used to build a base image that is the bases for several other docker images.
 
-Included in the build is the EPEL repository, the IUS repository and SSH, vi and are installed along with python-pip, supervisor and supervisor-stdout.
+Included in the build are the [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include ssh, sudo and vi along with python-setuptools, supervisor and supervisor-stdout.
 
 [Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run. To enable simple viewing of stdout for the sshd subprocess, supervisor-stdout is included. This allows you to see output from the supervisord controlled subprocesses with `docker logs <docker-container-name>`.
 
