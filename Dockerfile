@@ -21,12 +21,21 @@ RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-7 \
 RUN rpm --rebuilddb \
 	&& yum -y install \
 	https://centos7.iuscommunity.org/ius-release.rpm \
+	vim-minimal-7.4.160-1.el7 \
+	sudo-1.8.6p7-16.el7 \
+	openssh-6.6.1p1-23.el7_2 \
+	openssh-server-6.6.1p1-23.el7_2 \
+	openssh-clients-6.6.1p1-23.el7_2 \
+	python-setuptools-0.9.8-4.el7 \
+	yum-plugin-versionlock-1.1.31-34.el7 \
+	&& yum versionlock add \
 	vim-minimal \
 	sudo \
 	openssh \
 	openssh-server \
 	openssh-clients \
 	python-setuptools \
+	yum-plugin-versionlock \
 	&& rm -rf /var/cache/yum/* \
 	&& yum clean all
 
