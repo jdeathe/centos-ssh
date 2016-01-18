@@ -9,7 +9,7 @@ FROM centos:centos7.2.1511
 MAINTAINER James Deathe <james.deathe@gmail.com>
 
 # -----------------------------------------------------------------------------
-# Import the RPM GPG keys and install Repositories
+# Import the RPM GPG keys for Repositories
 # -----------------------------------------------------------------------------
 RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-7 \
 	&& rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 \
@@ -46,7 +46,7 @@ RUN rpm --rebuilddb \
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
 RUN easy_install 'supervisor == 3.2.0' 'supervisor-stdout == 0.1.1' \
- 	&& mkdir -p /var/log/supervisor/
+	&& mkdir -p /var/log/supervisor/
 
 # -----------------------------------------------------------------------------
 # UTC Timezone & Networking
