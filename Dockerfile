@@ -48,7 +48,6 @@ RUN rpm --rebuilddb \
 RUN easy_install 'supervisor == 3.2.0' 'supervisor-stdout == 0.1.1' \
 	&& mkdir -p /var/log/supervisor/
 
-
 # -----------------------------------------------------------------------------
 # UTC Timezone & Networking
 # -----------------------------------------------------------------------------
