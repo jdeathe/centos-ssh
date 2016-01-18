@@ -3,13 +3,13 @@ centos-ssh
 
 Docker Image of CentOS-6 6.7 x86_64
 
-Includes public key authentication, Automated password generation, supports custom configuration via a configuration data volume.
+Includes public key authentication, Automated password generation, supports custom configuration via environment variables and/or a configuration data volume.
 
 ## Overview & links
 
 The [Dockerfile](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile) can be used to build a base image that is the bases for several other docker images.
 
-Included in the build are the [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include ssh, sudo and vi along with python-setuptools, supervisor and supervisor-stdout.
+Included in the build are the [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/) and [vim-minimal](http://www.vim.org/) are along with python-setuptools, [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
 
 [Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run. To enable simple viewing of stdout for the sshd subprocess, supervisor-stdout is included. This allows you to see output from the supervisord controlled subprocesses with `docker logs <docker-container-name>`.
 
@@ -17,7 +17,7 @@ SSH access is by public key authentication and, by default, the [Vagrant](http:/
 
 ### SSH Alternatives
 
-SSH is not required in order to access a terminal for the running container. The simplest method is to use the docker exec command to run bash (or sh) as follows: 
+SSH is not required in order to access a terminal for the running container. The simplest method is to use the docker exec command to run bash (or sh) as follows:
 
 ```
 $ docker exec -it <docker-name-or-id> bash
@@ -95,7 +95,7 @@ $ docker run --rm -it \
 
 ##### Required configuration files
 
-The following configuration files are required to run the applicatiobn container and should be located in the directory /etc/services-config/.
+The following configuration files are required to run the application container and should be located in the directory /etc/services-config/.
 
 - [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/authorized_keys)
 - [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/ssh-bootstrap.conf)
@@ -104,7 +104,7 @@ The following configuration files are required to run the applicatiobn container
 
 ### Running
 
-To run the a docker container from this image you can use the included run.sh and run.conf scripts. The helper script will stop any running container of the same name, remove it and run a new daemonised container on an unspecified host port. Alternatively you can use the following methods.
+To run the a docker container from this image you can use the included [run.sh](https://github.com/jdeathe/centos-ssh/blob/centos-6/run.sh) and [run.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/run.conf) scripts. The helper script will stop any running container of the same name, remove it and run a new daemonised container on an unspecified host port. Alternatively you can use the following methods.
 
 #### Using environment variables
 
@@ -125,7 +125,7 @@ $ docker stop ssh.pool-1.1.1 \
 
 #### Using configuration volume
 
-The following example uses the settings from the optonal configuration volume volume-config.ssh.pool-1.1.1.
+The following example uses the settings from the optional configuration volume volume-config.ssh.pool-1.1.1.
 
 ```
 $ docker stop ssh.pool-1.1.1 \
@@ -147,10 +147,10 @@ The output of the logs should show the auto-generated password for the app-admin
 
 ```
 sshd_bootstrap stdout | Initialise SSH...
-sshd_bootstrap stdout | 
+sshd_bootstrap stdout |
 ================================================================================
 SSH Credentials
--------------------------------------------------------------------------------- 
+--------------------------------------------------------------------------------
 root : ut5vZhb5
 app-admin : s4pjZwT8
 --------------------------------------------------------------------------------
@@ -242,7 +242,7 @@ $ curl -LsSO https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vag
   chmod 600 ~/.ssh/id_rsa_insecure
 ```
 
-If the command ran successfully you should now have a new private SSH key installed in your home "~/.ssh" directory called "id_rsa_insecure" 
+If the command ran successfully you should now have a new private SSH key installed in your home "~/.ssh" directory called "id_rsa_insecure"
 
 Next, unless we specified one, we need to determine what port to connect to on the docker host. You can do this with either `docker ps` or `docker inspect` but the simplest method is to use `docker port`.
 
