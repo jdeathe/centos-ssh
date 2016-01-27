@@ -1,7 +1,7 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-7 7.2.1511 x86_64 / EPEL/IUS Repos. / OpenSSH / Supervisor.
+# CentOS-7 7.2.1511 x86_64 / SCL/EPEL/IUS Repos. / OpenSSH / Supervisor.
 # 
 # =============================================================================
 FROM centos:centos7.2.1511
@@ -20,6 +20,9 @@ RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-7 \
 # -----------------------------------------------------------------------------
 RUN rpm --rebuilddb \
 	&& yum -y install \
+	centos-release-scl \
+	centos-release-scl-rh \
+	epel-release \
 	https://centos7.iuscommunity.org/ius-release.rpm \
 	vim-minimal-7.4.160-1.el7 \
 	sudo-1.8.6p7-16.el7 \
