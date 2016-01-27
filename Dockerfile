@@ -51,7 +51,6 @@ RUN rpm --rebuilddb \
 RUN easy_install 'supervisor == 3.2.0' 'supervisor-stdout == 0.1.1' \
 	&& mkdir -p /var/log/supervisor/
 
-
 # -----------------------------------------------------------------------------
 # UTC Timezone & Networking
 # -----------------------------------------------------------------------------
@@ -62,8 +61,6 @@ RUN ln -sf /usr/share/zoneinfo/UTC /etc/localtime \
 # Configure SSH for non-root public key authentication
 # -----------------------------------------------------------------------------
 RUN sed -i \
-	-e 's~^UsePAM yes~#UsePAM yes~g' \
-	-e 's~^#UsePAM no~UsePAM no~g' \
 	-e 's~^PasswordAuthentication yes~PasswordAuthentication no~g' \
 	-e 's~^#PermitRootLogin yes~PermitRootLogin no~g' \
 	-e 's~^#UseDNS yes~UseDNS no~g' \
