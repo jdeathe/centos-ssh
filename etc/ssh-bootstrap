@@ -189,6 +189,10 @@ OPTS_SSH_USER_HOME_DIR="$(get_ssh_user_home_dir /home/${OPTS_SSH_USER})"
 
 if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 
+	# Allow some time for supervisor_stdout to start
+	sleep 2 &
+	TIMEOUT_PID = ${!}
+
 	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
 	OPTS_SSH_AUTHORIZED_KEYS="$(get_ssh_authorized_keys /etc/services-config/ssh/authorized_keys)"
 	OPTS_SSH_ROOT_PASSWORD="${SSH_ROOT_PASSWORD:-$(get_password 8)}"
@@ -241,8 +245,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		
 	EOT
 
-	# Allow some time for supervisor_stdout to start
-	sleep 2
+	wait ${TIMEOUT_PID}
 fi
 
 exit 0
