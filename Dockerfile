@@ -83,10 +83,13 @@ ADD etc/services-config/supervisor.d/sshd.conf \
 	etc/services-config/supervisor.d/sshd_bootstrap.conf \
 	/etc/services-config/supervisor.d/
 
-RUN cp -pf /etc/ssh/sshd_config /etc/services-config/ssh/ \
+RUN mkdir -p /etc/supervisor.d/ \
+	&& cp -pf /etc/ssh/sshd_config /etc/services-config/ssh/ \
 	&& ln -sf /etc/services-config/supervisor/supervisord.conf /etc/supervisord.conf \
 	&& ln -sf /etc/services-config/ssh/sshd_config /etc/ssh/sshd_config \
 	&& ln -sf /etc/services-config/ssh/ssh-bootstrap.conf /etc/ssh-bootstrap.conf \
+	&& ln -sf /etc/services-config/supervisor.d/sshd.conf /etc/supervisor.d/sshd.conf \
+	&& ln -sf /etc/services-config/supervisor.d/sshd_bootstrap.conf /etc/supervisor.d/sshd_bootstrap.conf \
 	&& chmod +x /etc/ssh-bootstrap
 
 # -----------------------------------------------------------------------------
