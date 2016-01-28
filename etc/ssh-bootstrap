@@ -124,10 +124,74 @@ get_ssh_user_home_dir ()
 	printf "%s" "${VALUE}"
 }
 
+generate_new_ssh_host_key ()
+{
+	local TYPE=${1:-rsa}
+	local REPLACE=${2:-false}
+	local RESPONSE='n\n'
+
+	if [[ ${REPLACE} == true ]] || [[ ${REPLACE} == 'y' ]]; then
+		RESPONSE='y\n'
+	fi
+
+	case ${TYPE} in
+		rsa|dsa|ecdsa|ed25519)
+
+			echo -e ${RESPONSE} | ssh-keygen \
+				-q \
+				-C "" \
+				-N "" \
+				-t ${TYPE} \
+				-f /etc/ssh/ssh_host_${TYPE}_key \
+				&> /dev/null
+
+			if [[ -x /sbin/restorecon ]]; then
+				/sbin/restorecon /etc/ssh/ssh_host_${TYPE}_key.pub
+			fi
+
+			;;
+		*)
+			echo "Unknown key type ${TYPE} - skipping."
+			;;
+	esac
+}
+
+generate_ssh_host_keys ()
+{
+	local VERSION="${1:-}"
+
+	if [[ -z ${VERSION} ]] && [[ -e /etc/redhat-release ]]; then
+		VERSION=$(rpm -q --whatprovides redhat-release --queryformat "%{VERSION}")
+	else
+		echo "ERROR: Unknown EL release."
+		return 1
+	fi
+
+	case ${VERSION} in
+		6)
+			generate_new_ssh_host_key rsa true
+			generate_new_ssh_host_key dsa true
+			;;
+		7)
+			generate_new_ssh_host_key rsa true
+			generate_new_ssh_host_key dsa true
+			generate_new_ssh_host_key ecdsa true
+			generate_new_ssh_host_key ed25519 true
+			;;
+		*)
+			echo "Unknown EL release ${VERSION} - skipping."
+			;;
+	esac
+}
+
 OPTS_SSH_USER="$(get_ssh_user app-admin)"
 OPTS_SSH_USER_HOME_DIR="$(get_ssh_user_home_dir /home/${OPTS_SSH_USER})"
 
 if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
+
+	# Allow some time for supervisor_stdout to start
+	sleep 2 &
+	TIMEOUT_PID = ${!}
 
 	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
 	OPTS_SSH_AUTHORIZED_KEYS="$(get_ssh_authorized_keys /etc/services-config/ssh/authorized_keys)"
@@ -140,13 +204,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	echo "Initialise SSH..."
 
 	# Generate new host keys
-	rm -f /etc/ssh/{ssh_host_rsa_key,ssh_host_rsa_key.pub,ssh_host_dsa_key,ssh_host_dsa_key.pub}
-	ssh-keygen -q -C "" -N "" -t rsa -f /etc/ssh/ssh_host_rsa_key
-	ssh-keygen -q -C "" -N "" -t dsa -f /etc/ssh/ssh_host_dsa_key
-	if [[ -x /sbin/restorecon ]]; then
-		/sbin/restorecon /etc/ssh/ssh_host_rsa_key.pub
-		/sbin/restorecon /etc/ssh/ssh_host_dsa_key.pub
-	fi
+	generate_ssh_host_keys
 
 	useradd -u 500 -m -G users,wheel -d ${OPTS_SSH_USER_HOME_DIR} -s ${OPTS_SSH_USER_SHELL} ${OPTS_SSH_USER}
 
@@ -187,8 +245,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		
 	EOT
 
-	# Allow some time for supervisor_stdout to start
-	sleep 2
+	wait ${TIMEOUT_PID}
 fi
 
 exit 0
