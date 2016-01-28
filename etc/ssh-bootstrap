@@ -2,15 +2,18 @@
 
 source /etc/ssh-bootstrap.conf
 
-get_option ()
-{
-	local value=$(/usr/bin/my_print_defaults "${1}" | sed -n "s/^--${2}=//p" | tail -n 1)
-	echo ${value:-$3}
-}
-
 get_password ()
 {
-	echo $(head -n 4096 /dev/urandom | tr -cd '[:alnum:]' | head -c ${1})
+	local PASSWORD_LENGTH=${1:-8}
+	local PASSWORD=$(
+		head -n 4096 /dev/urandom 2> /dev/null | \
+		tr -cd '[:alnum:]' 2> /dev/null | \
+		head -c ${PASSWORD_LENGTH} 2> /dev/null
+	)
+
+	printf -- "%s" "${PASSWORD}"
+
+	return 0
 }
 
 is_valid_ssh_authorized_keys ()
@@ -191,7 +194,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 
 	# Allow some time for supervisor_stdout to start
 	sleep 2 &
-	TIMEOUT_PID = ${!}
+	TIMEOUT_PID=${!}
 
 	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
 	OPTS_SSH_AUTHORIZED_KEYS="$(get_ssh_authorized_keys /etc/services-config/ssh/authorized_keys)"
@@ -201,7 +204,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	OPTS_SSH_USER_SHELL="$(get_ssh_user_shell /bin/bash)"
 
 	# Initialise
-	echo "Initialise SSH..."
+	echo "Initialising SSH."
 
 	# Generate new host keys
 	generate_ssh_host_keys

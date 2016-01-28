@@ -101,8 +101,8 @@ The following configuration files are required to run the application container 
 - [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/ssh-bootstrap.conf)
 - [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd_config)
 - [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.conf)
-- [supervisor.d/sshd.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor.d/sshd.conf)
-- [supervisor.d/sshd_bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor.d/sshd_bootstrap.conf)
+- [supervisor/supervisord.d/sshd.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.d/sshd.conf)
+- [supervisor/supervisord.d/sshd_bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.d/sshd_bootstrap.conf)sshd_bootstrap.conf)
 
 ### Running
 
@@ -311,10 +311,10 @@ The SSH daemon options can be overridden with your custom sshd_config file.
 
 The supervisor service's primary configuration can also be overridden by editing the custom supervisord.conf file. Program specific configuration files will be loaded from /etc/supervisor.d/ from the container.
 
-#### [supervisor.d/sshd.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor.d/sshd.conf)
+#### [supervisor/supervisord.d/sshd.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor/supervisord.d/sshd.conf)
 
 The supervisor program configuration for the sshd service.
 
-#### [supervisor.d/sshd_bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor.d/sshd_bootstrap.conf)
+#### [supervisor/supervisord.d/sshd_bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor/supervisord.d/sshd_bootstrap.conf)
 
 The supervisor program configuration for the sshd_boostrap script.
