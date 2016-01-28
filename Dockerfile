@@ -80,7 +80,7 @@ ADD etc/services-config/ssh/authorized_keys \
 	/etc/services-config/ssh/
 ADD etc/services-config/supervisor/supervisord.conf /etc/services-config/supervisor/
 ADD etc/services-config/supervisor.d/sshd.conf \
-	etc/services-config/supervisor.d/sshd_boostrap.conf \
+	etc/services-config/supervisor.d/sshd_bootstrap.conf \
 	/etc/services-config/supervisor.d/
 
 RUN cp -pf /etc/ssh/sshd_config /etc/services-config/ssh/ \
