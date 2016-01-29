@@ -40,10 +40,9 @@ fi
 docker build --no-cache=${NO_CACHE} -t ${DOCKER_IMAGE_REPOSITORY_NAME} .
 
 if [[ ${?} -eq 0 ]]; then
-	echo -e "\nDocker image:"
+	printf -- "\n%s:\n" 'Docker image'
 	show_docker_image ${DOCKER_IMAGE_REPOSITORY_NAME}
-
-	echo " ---> ${COLOUR_POSITIVE}Build complete${COLOUR_RESET}"
+	printf -- " ${COLOUR_POSITIVE}--->${COLOUR_RESET} %s\n" 'Build complete'
 else
-	echo -e "\n ---> ${COLOUR_NEGATIVE}ERROR: Build failed${COLOUR_RESET}"
+	printf -- " ${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" 'ERROR'
 fi
