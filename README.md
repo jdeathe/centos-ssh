@@ -98,11 +98,11 @@ $ docker run --rm -it \
 The following configuration files are required to run the application container and should be located in the directory /etc/services-config/.
 
 - [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/authorized_keys)
-- [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/ssh-bootstrap.conf)
+- [ssh/sshd-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd-bootstrap.conf)
 - [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd_config)
 - [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.conf)
 - [supervisor/supervisord.d/sshd.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.d/sshd.conf)
-- [supervisor/supervisord.d/sshd_bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.d/sshd_bootstrap.conf)sshd_bootstrap.conf)
+- [supervisor/supervisord.d/sshd-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf)
 
 ### Running
 
@@ -112,7 +112,7 @@ To run the a docker container from this image you can use the included [run.sh](
 
 The following example overrides the default "app-admin" SSH username and home directory path with "app-user". The same technique could also be applied to set the SSH_USER_PASSWORD value.
 
-*Note:* Settings applied by environment variables will override those set within configuration volumes from release 1.3.1. Existing installations that use the ssh-bootstrap.conf saved on a configuration "data" volume will not allow override by the environment variables. Also users can update ssh-bootstrap.conf to prevent the value being replaced by that set using the environment variable.
+*Note:* Settings applied by environment variables will override those set within configuration volumes from release 1.3.1. Existing installations that use the sshd-bootstrap.conf saved on a configuration "data" volume will not allow override by the environment variables. Also users can update sshd-bootstrap.conf to prevent the value being replaced by that set using the environment variable.
 
 ```
 $ docker stop ssh.pool-1.1.1 \
@@ -299,9 +299,9 @@ $ ssh -p <container-port> \
   -o StrictHostKeyChecking=no
 ```
 
-#### [ssh/ssh-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/ssh-bootstrap.conf)
+#### [ssh/sshd-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd-bootstrap.conf)
 
-The bootstrap script sets up the sudo user and generates a random 8 character password you can override this behaviour by supplying your own values in your custom ssh-bootstrap.conf file. You can also change the sudoer username to something other that the default "app-admin".
+The bootstrap script sets up the sudo user and generates a random 8 character password you can override this behaviour by supplying your own values in your custom sshd-bootstrap.conf file. You can also change the sudoer username to something other that the default "app-admin".
 
 #### [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd_config)
 
@@ -311,10 +311,10 @@ The SSH daemon options can be overridden with your custom sshd_config file.
 
 The supervisor service's primary configuration can also be overridden by editing the custom supervisord.conf file. Program specific configuration files will be loaded from /etc/supervisor.d/ from the container.
 
-#### [supervisor/supervisord.d/sshd.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor/supervisord.d/sshd.conf)
+#### [supervisor/supervisord.d/sshd.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.d/sshd.conf)
 
 The supervisor program configuration for the sshd service.
 
-#### [supervisor/supervisord.d/sshd_bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/supervisor/supervisord.d/sshd_bootstrap.conf)
+#### [supervisor/supervisord.d/sshd-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf)
 
 The supervisor program configuration for the sshd_boostrap script.

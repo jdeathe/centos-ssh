@@ -74,23 +74,23 @@ RUN sed -i 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' /etc/sudoers
 # -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
-ADD etc/ssh-bootstrap /etc/
+ADD usr/sbin/sshd-bootstrap /usr/sbin/sshd-bootstrap
 ADD etc/services-config/ssh/authorized_keys \
-	etc/services-config/ssh/ssh-bootstrap.conf \
+	etc/services-config/ssh/sshd-bootstrap.conf \
 	/etc/services-config/ssh/
 ADD etc/services-config/supervisor/supervisord.conf /etc/services-config/supervisor/
 ADD etc/services-config/supervisor/supervisord.d/sshd.conf \
-	etc/services-config/supervisor/supervisord.d/sshd_bootstrap.conf \
+	etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
 	/etc/services-config/supervisor/supervisord.d/
 
 RUN mkdir -p /etc/supervisord.d/ \
 	&& cp -pf /etc/ssh/sshd_config /etc/services-config/ssh/ \
 	&& ln -sf /etc/services-config/ssh/sshd_config /etc/ssh/sshd_config \
-	&& ln -sf /etc/services-config/ssh/ssh-bootstrap.conf /etc/ssh-bootstrap.conf \
+	&& ln -sf /etc/services-config/ssh/sshd-bootstrap.conf /etc/sshd-bootstrap.conf \
 	&& ln -sf /etc/services-config/supervisor/supervisord.conf /etc/supervisord.conf \
 	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd.conf /etc/supervisord.d/sshd.conf \
-	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd_bootstrap.conf /etc/supervisord.d/sshd_bootstrap.conf \
-	&& chmod +x /etc/ssh-bootstrap
+	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf /etc/supervisord.d/sshd-bootstrap.conf \
+	&& chmod +x /usr/sbin/sshd-bootstrap
 
 # -----------------------------------------------------------------------------
 # Purge
