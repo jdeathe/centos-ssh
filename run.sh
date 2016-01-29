@@ -135,8 +135,7 @@ docker run \
 	--name ${DOCKER_NAME} \
 	-p ${DOCKER_HOST_PORT_SSH:-}:22 \
 	${DOCKER_VOLUMES_FROM:-} \
-	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}" \
-	1> /dev/null;
+	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
 )
 
 # Use environment variables instead of configuration volume
@@ -158,10 +157,9 @@ docker run \
 # )
 
 if is_docker_container_name_running ${DOCKER_NAME}; then
-	echo -e "\nDocker process status:"
+	printf -- "\n%s:\n" 'Docker process status'
 	show_docker_container_name_status ${DOCKER_NAME}
-
-	echo " ---> ${COLOUR_POSITIVE}Container running${COLOUR_RESET}"
-else
-	echo -e "\n ---> ${COLOUR_NEGATIVE}ERROR: Container run failed${COLOUR_RESET}"
+	printf -- " ${COLOUR_POSITIVE}--->${COLOUR_RESET} %s\n" 'Container running'
+elif [[ ${#} -eq 0 ]]; then
+	printf -- " ${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" 'ERROR'
 fi
