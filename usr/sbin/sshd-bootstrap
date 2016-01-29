@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source /etc/ssh-bootstrap.conf
+source /etc/sshd-bootstrap.conf
 
 get_password ()
 {
