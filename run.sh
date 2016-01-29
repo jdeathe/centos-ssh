@@ -38,6 +38,22 @@ is_docker_container_name_running ()
 	return 1
 }
 
+show_docker_container_name_status ()
+{
+	local NAME=$1
+
+	if [[ -z ${NAME} ]]; then
+		return 1
+	fi
+
+	docker ps | \
+		awk \
+			-v pattern="${NAME}$" \
+			'$NF ~ pattern { print $0; }'
+
+}
+
+
 remove_docker_container_name ()
 {
 	local NAME=$1
@@ -45,10 +61,18 @@ remove_docker_container_name ()
 	if have_docker_container_name ${NAME}; then
 		if is_docker_container_name_running ${NAME}; then
 			echo "Stopping container ${NAME}"
-			(docker stop ${NAME})
+			docker stop ${NAME} &> /dev/null
+
+			if [[ ${?} -ne 0 ]]; then
+				return 1
+			fi
 		fi
 		echo "Removing container ${NAME}"
-		(docker rm ${NAME})
+		docker rm ${NAME} &> /dev/null
+
+		if [[ ${?} -ne 0 ]]; then
+			return 1
+		fi
 	fi
 }
 
@@ -105,18 +129,19 @@ fi
 
 # In a sub-shell set xtrace - prints the docker command to screen for reference
 (
-set -x
+set -xe
 docker run \
 	${DOCKER_OPERATOR_OPTIONS} \
 	--name ${DOCKER_NAME} \
 	-p ${DOCKER_HOST_PORT_SSH:-}:22 \
 	${DOCKER_VOLUMES_FROM:-} \
-	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
+	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}" \
+	1> /dev/null;
 )
 
 # Use environment variables instead of configuration volume
 # (
-# set -x
+# set -xe
 # docker run \
 # 	${DOCKER_OPERATOR_OPTIONS} \
 # 	--name ${DOCKER_NAME} \
@@ -133,6 +158,10 @@ docker run \
 # )
 
 if is_docker_container_name_running ${DOCKER_NAME}; then
-	docker ps | awk -v pattern="${DOCKER_NAME}$" '$NF ~ pattern { print $0 ; }'
-	echo " ---> Docker container running."
+	echo -e "\nDocker process status:"
+	show_docker_container_name_status ${DOCKER_NAME}
+
+	echo " ---> ${COLOUR_POSITIVE}Container running${COLOUR_RESET}"
+else
+	echo -e "\n ---> ${COLOUR_NEGATIVE}ERROR: Container run failed${COLOUR_RESET}"
 fi
