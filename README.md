@@ -149,16 +149,29 @@ $ docker logs ssh.pool-1.1.1
 The output of the logs should show the auto-generated password for the app-admin and root users, (if not try again after a few seconds).
 
 ```
-sshd_bootstrap stdout | Initialise SSH...
-sshd_bootstrap stdout |
+2016-01-30 02:01:20,292 CRIT Supervisor running as root (no user in config file)
+2016-01-30 02:01:20,292 WARN Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
+2016-01-30 02:01:20,292 WARN Included extra file "/etc/supervisord.d/sshd.conf" during parsing
+2016-01-30 02:01:20,293 INFO supervisord started with pid 1
+2016-01-30 02:01:21,297 INFO spawned: 'supervisor_stdout' with pid 10
+2016-01-30 02:01:21,299 INFO spawned: 'sshd-bootstrap' with pid 11
+2016-01-30 02:01:21,303 INFO spawned: 'sshd' with pid 12
+2016-01-30 02:01:21,343 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2016-01-30 02:01:22,771 INFO success: supervisor_stdout entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2016-01-30 02:01:22,771 INFO success: sshd entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+sshd-bootstrap stdout | Initialising SSH.
+sshd-bootstrap stdout |
 ================================================================================
 SSH Credentials
 --------------------------------------------------------------------------------
-root : ut5vZhb5
-app-admin : s4pjZwT8
+root : SdydWvWG
+app-admin : IzRi3exL
+sudo : ALL=(ALL) ALL
 --------------------------------------------------------------------------------
 
-2014-07-05 19:35:35,370 INFO exited: sshd_bootstrap (exit status 0; expected)
+sshd stdout | Server listening on 0.0.0.0 port 22.
+sshd stdout | Server listening on :: port 22.
+2016-01-30 02:01:23,337 INFO exited: sshd-bootstrap (exit status 0; expected)
 ```
 
 #### Runtime Environment Variables
