@@ -77,6 +77,7 @@ RUN sed -i 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' /etc/sudoers
 ADD usr/sbin/sshd-bootstrap /usr/sbin/sshd-bootstrap
 ADD etc/services-config/ssh/authorized_keys \
 	etc/services-config/ssh/sshd-bootstrap.conf \
+	etc/services-config/ssh/sshd-bootstrap.env \
 	/etc/services-config/ssh/
 ADD etc/services-config/supervisor/supervisord.conf /etc/services-config/supervisor/
 ADD etc/services-config/supervisor/supervisord.d/sshd.conf \
@@ -87,6 +88,7 @@ RUN mkdir -p /etc/supervisord.d/ \
 	&& cp -pf /etc/ssh/sshd_config /etc/services-config/ssh/ \
 	&& ln -sf /etc/services-config/ssh/sshd_config /etc/ssh/sshd_config \
 	&& ln -sf /etc/services-config/ssh/sshd-bootstrap.conf /etc/sshd-bootstrap.conf \
+	&& ln -sf /etc/services-config/ssh/sshd-bootstrap.env /etc/sshd-bootstrap.env \
 	&& ln -sf /etc/services-config/supervisor/supervisord.conf /etc/supervisord.conf \
 	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd.conf /etc/supervisord.d/sshd.conf \
 	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf /etc/supervisord.d/sshd-bootstrap.conf \
@@ -107,6 +109,7 @@ EXPOSE 22
 # Set default environment variables
 # -----------------------------------------------------------------------------
 ENV SSH_AUTHORIZED_KEYS ""
+ENV SSH_INHERIT_ENVIRONMENT false
 ENV SSH_SUDO "ALL=(ALL) ALL"
 ENV SSH_USER_PASSWORD ""
 ENV SSH_USER "app-admin"
