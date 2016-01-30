@@ -187,8 +187,16 @@ generate_ssh_host_keys ()
 	esac
 }
 
+OPTS_SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT:-false}
 OPTS_SSH_USER="$(get_ssh_user app-admin)"
 OPTS_SSH_USER_HOME_DIR="$(get_ssh_user_home_dir /home/${OPTS_SSH_USER})"
+
+# Docker ENV inheritance
+if [[ ${OPTS_SSH_INHERIT_ENVIRONMENT} == true ]] && [[ -s /etc/sshd-bootstrap.env ]]; then
+	# Variables to exclude
+	grep -Ev "^([.]*SSH_USER_PASSWORD|_|HOME|HOSTNAME|PATH|PWD|SHLVL|SUPERVISOR_ENABLED|SUPERVISOR_GROUP_NAME|SUPERVISOR_PROCESS_NAME|TERM)=" \
+		/etc/sshd-bootstrap.env > /etc/environment
+fi
 
 if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 
