@@ -149,6 +149,7 @@ docker run \
 # ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key
 # ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJlEHFYDmRgS+YQ+MA9PKHyriCPmVNs/6yVc2lopwPWioXt0+ulH/H43PgB6/4fkP0duauHsRtpp7z7dhqgZOXqdLUn/Ybp0rz0+yKUOBb9ggjE5n7hYyDGtZR9Y11pJ4TuRHmL6wv5mnj9WRzkUlJNYkr6X5b6yAxtQmX+2f33u2qGdAwADddE/uZ4vKnC0jFsv5FdvnwRf2diF/9AagDb7xhZ9U3hPOyLj31H/OUce4xBpGXRfkUYkeW8Qx+zEbEBVlGxDroIMZmHJIknBDAzVfft+lsg1Z06NCYOJ+hSew==
 # " \
+#	--env "SSH_INHERIT_ENVIRONMENT=true" \
 # 	--env "SSH_USER=app-1" \
 # 	--env "SSH_USER_HOME_DIR=/home/app" \
 # 	--env "SSH_USER_SHELL=/bin/sh" \
@@ -163,3 +164,35 @@ if is_docker_container_name_running ${DOCKER_NAME}; then
 elif [[ ${#} -eq 0 ]]; then
 	printf -- " ${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" 'ERROR'
 fi
+
+# Linked container test
+# if [[ ${#} -eq 0 ]]; then
+
+# 	DOCKER_NAME_LINK_HOST=${DOCKER_NAME}.link-host
+
+# 	if [[ -n ${DOCKER_HOST_PORT_SSH} ]]; then
+# 		(( DOCKER_HOST_PORT_SSH ++ ))
+# 	fi
+
+# 	remove_docker_container_name ${DOCKER_NAME_LINK_HOST}
+
+# 	(
+# 	set -xe
+# 	docker run \
+# 		${DOCKER_OPERATOR_OPTIONS} \
+# 		--name ${DOCKER_NAME_LINK_HOST} \
+# 		-p ${DOCKER_HOST_PORT_SSH:-}:22 \
+# 		--link ${DOCKER_NAME}:link-guest \
+# 		--env "SSH_INHERIT_ENVIRONMENT=true" \
+# 		${DOCKER_VOLUMES_FROM:-} \
+# 		${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
+# 	)
+
+# 	if is_docker_container_name_running ${DOCKER_NAME_LINK_HOST}; then
+# 		printf -- "\n%s:\n" 'Docker process status'
+# 		show_docker_container_name_status ${DOCKER_NAME_LINK_HOST}
+# 		printf -- " ${COLOUR_POSITIVE}--->${COLOUR_RESET} %s\n" 'Container running'
+# 	else
+# 		printf -- " ${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" 'ERROR'
+# 	fi
+# fi

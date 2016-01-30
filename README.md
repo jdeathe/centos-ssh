@@ -99,6 +99,7 @@ The following configuration files are required to run the application container 
 
 - [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/authorized_keys)
 - [ssh/sshd-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd-bootstrap.conf)
+- [ssh/sshd-bootstrap.env](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd-bootstrap.env)
 - [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd_config)
 - [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.conf)
 - [supervisor/supervisord.d/sshd.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.d/sshd.conf)
@@ -106,7 +107,7 @@ The following configuration files are required to run the application container 
 
 ### Running
 
-To run the a docker container from this image you can use the included [run.sh](https://github.com/jdeathe/centos-ssh/blob/centos-6/run.sh) and [run.conf](https://github.com/jdeathe/centos-ssh/blob/centos-6/run.conf) scripts. The helper script will stop any running container of the same name, remove it and run a new daemonised container on an unspecified host port. Alternatively you can use the following methods.
+To run the a docker container from this image you can use the included [run.sh](https://github.com/jdeathe/centos-ssh/blob/centos-7/run.sh) and [run.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/run.conf) scripts. The helper script will stop any running container of the same name, remove it and run a new daemonised container on an unspecified host port. Alternatively you can use the following methods.
 
 #### Using environment variables
 
@@ -227,6 +228,16 @@ ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJl
 ...
 ```
 
+##### 7. SSH_INHERIT_ENVIRONMENT
+
+The SSH user's environment is reset by default meaning that the Docker environmental variables are not available. Use ```SSH_INHERIT_ENVIRONMENT``` to allow the Docker environment variables to be passed to the SSH user's environment. Note that some values are removed to prevent issues; such as SSH_USER_PASSWORD, HOME, HOSTNAME, PATH, TERM etc.
+
+```
+...
+  --env "SSH_INHERIT_ENVIRONMENT=true" \
+...
+```
+
 ### Connect to the running container using SSH
 
 If you have not already got one, create the .ssh directory in your home directory with the permissions required by SSH.
@@ -302,6 +313,10 @@ $ ssh -p <container-port> \
 #### [ssh/sshd-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd-bootstrap.conf)
 
 The bootstrap script sets up the sudo user and generates a random 8 character password you can override this behaviour by supplying your own values in your custom sshd-bootstrap.conf file. You can also change the sudoer username to something other that the default "app-admin".
+
+#### [ssh/sshd-bootstrap.env](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd-bootstrap.env)
+
+This is an intentionally empty file used for storing the Docker environment variables. If the environment variable ```SSH_INHERIT_ENVIRONMENT``` is set to true then environment variables stored in this file are added to the SSH user's environment.
 
 #### [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd_config)
 
