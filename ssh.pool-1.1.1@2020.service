@@ -1,0 +1,129 @@
+# -----------------------------------------------------------------------------
+# Create a data container for the configuration volume: 
+#     docker run -v /config --name volume-config.<service-name> busybox /bin/true
+#
+# To install: 
+#     sudo cp <container-path>/<service-name>@<port>.service /etc/systemd/system/
+#     sudo systemctl daemon-reload
+#     sudo systemctl enable -f /etc/systemd/system/<service-name>@<port>.service
+# 
+# Start using: 
+#     sudo systemctl [start|stop|restart|kill|status] <service-name>@<port>.service
+#
+# Debugging: 
+#     journalctl -fn 50 u <service-name>@<port>.service
+#
+# To uninstall:
+#     sudo systemctl disable -f /etc/systemd/system/<service-name>@<port>.service
+#     sudo systemctl stop /etc/systemd/system/<service-name>@<port>.service
+#     sudo docker rm <service-name>
+# -----------------------------------------------------------------------------
+
+[Unit]
+Description=CentOS / Supervisor / OpenSSH // pool-1.1.1
+After=etcd2.service
+After=docker.service
+Requires=docker.service
+Requires=etcd2.service
+
+[Service]
+Restart=on-failure
+RestartSec=30
+TimeoutStartSec=1200
+Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/services-packages"
+Environment="DOCKER_IMAGE_NAME=jdeathe/centos-ssh"
+Environment="DOCKER_IMAGE_TAG=centos-6-1.4.2"
+Environment="SERVICE_UNIT_NAME=ssh"
+Environment="SERVICE_UNIT_APP_GROUP=app-1"
+Environment="SERVICE_UNIT_SHARED_GROUP=pool-1"
+Environment="SERVICE_UNIT_LOCAL_ID=1"
+Environment="SERVICE_UNIT_INSTANCE=1"
+Environment="VOLUME_CONFIG_ENABLED=false"
+Environment="VOLUME_CONFIG_NAMED=false"
+Environment="VOLUME_CONFIG_NAME=volume-config.%p"
+Environment="VOLUME_DATA_NAME=volume-data.%p"
+Environment="SSH_AUTHORIZED_KEYS=ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
+Environment="SSH_INHERIT_ENVIRONMENT=false"
+Environment="SSH_USER=app-admin"
+Environment="SSH_USER_HOME_DIR=/home/app-admin"
+Environment="SSH_USER_SHELL=/bin/bash"
+
+# Initialisation: Load image from local storage if available, otherwise pull.
+ExecStartPre=/bin/sudo /bin/bash -c \
+  "if [[ ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} != $(/usr/bin/docker images | awk -v FS='[ ]+' -v pattern=\"^${DOCKER_IMAGE_NAME}[ ]+${DOCKER_IMAGE_TAG} \" '$0 ~ pattern { print $1\":\"$2; }') ]]; then \
+    if [[ -f ${DOCKER_IMAGE_PACKAGE_PATH}/${DOCKER_IMAGE_NAME}.${DOCKER_IMAGE_TAG}.tar.xz ]]; then \
+      /usr/bin/xz -dc ${DOCKER_IMAGE_PACKAGE_PATH}/${DOCKER_IMAGE_NAME}.${DOCKER_IMAGE_TAG}.tar.xz | /usr/bin/docker load; \
+    else \
+      /usr/bin/docker pull ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
+    fi; \
+  fi"
+
+# Create a data container for the configuration volume
+ExecStartPre=/bin/sudo /bin/bash -c \
+  "if [[ ${VOLUME_CONFIG_ENABLED} == true ]] && [[ ${VOLUME_CONFIG_NAMED} == true ]]; then \
+    if [[ ${VOLUME_CONFIG_NAME} != $(/usr/bin/docker ps -a | /bin/awk -v pattern=\"^${VOLUME_CONFIG_NAME}$\" '$NF ~ pattern { print $NF; }') ]]; then \
+      /usr/bin/docker run \
+        --name ${VOLUME_CONFIG_NAME}.tmp \
+        ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
+        /bin/sh -c 'while true; do echo -ne .; sleep 1; done'; \
+      /usr/bin/docker run \
+        --name ${VOLUME_CONFIG_NAME} \
+        -v ${VOLUME_CONFIG_NAME}:/etc/services-config \
+        ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
+        /bin/true; \
+      /usr/bin/docker cp ${VOLUME_CONFIG_NAME}.tmp:/etc/services-config/. \
+        /var/lib/docker/volumes/${VOLUME_CONFIG_NAME}/_data; \
+      /usr/bin/docker kill ${VOLUME_CONFIG_NAME}.tmp; \
+    fi; \
+  elif [[ ${VOLUME_CONFIG_ENABLED} == true ]] && [[ ${VOLUME_CONFIG_NAMED} != true ]]; then \
+    if [[ ${VOLUME_CONFIG_NAME} != $(/usr/bin/docker ps -a | /bin/awk -v pattern=\"^${VOLUME_CONFIG_NAME}$\" '$NF ~ pattern { print $NF; }') ]]; then \
+      /usr/bin/docker run \
+        --name ${VOLUME_CONFIG_NAME} \
+        -v /etc/services-config \
+        ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
+        /bin/true; \
+    fi; \
+  fi"
+
+# Remove existing container (and stop if running). This allows it to 
+# be re-created on startup but not removed on exit as with --rm.
+ExecStartPre=/bin/sudo /bin/bash -c \
+  "if [[ %p == $(/usr/bin/docker ps -a | /bin/awk -v pattern='^%p$' '$NF ~ pattern { print $NF; }') ]]; then \
+    if [[ %p == $(/usr/bin/docker ps | /bin/awk -v pattern='^%p$' '$NF ~ pattern { print $NF; }') ]]; then \
+      /usr/bin/docker stop %p; \
+    fi; \
+    /usr/bin/docker rm %p; \
+  fi"
+
+# Startup
+ExecStart=/bin/sudo /bin/bash -c \
+  "if [[ ${VOLUME_CONFIG_NAME} == $(/usr/bin/docker ps -a | /bin/awk -v pattern=\"^${VOLUME_CONFIG_NAME}$\" '$NF ~ pattern { print $NF; }') ]]; then \
+    /usr/bin/docker run \
+      --name %p \
+      -p %i:22 \
+      --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
+      --env SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT} \
+      --env SSH_USER=${SSH_USER} \
+      --env SSH_USER_HOME_DIR=${SSH_USER_HOME_DIR} \
+      --env SSH_USER_SHELL=${SSH_USER_SHELL} \
+      --volumes-from volume-config.%p \
+      ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
+  else \
+    /usr/bin/docker run \
+      --name %p \
+      -p %i:22 \
+      --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
+      --env SSH_INHERIT_ENVIRONMENT=false \
+      --env SSH_USER=${SSH_USER} \
+      --env SSH_USER_HOME_DIR=${SSH_USER_HOME_DIR} \
+      --env SSH_USER_SHELL=${SSH_USER_SHELL} \
+      ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
+  fi"
+
+ExecStartPost=/usr/bin/etcdctl set /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE} %H:%i
+
+ExecStop=/usr/bin/docker stop --time 10 %p
+ExecStopPost=/usr/bin/etcdctl rm /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE}
+
+[Install]
+WantedBy=multi-user.target
