@@ -5,13 +5,18 @@
 # To install: 
 #     sudo cp <container-path>/<service-name>@<port>.service /etc/systemd/system/
 #     sudo systemctl daemon-reload
-#     sudo systemctl enable /etc/systemd/system/<service-name>@<port>.service
+#     sudo systemctl enable -f /etc/systemd/system/<service-name>@<port>.service
 # 
 # Start using: 
 #     sudo systemctl [start|stop|restart|kill|status] <service-name>@<port>.service
 #
 # Debugging: 
 #     journalctl -fn 50 u <service-name>@<port>.service
+#
+# To uninstall:
+#     sudo systemctl disable -f /etc/systemd/system/<service-name>@<port>.service
+#     sudo systemctl stop /etc/systemd/system/<service-name>@<port>.service
+#     sudo docker rm <service-name>
 # -----------------------------------------------------------------------------
 
 [Unit]
@@ -37,9 +42,11 @@ Environment="VOLUME_CONFIG_ENABLED=false"
 Environment="VOLUME_CONFIG_NAMED=false"
 Environment="VOLUME_CONFIG_NAME=volume-config.%p"
 Environment="VOLUME_DATA_NAME=volume-data.%p"
-# Environment="APACHE_SERVER_ALIAS=app-1"
-# Environment="APACHE_SERVER_NAME=app-1.local"
-# Environment="DATE_TIMEZONE=UTC"
+Environment="SSH_AUTHORIZED_KEYS=ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
+Environment="SSH_INHERIT_ENVIRONMENT=false"
+Environment="SSH_USER=app-admin"
+Environment="SSH_USER_HOME_DIR=/home/app-admin"
+Environment="SSH_USER_SHELL=/bin/bash"
 
 # Initialisation: Load image from local storage if available, otherwise pull.
 ExecStartPre=/bin/sudo /bin/bash -c \
@@ -94,20 +101,22 @@ ExecStart=/bin/sudo /bin/bash -c \
     /usr/bin/docker run \
       --name %p \
       -p %i:22 \
-      --env SSH_INHERIT_ENVIRONMENT=false \
-      --env SSH_USER=app-admin \
-      --env SSH_USER_HOME_DIR=/home/app-admin \
-      --env SSH_USER_SHELL=/bin/bash \
+      --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
+      --env SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT} \
+      --env SSH_USER=${SSH_USER} \
+      --env SSH_USER_HOME_DIR=${SSH_USER_HOME_DIR} \
+      --env SSH_USER_SHELL=${SSH_USER_SHELL} \
       --volumes-from volume-config.%p \
       ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   else \
     /usr/bin/docker run \
       --name %p \
       -p %i:22 \
+      --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
       --env SSH_INHERIT_ENVIRONMENT=false \
-      --env SSH_USER=app-admin \
-      --env SSH_USER_HOME_DIR=/home/app-admin \
-      --env SSH_USER_SHELL=/bin/bash \
+      --env SSH_USER=${SSH_USER} \
+      --env SSH_USER_HOME_DIR=${SSH_USER_HOME_DIR} \
+      --env SSH_USER_SHELL=${SSH_USER_SHELL} \
       ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   fi"
 

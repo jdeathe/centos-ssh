@@ -110,6 +110,8 @@ journalctl -fu ${SERVICE_UNIT_FILE_NAME} &
 LOG_PID=${!}
 wait ${INSTALL_PID}
 INSTALL_STATUS=${?}
+# Allow time for the container bootstrap to complete
+sleep 5
 kill -9 ${LOG_PID}
 
 printf -- "\nService status:\n"
