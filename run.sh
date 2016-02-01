@@ -139,6 +139,8 @@ docker run \
 )
 
 # Use environment variables instead of configuration volume
+# SHA-512 hashed password: Passw0rd!
+# Salt: salt/pepper.pot.
 # (
 # set -xe
 # docker run \
@@ -150,7 +152,10 @@ docker run \
 # ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJlEHFYDmRgS+YQ+MA9PKHyriCPmVNs/6yVc2lopwPWioXt0+ulH/H43PgB6/4fkP0duauHsRtpp7z7dhqgZOXqdLUn/Ybp0rz0+yKUOBb9ggjE5n7hYyDGtZR9Y11pJ4TuRHmL6wv5mnj9WRzkUlJNYkr6X5b6yAxtQmX+2f33u2qGdAwADddE/uZ4vKnC0jFsv5FdvnwRf2diF/9AagDb7xhZ9U3hPOyLj31H/OUce4xBpGXRfkUYkeW8Qx+zEbEBVlGxDroIMZmHJIknBDAzVfft+lsg1Z06NCYOJ+hSew==
 # " \
 # 	--env "SSH_INHERIT_ENVIRONMENT=true" \
+# 	--env "SSH_SUDO=ALL=(ALL) ALL" \
 # 	--env "SSH_USER=app-1" \
+# 	--env "SSH_USER_PASSWORD_HASHED=true" \
+# 	--env 'SSH_USER_PASSWORD=$6$salt/pepper.pot.$vXFjBSve4gdT2gmS3p4pXycFSmkN4yT6eE.FmuFTqiSzH1bRFzulKtlYmJIMvP0pfrL4rx6L78ZQ7hjbWNRff1' \
 # 	--env "SSH_USER_HOME_DIR=/home/app" \
 # 	--env "SSH_USER_SHELL=/bin/sh" \
 # 	${DOCKER_VOLUMES_FROM:-} \
