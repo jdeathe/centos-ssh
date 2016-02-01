@@ -149,34 +149,58 @@ $ docker logs ssh.pool-1.1.1
 The output of the logs should show the auto-generated password for the app-admin and root users, (if not try again after a few seconds).
 
 ```
-2016-01-30 02:01:20,292 CRIT Supervisor running as root (no user in config file)
-2016-01-30 02:01:20,292 WARN Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
-2016-01-30 02:01:20,292 WARN Included extra file "/etc/supervisord.d/sshd.conf" during parsing
-2016-01-30 02:01:20,293 INFO supervisord started with pid 1
-2016-01-30 02:01:21,297 INFO spawned: 'supervisor_stdout' with pid 10
-2016-01-30 02:01:21,299 INFO spawned: 'sshd-bootstrap' with pid 11
-2016-01-30 02:01:21,303 INFO spawned: 'sshd' with pid 12
-2016-01-30 02:01:21,343 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-2016-01-30 02:01:22,771 INFO success: supervisor_stdout entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-2016-01-30 02:01:22,771 INFO success: sshd entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2016-02-01 02:26:51,420 CRIT Supervisor running as root (no user in config file)
+2016-02-01 02:26:51,420 WARN Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
+2016-02-01 02:26:51,420 WARN Included extra file "/etc/supervisord.d/sshd.conf" during parsing
+2016-02-01 02:26:51,420 WARN No file matches via include "/etc/supervisord.d/*.ini"
+2016-02-01 02:26:51,422 INFO supervisord started with pid 1
+2016-02-01 02:26:52,425 INFO spawned: 'supervisor_stdout' with pid 7
+2016-02-01 02:26:52,427 INFO spawned: 'sshd-bootstrap' with pid 8
+2016-02-01 02:26:52,429 INFO spawned: 'sshd' with pid 9
+2016-02-01 02:26:52,458 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2016-02-01 02:26:53,956 INFO success: supervisor_stdout entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2016-02-01 02:26:53,957 INFO success: sshd entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
 sshd-bootstrap stdout | Initialising SSH.
 sshd-bootstrap stdout |
 ================================================================================
 SSH Credentials
 --------------------------------------------------------------------------------
-root : SdydWvWG
-app-admin : IzRi3exL
+user : app-user
+password : Lu9ipKBx
 sudo : ALL=(ALL) ALL
 --------------------------------------------------------------------------------
 
 sshd stdout | Server listening on 0.0.0.0 port 22.
 sshd stdout | Server listening on :: port 22.
-2016-01-30 02:01:23,337 INFO exited: sshd-bootstrap (exit status 0; expected)
+2016-02-01 02:26:54,464 INFO exited: sshd-bootstrap (exit status 0; expected)
 ```
 
 #### Runtime Environment Variables
 
 There are several environmental variables defined at runtime these allow the operator to customise the running container.
+
+##### SSH_AUTHORIZED_KEYS
+
+As detailed below the public key added for the SSH user is insecure by default. This is intentional and allows for access using a known private key. Using ```SSH_AUTHORIZED_KEYS``` you can replace the insecure public key with another one (or several). Further details on how to create your own private + public key pair are detailed below.
+
+```
+...
+--env "SSH_AUTHORIZED_KEYS=
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key
+ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJlEHFYDmRgS+YQ+MA9PKHyriCPmVNs/6yVc2lopwPWioXt0+ulH/H43PgB6/4fkP0duauHsRtpp7z7dhqgZOXqdLUn/Ybp0rz0+yKUOBb9ggjE5n7hYyDGtZR9Y11pJ4TuRHmL6wv5mnj9WRzkUlJNYkr6X5b6yAxtQmX+2f33u2qGdAwADddE/uZ4vKnC0jFsv5FdvnwRf2diF/9AagDb7xhZ9U3hPOyLj31H/OUce4xBpGXRfkUYkeW8Qx+zEbEBVlGxDroIMZmHJIknBDAzVfft+lsg1Z06NCYOJ+hSew== another public key
+"  \
+...
+```
+
+##### SSH_INHERIT_ENVIRONMENT
+
+The SSH user's environment is reset by default meaning that the Docker environmental variables are not available. Use ```SSH_INHERIT_ENVIRONMENT``` to allow the Docker environment variables to be passed to the SSH user's environment. Note that some values are removed to prevent issues; such as SSH_USER_PASSWORD, HOME, HOSTNAME, PATH, TERM etc.
+
+```
+...
+  --env "SSH_INHERIT_ENVIRONMENT=true" \
+...
+```
 
 ##### SSH_USER
 
@@ -200,13 +224,38 @@ On first run the SSH user is created with the default HOME directory of "/home/a
 
 ##### SSH_USER_PASSWORD
 
-On first run the SSH user is created with a generated password. If you require a specific password ```SSH_USER_PASSWORD``` can be used when running the container.
+On first run the SSH user is created with a generated password. If you require a specific password ```SSH_USER_PASSWORD``` can be used when running the container. If set to an empty string then a password is auto-generated and, if ```SSH_SUDO``` is not set to allow no password for all commands, will be displayed in the docker logs.
 
 ```
 ...
   --env "SSH_USER_PASSWORD=Passw0rd!" \
 ...
 ```
+
+##### SSH_USER_PASSWORD_HASHED
+
+If setting a password for the SSH user you might not want to store the plain text password value in the ```SSH_USER_PASSWORD``` environment variable. Setting ```SSH_USER_PASSWORD_HASHED``` to `true` indicates that the value stored in ```SSH_USER_PASSWORD``` should be treated as a crypt SHA-512 salted password hash.
+
+```
+...
+  --env "SSH_USER_PASSWORD_HASHED=true" \
+  --env 'SSH_USER_PASSWORD=$6$pepper$g5/OhofGtHVo3wqRgVHFQrJDyK0mV9bDpF5HP964wuIkQ7MXuYq1KRTmShaUmTQW3ZRsjw2MjC1LNPh5HMcrY0'
+...
+```
+
+###### Generating a crypt SHA-512 password hash
+
+To generate a new hashed password string you can use the following method - given a password of "Passw0rd!" and a salt of "pepper".
+
+```
+$ docker exec -it ssh.pool-1.1.1 \
+  env \
+  PASSWORD=Passw0rd! \
+  PASSWORD_SALT=pepper \
+  python -c "import crypt,os; print crypt.crypt(os.environ.get('PASSWORD'), '\$6\$' + os.environ.get('PASSWORD_SALT') + '\$')"
+```
+
+The result should be the string: ```$6$pepper$g5/OhofGtHVo3wqRgVHFQrJDyK0mV9bDpF5HP964wuIkQ7MXuYq1KRTmShaUmTQW3ZRsjw2MjC1LNPh5HMcrY0```
 
 ##### SSH_USER_SHELL
 
@@ -225,29 +274,6 @@ On first run the SSH user is created with a the sudo rule ```ALL=(ALL)  ALL``` w
 ```
 ...
   --env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
-...
-```
-
-##### SSH_AUTHORIZED_KEYS
-
-As detailed below the public key added for the SSH user is insecure by default. This is intentional and allows for access using a known private key. Using ```SSH_AUTHORIZED_KEYS``` you can replace the insecure public key with another one (or several). Further details on how to create your own private + public key pair are detailed below.
-
-```
-...
---env "SSH_AUTHORIZED_KEYS=
-ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key
-ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJlEHFYDmRgS+YQ+MA9PKHyriCPmVNs/6yVc2lopwPWioXt0+ulH/H43PgB6/4fkP0duauHsRtpp7z7dhqgZOXqdLUn/Ybp0rz0+yKUOBb9ggjE5n7hYyDGtZR9Y11pJ4TuRHmL6wv5mnj9WRzkUlJNYkr6X5b6yAxtQmX+2f33u2qGdAwADddE/uZ4vKnC0jFsv5FdvnwRf2diF/9AagDb7xhZ9U3hPOyLj31H/OUce4xBpGXRfkUYkeW8Qx+zEbEBVlGxDroIMZmHJIknBDAzVfft+lsg1Z06NCYOJ+hSew== another public key
-"  \
-...
-```
-
-##### SSH_INHERIT_ENVIRONMENT
-
-The SSH user's environment is reset by default meaning that the Docker environmental variables are not available. Use ```SSH_INHERIT_ENVIRONMENT``` to allow the Docker environment variables to be passed to the SSH user's environment. Note that some values are removed to prevent issues; such as SSH_USER_PASSWORD, HOME, HOSTNAME, PATH, TERM etc.
-
-```
-...
-  --env "SSH_INHERIT_ENVIRONMENT=true" \
 ...
 ```
 
