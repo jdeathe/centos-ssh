@@ -43,7 +43,7 @@ is_valid_ssh_authorized_keys ()
 	fi
 
 	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
-		if [[ -n ${SSH_KEY} ]] && [[ $(ssh-keygen -lf /dev/stdin <<< ${SSH_KEY}) =~ ${INVALID_KEY_PATTERN} ]]; then
+		if [[ -n ${SSH_KEY} ]] && [[ $(get_ssh_key_fingerprint "${SSH_KEY}") =~ ${INVALID_KEY_PATTERN} ]]; then
 			return 1
 		fi
 	done <<< "${AUTHORIZED_KEYS}"
@@ -119,7 +119,54 @@ get_ssh_authorized_keys ()
 		VALUE="$(cat ${DEFAULT_PATH})"
 	fi
 
-	printf "%s" "${VALUE}"
+	printf -- "%s" "${VALUE}"
+}
+
+get_ssh_authorized_key_fingerprints ()
+{
+	local AUTHORIZED_KEYS="${1:-$(get_ssh_authorized_keys)}"
+	local FINGERPRINT=
+	local FINGERPRINTS=
+	local IFS=
+	local INVALID_KEY_PATTERN='^/dev/stdin is not a public key file.$'
+	local INSECURE_FINGERPRINT='dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6'
+	local SSH_KEY=
+
+	if [[ -z ${AUTHORIZED_KEYS} ]]; then
+		return 1
+	fi
+
+	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
+		if [[ -n ${SSH_KEY} ]] && [[ ! $(get_ssh_key_fingerprint ${SSH_KEY}) =~ ${INVALID_KEY_PATTERN} ]]; then
+			FINGERPRINT=$(
+				printf -- '%s' \
+				$(get_ssh_key_fingerprint ${SSH_KEY}) | \
+				awk '{ print $2; }'
+			)
+
+			# Indicate use of insecure public key
+			if [[ ${FINGERPRINT} == ${INSECURE_FINGERPRINT} ]];then
+				FINGERPRINT+=" (insecure key)"
+			fi
+
+			printf -v FINGERPRINTS \
+				'%s%s\n' \
+				"${FINGERPRINTS}" \
+				"${FINGERPRINT}"
+		fi
+	done <<< "${AUTHORIZED_KEYS}"
+
+	printf -- "%s" "${FINGERPRINTS}"
+}
+
+get_ssh_key_fingerprint ()
+{
+	local SSH_KEY="${1:-}"
+	local FINGERPRINT=$(
+		ssh-keygen -lf /dev/stdin <<< ${SSH_KEY}
+	)
+
+	printf -- "%s" "${FINGERPRINT}"
 }
 
 get_ssh_user ()
@@ -262,9 +309,12 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	chmod 600 ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 
 	if ! is_valid_ssh_authorized_keys "${OPTS_SSH_AUTHORIZED_KEYS}"; then
-		echo "ERROR: Public key validation failed. Unable to populate ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_key"
+		printf -v SSH_KEY_FINGERPRINTS \
+			'ERROR: Public key validation failed.\nUnable to populate %s/.ssh/authorized_key\n' \
+			"${OPTS_SSH_USER_HOME_DIR}"
 	else
 		printf "%s" "${OPTS_SSH_AUTHORIZED_KEYS}" > ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
+		SSH_KEY_FINGERPRINTS="$(get_ssh_authorized_key_fingerprints)"
 	fi
 
 	tee -a /etc/sudoers > /dev/null <<-EOT
@@ -309,6 +359,8 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		user : ${OPTS_SSH_USER}
 		password : ${OPTS_SSH_USER_PASSWORD}
 		sudo : ${OPTS_SSH_SUDO}
+		key fingerprints : 
+		${SSH_KEY_FINGERPRINTS}
 		--------------------------------------------------------------------------------
 		
 	EOT
