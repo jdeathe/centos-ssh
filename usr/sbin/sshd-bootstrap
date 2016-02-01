@@ -236,7 +236,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	TIMEOUT_PID=${!}
 
 	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
-	PASSWORD_LENGTH=8
+	PASSWORD_LENGTH=16
 	REDACTED_VALUE="********"
 	OPTS_SSH_AUTHORIZED_KEYS="$(get_ssh_authorized_keys /etc/services-config/ssh/authorized_keys)"
 	OPTS_SSH_USER_PASSWORD_HASHED="${SSH_USER_PASSWORD_HASHED:-false}"
