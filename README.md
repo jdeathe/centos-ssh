@@ -178,7 +178,7 @@ sshd stdout | Server listening on :: port 22.
 
 There are several environmental variables defined at runtime these allow the operator to customise the running container.
 
-##### 1. SSH_USER
+##### SSH_USER
 
 On first run the SSH user is created with the default username of "app-admin". If you require an alternative username ```SSH_USER``` can be used when running the container.
 
@@ -188,7 +188,7 @@ On first run the SSH user is created with the default username of "app-admin". I
 ...
 ```
 
-##### 2. SSH_USER_HOME_DIR
+##### SSH_USER_HOME_DIR
 
 On first run the SSH user is created with the default HOME directory of "/home/app-admin". If you require an alternative HOME directory ```SSH_USER_HOME_DIR``` can be used when running the container.
 
@@ -198,7 +198,7 @@ On first run the SSH user is created with the default HOME directory of "/home/a
 ...
 ```
 
-##### 3. SSH_USER_PASSWORD
+##### SSH_USER_PASSWORD
 
 On first run the SSH user is created with a generated password. If you require a specific password ```SSH_USER_PASSWORD``` can be used when running the container.
 
@@ -208,7 +208,7 @@ On first run the SSH user is created with a generated password. If you require a
 ...
 ```
 
-##### 4. SSH_USER_SHELL
+##### SSH_USER_SHELL
 
 On first run the SSH user is created with a default shell of "/bin/bash". If you require a specific shell ```SSH_USER_SHELL``` can be used when running the container. You could use "/sbin/nologin" to prevent login with the user account.
 
@@ -218,7 +218,7 @@ On first run the SSH user is created with a default shell of "/bin/bash". If you
 ...
 ```
 
-##### 5. SSH_SUDO
+##### SSH_SUDO
 
 On first run the SSH user is created with a the sudo rule ```ALL=(ALL)  ALL``` which allows the user to run all commands but a password is required. If you want to limit the access to specific commands or allow sudo without a password prompt ```SSH_SUDO``` can be used.
 
@@ -228,7 +228,7 @@ On first run the SSH user is created with a the sudo rule ```ALL=(ALL)  ALL``` w
 ...
 ```
 
-##### 6. SSH_AUTHORIZED_KEYS
+##### SSH_AUTHORIZED_KEYS
 
 As detailed below the public key added for the SSH user is insecure by default. This is intentional and allows for access using a known private key. Using ```SSH_AUTHORIZED_KEYS``` you can replace the insecure public key with another one (or several). Further details on how to create your own private + public key pair are detailed below.
 
@@ -241,7 +241,7 @@ ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJl
 ...
 ```
 
-##### 7. SSH_INHERIT_ENVIRONMENT
+##### SSH_INHERIT_ENVIRONMENT
 
 The SSH user's environment is reset by default meaning that the Docker environmental variables are not available. Use ```SSH_INHERIT_ENVIRONMENT``` to allow the Docker environment variables to be passed to the SSH user's environment. Note that some values are removed to prevent issues; such as SSH_USER_PASSWORD, HOME, HOSTNAME, PATH, TERM etc.
 
