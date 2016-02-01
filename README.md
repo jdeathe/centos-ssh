@@ -166,7 +166,7 @@ sshd-bootstrap stdout |
 SSH Credentials
 --------------------------------------------------------------------------------
 user : app-user
-password : Lu9ipKBx
+password : QDQE12uVMyagLEsQ
 sudo : ALL=(ALL) ALL
 --------------------------------------------------------------------------------
 
