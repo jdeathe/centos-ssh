@@ -138,6 +138,20 @@ docker run \
 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
 )
 
+# Forced SFTP
+# 	sftp -P 2020 -i ~/.ssh/id_rsa_insecure app-sftp@docker-host
+# (
+# set -xe
+# docker run \
+# 	${DOCKER_OPERATOR_OPTIONS} \
+# 	--name ${DOCKER_NAME} \
+# 	-p ${DOCKER_HOST_PORT_SSH:-}:22 \
+# 	--env "SSH_USER=app-sftp" \
+# 	--env "SSH_USER_FORCE_SFTP=true" \
+# 	${DOCKER_VOLUMES_FROM:-} \
+# 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
+# )
+
 # Use environment variables instead of configuration volume
 # SHA-512 hashed password: Passw0rd!
 # Salt: salt/pepper.pot.
@@ -156,6 +170,7 @@ docker run \
 # 	--env "SSH_USER=app-1" \
 # 	--env "SSH_USER_PASSWORD_HASHED=true" \
 # 	--env 'SSH_USER_PASSWORD=$6$salt/pepper.pot.$vXFjBSve4gdT2gmS3p4pXycFSmkN4yT6eE.FmuFTqiSzH1bRFzulKtlYmJIMvP0pfrL4rx6L78ZQ7hjbWNRff1' \
+# 	--env "SSH_USER_FORCE_SFTP=false" \
 # 	--env "SSH_USER_HOME_DIR=/home/app" \
 # 	--env "SSH_USER_SHELL=/bin/sh" \
 # 	${DOCKER_VOLUMES_FROM:-} \

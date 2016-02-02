@@ -185,9 +185,15 @@ get_ssh_user_shell ()
 {
 	local DEFAULT_VALUE="${1:-/bin/bash}"
 	local VALUE="${SSH_USER_SHELL:-}"
+	local FORCE_SFTP=${SSH_USER_FORCE_SFTP:-false}
 
 	if [[ -z ${VALUE} ]] || ! is_valid_ssh_shell "${VALUE}"; then
 		VALUE="${DEFAULT_VALUE}"
+	fi
+
+	# SFTP users cannot have shell access
+	if [[ ${FORCE_SFTP} == true ]]; then
+		VALUE=/sbin/nologin
 	fi
 
 	printf "%s" "${VALUE}"
@@ -195,7 +201,7 @@ get_ssh_user_shell ()
 
 get_ssh_user_home_dir ()
 {
-	local DEFAULT_VALUE="${1:-/home/app-admin}"
+	local DEFAULT_VALUE="${1:-/home/$(get_ssh_user)}"
 	local VALUE="${SSH_USER_HOME_DIR:-}"
 
 	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_home_dir "${VALUE}"; then
@@ -286,23 +292,65 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	PASSWORD_LENGTH=16
 	REDACTED_VALUE="********"
 	OPTS_SSH_AUTHORIZED_KEYS="$(get_ssh_authorized_keys /etc/services-config/ssh/authorized_keys)"
+	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
 	OPTS_SSH_USER_PASSWORD_HASHED="${SSH_USER_PASSWORD_HASHED:-false}"
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password ${PASSWORD_LENGTH})}"
-	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
+	OPTS_SSH_USER_FORCE_SFTP=${SSH_USER_FORCE_SFTP:-false}
 	OPTS_SSH_USER_SHELL="$(get_ssh_user_shell /bin/bash)"
 
+	# SFTP users setup
+	OPTS_CHROOT_DIRECTORY=/chroot
+	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
+		SSH_USER_GROUPS=users
+		SSHD_COMMAND=SFTP
+	else
+		SSHD_COMMAND=SSH
+	fi
+
 	# Initialise
-	echo "Initialising SSH."
+	echo "Initialising ${SSHD_COMMAND}."
 
 	# Generate new host keys
 	generate_ssh_host_keys
 
-	useradd -u 500 -m -G users,wheel -d ${OPTS_SSH_USER_HOME_DIR} -s ${OPTS_SSH_USER_SHELL} ${OPTS_SSH_USER}
+	useradd \
+		-u 500 \
+		-m \
+		-G ${SSH_USER_GROUPS:-users,wheel} \
+		-d ${OPTS_SSH_USER_HOME_DIR} \
+		-s ${OPTS_SSH_USER_SHELL} \
+		${OPTS_SSH_USER}
 
-	if [[ ${DEFAULT_SSH_SUDO} != ${OPTS_SSH_SUDO} ]]; then
-		sed -i "s~^%wheel\\t.*$~%wheel\\t${OPTS_SSH_SUDO}~g" /etc/sudoers
+	# SFTP users
+	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
+		SSHD_COMMAND=SFTP
+
+		if [[ -n ${OPTS_CHROOT_DIRECTORY} ]] && [[ ! -d ${OPTS_CHROOT_DIRECTORY} ]]; then 
+			mkdir -m 711 ${OPTS_CHROOT_DIRECTORY}
+			mkdir -p -m 755 ${OPTS_CHROOT_DIRECTORY}${OPTS_SSH_USER_HOME_DIR}
+		else
+			chmod 755 ${OPTS_CHROOT_DIRECTORY}${OPTS_SSH_USER_HOME_DIR}
+		fi
+
+		chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_CHROOT_DIRECTORY}/*
+
+		# Add group specific sshd configuration 
+		tee -a /etc/ssh/sshd_config > /dev/null <<-EOT
+			# Force SFTP
+			Match group ${SSH_USER_GROUPS}
+			AllowTcpForwarding no
+			X11Forwarding no
+			PasswordAuthentication yes
+			ChrootDirectory ${OPTS_CHROOT_DIRECTORY}
+			ForceCommand internal-sftp
+		EOT
+	else
+		sed -i \
+			-e '/# Force SFTP/,/ForceCommand internal-sftp/ { d; }' \
+			/etc/ssh/sshd_config
 	fi
 
+	# SSH require files
 	mkdir -m 700 ${OPTS_SSH_USER_HOME_DIR}/.ssh
 	touch ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 	chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_SSH_USER_HOME_DIR}/.ssh
@@ -315,6 +363,11 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	else
 		printf "%s" "${OPTS_SSH_AUTHORIZED_KEYS}" > ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 		SSH_KEY_FINGERPRINTS="$(get_ssh_authorized_key_fingerprints)"
+	fi
+
+	# Set sudo access for the wheel group only
+	if [[ ${DEFAULT_SSH_SUDO} != ${OPTS_SSH_SUDO} ]]; then
+		sed -i "s~^%wheel\\t.*$~%wheel\\t${OPTS_SSH_SUDO}~g" /etc/sudoers
 	fi
 
 	tee -a /etc/sudoers > /dev/null <<-EOT
@@ -354,7 +407,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	cat <<-EOT
 
 		================================================================================
-		SSH Credentials
+		${SSHD_COMMAND} Credentials
 		--------------------------------------------------------------------------------
 		user : ${OPTS_SSH_USER}
 		password : ${OPTS_SSH_USER_PASSWORD}
