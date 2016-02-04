@@ -417,7 +417,6 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 			Match group ${SSH_USER_GROUPS}
 			AllowTcpForwarding no
 			X11Forwarding no
-			PasswordAuthentication yes
 			ChrootDirectory ${OPTS_SSH_CHROOT_DIRECTORY}
 			ForceCommand internal-sftp
 		EOT
@@ -476,7 +475,8 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	fi
 
 	# Only show user password if auto-generated and password is required for sudo
-	if [[ -n ${SSH_USER_PASSWORD} ]] || is_sudo_no_password_all "${OPTS_SSH_SUDO}"; then
+	if [[ -n ${SSH_USER_PASSWORD} ]] || is_sudo_no_password_all "${OPTS_SSH_SUDO}" \
+		|| [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
 		OPTS_SSH_USER_PASSWORD=${REDACTED_VALUE}
 		SSH_USER_PASSWORD=${REDACTED_VALUE}
 	fi
