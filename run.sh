@@ -146,8 +146,10 @@ docker run \
 # 	${DOCKER_OPERATOR_OPTIONS} \
 # 	--name ${DOCKER_NAME} \
 # 	-p ${DOCKER_HOST_PORT_SSH:-}:22 \
+# 	--env "SSH_CHROOT_DIRECTORY=%h" \
 # 	--env "SSH_USER=app-sftp" \
 # 	--env "SSH_USER_FORCE_SFTP=true" \
+# 	--env "SSH_USER_HOME_DIR=/home/app-sftp" \
 # 	${DOCKER_VOLUMES_FROM:-} \
 # 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
 # )
@@ -166,6 +168,7 @@ docker run \
 # ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJlEHFYDmRgS+YQ+MA9PKHyriCPmVNs/6yVc2lopwPWioXt0+ulH/H43PgB6/4fkP0duauHsRtpp7z7dhqgZOXqdLUn/Ybp0rz0+yKUOBb9ggjE5n7hYyDGtZR9Y11pJ4TuRHmL6wv5mnj9WRzkUlJNYkr6X5b6yAxtQmX+2f33u2qGdAwADddE/uZ4vKnC0jFsv5FdvnwRf2diF/9AagDb7xhZ9U3hPOyLj31H/OUce4xBpGXRfkUYkeW8Qx+zEbEBVlGxDroIMZmHJIknBDAzVfft+lsg1Z06NCYOJ+hSew==
 # " \
 # 	--env "SSH_INHERIT_ENVIRONMENT=true" \
+#	--env "SSH_CHROOT_DIRECTORY=%h" \
 # 	--env "SSH_SUDO=ALL=(ALL) ALL" \
 # 	--env "SSH_USER=app-1" \
 # 	--env "SSH_USER_PASSWORD_HASHED=true" \

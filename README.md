@@ -167,6 +167,9 @@ SSH Credentials
 --------------------------------------------------------------------------------
 user : app-user
 password : QDQE12uVMyagLEsQ
+home : /home/app-admin
+chroot path : N/A
+shell : /bin/bash
 sudo : ALL=(ALL) ALL
 key fingerprints :
 dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6 (insecure key)
