@@ -170,6 +170,22 @@ docker run \
 # 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
 # )
 
+# Forced SFTP + apache-php linked volume (writeable home directory)
+# (
+# set -xe
+# docker run \
+# 	${DOCKER_OPERATOR_OPTIONS} \
+# 	--name ${DOCKER_NAME} \
+# 	-p ${DOCKER_HOST_PORT_SSH:-}:22 \
+# 	--env "SSH_CHROOT_DIRECTORY=/var/www" \
+# 	--env "SSH_USER=app-sftp" \
+# 	--env "SSH_USER_FORCE_SFTP=true" \
+# 	--env "SSH_USER_HOME_DIR=/app" \
+# 	${DOCKER_VOLUMES_FROM:-} \
+# 	--volumes-from apache-php.app-1.1.1 \
+# 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
+# )
+
 # Use environment variables instead of configuration volume
 # SHA-512 hashed password: Passw0rd!
 # Salt: salt/pepper.pot.
