@@ -29,11 +29,39 @@ For cases where access to docker exec is not possible the preferred method is to
 
 Run up a container named 'ssh.pool-1.1.1' from the docker image 'jdeathe/centos-ssh' on port 2020 of your docker host.
 
+### SSH Mode
+
 ```
 $ docker run -d \
   --name ssh.pool-1.1.1 \
   -p 2020:22 \
   jdeathe/centos-ssh:latest
+```
+
+Check the logs for the password and connect using the `ssh` command line client.
+
+```
+$ docker logs ssh.pool-1.1.1
+$ ssh -p 2020 app-admin@<docker-host-ip>
+```
+
+### SFTP Mode
+
+```
+$ docker run -d \
+  --name ssh.pool-1.1.1 \
+  -p 2020:22 \
+  -e SSH_USER_FORCE_SFTP=true \
+  jdeathe/centos-ssh:latest
+```
+
+Connect using the `sftp` command line client and the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant).
+
+```
+$ curl -LSs https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant \
+  > ~/.ssh/id_rsa_insecure
+$ chmod 600 ~/.ssh/id_rsa_insecure
+$ sftp -p 2020 -i ~/.ssh/id_rsa_insecure app-admin@<docker-host-ip>
 ```
 
 ## Instructions
