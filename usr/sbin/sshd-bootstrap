@@ -389,12 +389,13 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 			# ChrootDirectory %h
 			SSH_CHROOT_HOME_DIRECTORY_PATH=${OPTS_SSH_USER_HOME_DIR}
 
-			chmod -R 700 ${OPTS_SSH_USER_HOME_DIR}
 			chmod 750 ${OPTS_SSH_USER_HOME_DIR}
 		fi
 
-		# Create a user writeable data directory
-		mkdir -m 700 ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
+		# Create a user writeable data directory if no other directories are mounted.
+		if [[ -z $(ls -l ${SSH_CHROOT_HOME_DIRECTORY_PATH}/ | grep '^d') ]]; then
+			mkdir -m 700 ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
+		fi
 
 		# Set user permissions on home directory contents
 		chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${SSH_CHROOT_DIRECTORY_PATH}
