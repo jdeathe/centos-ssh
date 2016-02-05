@@ -246,7 +246,7 @@ get_ssh_user_shell ()
 
 get_ssh_user_home_dir ()
 {
-	local DEFAULT_VALUE="${1:-/home/$(get_ssh_user)}"
+	local DEFAULT_VALUE="${1:-/home/app-admin}"
 	local VALUE="${SSH_USER_HOME_DIR:-}"
 
 	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_home_dir "${VALUE}"; then
