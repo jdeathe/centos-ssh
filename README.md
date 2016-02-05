@@ -197,6 +197,16 @@ ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJl
 ...
 ```
 
+##### SSH_CHROOT_DIRECTORY
+
+This option is only applicable when ```SSH_USER_FORCE_SFTP``` is set to `true`. When using the using the SFTP option the user is jailed into the ChrootDirectory. The value can contain the placeholders `%h` and `%u` which will be replaced with the values of ```SSH_USER_HOME_DIR``` and ```SSH_USER``` respectively. The default value of `%h` is the best choice in most cases but the user requires a sub-directory in their HOME directory which they have write access to. If no volume is mounted into the path of the SSH user's HOME directory the a directory named `_data` is created automatically. If you need the user to be able to write to their HOME directory they use an alternative value such as `/chroot/%u` so that the user's HOME path, (relative to the ChrootDirectory), becomes `/chroot/app-admin/home/app-admin` by default.
+
+```
+...
+  --env "SSH_CHROOT_DIRECTORY=%h" \
+...
+```
+
 ##### SSH_INHERIT_ENVIRONMENT
 
 The SSH user's environment is reset by default meaning that the Docker environmental variables are not available. Use ```SSH_INHERIT_ENVIRONMENT``` to allow the Docker environment variables to be passed to the SSH user's environment. Note that some values are removed to prevent issues; such as SSH_USER_PASSWORD, HOME, HOSTNAME, PATH, TERM etc.
@@ -207,6 +217,16 @@ The SSH user's environment is reset by default meaning that the Docker environme
 ...
 ```
 
+##### SSH_SUDO
+
+On first run the SSH user is created with a the sudo rule ```ALL=(ALL)  ALL``` which allows the user to run all commands but a password is required. If you want to limit the access to specific commands or allow sudo without a password prompt ```SSH_SUDO``` can be used.
+
+```
+...
+  --env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
+...
+```
+
 ##### SSH_USER
 
 On first run the SSH user is created with the default username of "app-admin". If you require an alternative username ```SSH_USER``` can be used when running the container.
@@ -214,6 +234,16 @@ On first run the SSH user is created with the default username of "app-admin". I
 ```
 ...
   --env "SSH_USER=app-1" \
+...
+```
+
+##### SSH_USER_FORCE_SFTP
+
+To force the use of the internal-sftp command set ```SSH_USER_FORCE_SFTP``` to `true`. This will prevent shell access, remove the ability to use `sudo` and restrict the user to the ChrootDirectory set using ```SSH_SHROOT_DIRECTORY```. Using SFTP in combination with --volumes-from another running container can be used to allow write access to an applications data volume - for example using the ```SSH_USER_HOME_DIR``` value to `/var/www/` could be used to allow access to the data volume of an Apache container.
+
+```
+...
+  --env "SSH_USER_FORCE_SFTP=false" \
 ...
 ```
 
@@ -269,16 +299,6 @@ On first run the SSH user is created with a default shell of "/bin/bash". If you
 ```
 ...
   --env "SSH_USER_SHELL=/bin/sh" \
-...
-```
-
-##### SSH_SUDO
-
-On first run the SSH user is created with a the sudo rule ```ALL=(ALL)  ALL``` which allows the user to run all commands but a password is required. If you want to limit the access to specific commands or allow sudo without a password prompt ```SSH_SUDO``` can be used.
-
-```
-...
-  --env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 ...
 ```
 
