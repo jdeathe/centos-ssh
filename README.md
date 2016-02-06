@@ -210,6 +210,7 @@ SSH Credentials
 --------------------------------------------------------------------------------
 user : app-user
 password : QDQE12uVMyagLEsQ
+uid : 500
 home : /home/app-admin
 chroot path : N/A
 shell : /bin/bash
@@ -342,6 +343,16 @@ On first run the SSH user is created with a default shell of "/bin/bash". If you
 ```
 ...
   --env "SSH_USER_SHELL=/bin/sh" \
+...
+```
+
+##### SSH_USER_UID
+
+Use ```SSH_USER_UID``` to set a specific UID for the ```SSH_USER```. The value should be greater than or equal to 500 - where the default is 500. This may be useful when running an SFTP container and mounting data volumes from an existing container.
+
+```
+...
+  --env "SSH_USER_UID=500" \
 ...
 ```
 
