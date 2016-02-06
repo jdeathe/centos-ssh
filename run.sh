@@ -165,6 +165,7 @@ docker run \
 # 	--env "SSH_USER=app-sftp" \
 # 	--env "SSH_USER_FORCE_SFTP=true" \
 # 	--env "SSH_USER_HOME_DIR=/var/www/" \
+# 	--env "SSH_USER_UID=501" \
 # 	${DOCKER_VOLUMES_FROM:-} \
 # 	--volumes-from apache-php.app-1.1.1 \
 # 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
@@ -181,6 +182,7 @@ docker run \
 # 	--env "SSH_USER=app-sftp" \
 # 	--env "SSH_USER_FORCE_SFTP=true" \
 # 	--env "SSH_USER_HOME_DIR=/app" \
+#	--env "SSH_USER_UID=502" \
 # 	${DOCKER_VOLUMES_FROM:-} \
 # 	--volumes-from apache-php.app-1.1.1 \
 # 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
@@ -208,6 +210,7 @@ docker run \
 # 	--env "SSH_USER_FORCE_SFTP=false" \
 # 	--env "SSH_USER_HOME_DIR=/home/app" \
 # 	--env "SSH_USER_SHELL=/bin/sh" \
+#	--env "SSH_USER_UID=500" \
 # 	${DOCKER_VOLUMES_FROM:-} \
 # 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
 # )

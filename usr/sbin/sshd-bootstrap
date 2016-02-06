@@ -63,25 +63,6 @@ is_valid_ssh_chroot_directory ()
 	return 1
 }
 
-is_valid_ssh_shell ()
-{
-	local SHELL=${1}
-	local VALID_SHELL=
-	local VALID_SHELLS=$(chsh --list-shells)
-
-	if [[ -z ${SHELL} ]]; then
-		return 1
-	fi
-
-	for VALID_SHELL in ${VALID_SHELLS}; do
-		if [[ ${VALID_SHELL} == ${SHELL} ]]; then
-			return 0
-		fi
-	done
-
-	return 1
-}
-
 is_valid_ssh_user ()
 {
 	local USERNAME=${1}
@@ -116,6 +97,41 @@ is_valid_ssh_user_password_hash ()
 	fi
 
 	if [[ ${PASSWORD_HASH} =~ ${SHA_512_PATTERN} ]]; then
+		return 0
+	fi
+
+	return 1
+}
+
+is_valid_ssh_user_shell ()
+{
+	local SHELL=${1}
+	local VALID_SHELL=
+	local VALID_SHELLS=$(chsh --list-shells)
+
+	if [[ -z ${SHELL} ]]; then
+		return 1
+	fi
+
+	for VALID_SHELL in ${VALID_SHELLS}; do
+		if [[ ${VALID_SHELL} == ${SHELL} ]]; then
+			return 0
+		fi
+	done
+
+	return 1
+}
+
+is_valid_ssh_user_uid ()
+{
+	local ID=${1}
+	local INTEGER_PATTERN='^[0-9]{3,}$'
+
+	if [[ -z ${ID} ]]; then
+		return 1
+	fi
+
+	if [[ ${ID} =~ ${INTEGER_PATTERN} ]] && (( ${ID} >= 500 )); then
 		return 0
 	fi
 
@@ -226,13 +242,25 @@ get_ssh_user ()
 	printf "%s" "${VALUE}"
 }
 
+get_ssh_user_home_dir ()
+{
+	local DEFAULT_VALUE="${1:-/home/app-admin}"
+	local VALUE="${SSH_USER_HOME_DIR:-}"
+
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_home_dir "${VALUE}"; then
+		VALUE="${DEFAULT_VALUE}"
+	fi
+
+	printf "%s" "${VALUE}"
+}
+
 get_ssh_user_shell ()
 {
 	local DEFAULT_VALUE="${1:-/bin/bash}"
 	local VALUE="${SSH_USER_SHELL:-}"
 	local FORCE_SFTP=${SSH_USER_FORCE_SFTP:-false}
 
-	if [[ -z ${VALUE} ]] || ! is_valid_ssh_shell "${VALUE}"; then
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_shell "${VALUE}"; then
 		VALUE="${DEFAULT_VALUE}"
 	fi
 
@@ -244,16 +272,16 @@ get_ssh_user_shell ()
 	printf "%s" "${VALUE}"
 }
 
-get_ssh_user_home_dir ()
+get_ssh_user_uid ()
 {
-	local DEFAULT_VALUE="${1:-/home/app-admin}"
-	local VALUE="${SSH_USER_HOME_DIR:-}"
+	local DEFAULT_VALUE="${1:-500}"
+	local VALUE="${SSH_USER_UID:-}"
 
-	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_home_dir "${VALUE}"; then
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_uid "${VALUE}"; then
 		VALUE="${DEFAULT_VALUE}"
 	fi
 
-	printf "%s" "${VALUE}"
+	printf "%d" "${VALUE}"
 }
 
 generate_new_ssh_host_key ()
@@ -342,6 +370,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password ${PASSWORD_LENGTH})}"
 	OPTS_SSH_USER_FORCE_SFTP="${SSH_USER_FORCE_SFTP:-false}"
 	OPTS_SSH_USER_SHELL="$(get_ssh_user_shell /bin/bash)"
+	OPTS_SSH_USER_UID="$(get_ssh_user_uid)"
 
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
 		SSHD_COMMAND=SFTP
@@ -364,7 +393,8 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	fi
 
 	useradd \
-		-u 500 \
+		-u ${OPTS_SSH_USER_UID} \
+		-U \
 		-m \
 		-G ${SSH_USER_GROUPS:-users,wheel} \
 		-d ${OPTS_SSH_USER_HOME_DIR} \
@@ -490,6 +520,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		--------------------------------------------------------------------------------
 		user : ${OPTS_SSH_USER}
 		password : ${OPTS_SSH_USER_PASSWORD}
+		id : ${OPTS_SSH_USER_UID}
 		home : ${OPTS_SSH_USER_HOME_DIR}
 		chroot path : ${SSH_CHROOT_DIRECTORY_PATH:-N/A}
 		shell : ${OPTS_SSH_USER_SHELL}
