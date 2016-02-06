@@ -520,7 +520,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		--------------------------------------------------------------------------------
 		user : ${OPTS_SSH_USER}
 		password : ${OPTS_SSH_USER_PASSWORD}
-		id : ${OPTS_SSH_USER_UID}
+		uid : ${OPTS_SSH_USER_UID}
 		home : ${OPTS_SSH_USER_HOME_DIR}
 		chroot path : ${SSH_CHROOT_DIRECTORY_PATH:-N/A}
 		shell : ${OPTS_SSH_USER_SHELL}
