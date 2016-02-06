@@ -1,7 +1,7 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-6 6.7 x86_64 / SCL/EPEL/IUS Repos. / OpenSSH / Supervisor.
+# CentOS-6 6.7 x86_64 / SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
 # 
 # =============================================================================
 FROM centos:centos6.7
@@ -119,5 +119,6 @@ ENV SSH_USER_HOME_DIR "/home/app-admin"
 ENV SSH_USER_PASSWORD ""
 ENV SSH_USER_PASSWORD_HASHED false
 ENV SSH_USER_SHELL "/bin/bash"
+ENV SSH_USER_UID "500"
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
