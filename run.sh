@@ -138,6 +138,54 @@ docker run \
 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
 )
 
+# Forced SFTP
+# 	sftp -P 2020 -i ~/.ssh/id_rsa_insecure app-sftp@docker-host
+# (
+# set -xe
+# docker run \
+# 	${DOCKER_OPERATOR_OPTIONS} \
+# 	--name ${DOCKER_NAME} \
+# 	-p ${DOCKER_HOST_PORT_SSH:-}:22 \
+# 	--env "SSH_CHROOT_DIRECTORY=%h" \
+# 	--env "SSH_USER=app-sftp" \
+# 	--env "SSH_USER_FORCE_SFTP=true" \
+# 	--env "SSH_USER_HOME_DIR=/home/app-sftp" \
+# 	${DOCKER_VOLUMES_FROM:-} \
+# 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
+# )
+
+# Forced SFTP + apache-php linked volume
+# (
+# set -xe
+# docker run \
+# 	${DOCKER_OPERATOR_OPTIONS} \
+# 	--name ${DOCKER_NAME} \
+# 	-p ${DOCKER_HOST_PORT_SSH:-}:22 \
+# 	--env "SSH_CHROOT_DIRECTORY=%h" \
+# 	--env "SSH_USER=app-sftp" \
+# 	--env "SSH_USER_FORCE_SFTP=true" \
+# 	--env "SSH_USER_HOME_DIR=/var/www/" \
+# 	${DOCKER_VOLUMES_FROM:-} \
+# 	--volumes-from apache-php.app-1.1.1 \
+# 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
+# )
+
+# Forced SFTP + apache-php linked volume (writeable home directory)
+# (
+# set -xe
+# docker run \
+# 	${DOCKER_OPERATOR_OPTIONS} \
+# 	--name ${DOCKER_NAME} \
+# 	-p ${DOCKER_HOST_PORT_SSH:-}:22 \
+# 	--env "SSH_CHROOT_DIRECTORY=/var/www" \
+# 	--env "SSH_USER=app-sftp" \
+# 	--env "SSH_USER_FORCE_SFTP=true" \
+# 	--env "SSH_USER_HOME_DIR=/app" \
+# 	${DOCKER_VOLUMES_FROM:-} \
+# 	--volumes-from apache-php.app-1.1.1 \
+# 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
+# )
+
 # Use environment variables instead of configuration volume
 # SHA-512 hashed password: Passw0rd!
 # Salt: salt/pepper.pot.
@@ -152,10 +200,12 @@ docker run \
 # ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJlEHFYDmRgS+YQ+MA9PKHyriCPmVNs/6yVc2lopwPWioXt0+ulH/H43PgB6/4fkP0duauHsRtpp7z7dhqgZOXqdLUn/Ybp0rz0+yKUOBb9ggjE5n7hYyDGtZR9Y11pJ4TuRHmL6wv5mnj9WRzkUlJNYkr6X5b6yAxtQmX+2f33u2qGdAwADddE/uZ4vKnC0jFsv5FdvnwRf2diF/9AagDb7xhZ9U3hPOyLj31H/OUce4xBpGXRfkUYkeW8Qx+zEbEBVlGxDroIMZmHJIknBDAzVfft+lsg1Z06NCYOJ+hSew==
 # " \
 # 	--env "SSH_INHERIT_ENVIRONMENT=true" \
+#	--env "SSH_CHROOT_DIRECTORY=%h" \
 # 	--env "SSH_SUDO=ALL=(ALL) ALL" \
 # 	--env "SSH_USER=app-1" \
 # 	--env "SSH_USER_PASSWORD_HASHED=true" \
 # 	--env 'SSH_USER_PASSWORD=$6$salt/pepper.pot.$vXFjBSve4gdT2gmS3p4pXycFSmkN4yT6eE.FmuFTqiSzH1bRFzulKtlYmJIMvP0pfrL4rx6L78ZQ7hjbWNRff1' \
+# 	--env "SSH_USER_FORCE_SFTP=false" \
 # 	--env "SSH_USER_HOME_DIR=/home/app" \
 # 	--env "SSH_USER_SHELL=/bin/sh" \
 # 	${DOCKER_VOLUMES_FROM:-} \
