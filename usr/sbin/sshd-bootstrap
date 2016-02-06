@@ -51,6 +51,18 @@ is_valid_ssh_authorized_keys ()
 	return 0
 }
 
+is_valid_ssh_chroot_directory ()
+{
+	local CHROOT_DIRECTORY="${1:-}"
+	local SAFE_DIRECTORY='^(%h|\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+)$'
+
+	if [[ -n $(grep -oP ${SAFE_DIRECTORY} <<< ${CHROOT_DIRECTORY}) ]]; then
+		return 0
+	fi
+
+	return 1
+}
+
 is_valid_ssh_shell ()
 {
 	local SHELL=${1}
@@ -159,6 +171,39 @@ get_ssh_authorized_key_fingerprints ()
 	printf -- "%s" "${FINGERPRINTS}"
 }
 
+get_ssh_chroot_directory ()
+{
+	local DEFAULT_VALUE="${1:-%h}"
+	local VALUE="${SSH_CHROOT_DIRECTORY:-}"
+
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_chroot_directory "${VALUE}"; then
+		VALUE="${DEFAULT_VALUE}"
+	fi
+
+	printf "%s" "${VALUE}"
+}
+
+get_ssh_chroot_directory_path ()
+{
+	local CHROOT_DIRECTORY="${1:-$(get_ssh_chroot_directory)}"
+	local DEFAULT_CHROOT_DIRECTORY_VALUE="%h"
+	local USER="$(get_ssh_user)"
+	local HOME="$(get_ssh_user_home_dir)"
+	local VALUE=
+
+	if ! is_valid_ssh_chroot_directory "${CHROOT_DIRECTORY}"; then
+		CHROOT_DIRECTORY="${DEFAULT_CHROOT_DIRECTORY_VALUE}"
+	fi
+
+	# Replace %h with SSH_USER_HOME_DIR
+	VALUE="${CHROOT_DIRECTORY//'%h'/${HOME}}"
+
+	# Replace %u with SSH_USER
+	VALUE="${VALUE//'%u'/${USER}}"
+
+	printf "%s" "${VALUE}"
+}
+
 get_ssh_key_fingerprint ()
 {
 	local SSH_KEY="${1:-}"
@@ -185,9 +230,15 @@ get_ssh_user_shell ()
 {
 	local DEFAULT_VALUE="${1:-/bin/bash}"
 	local VALUE="${SSH_USER_SHELL:-}"
+	local FORCE_SFTP=${SSH_USER_FORCE_SFTP:-false}
 
 	if [[ -z ${VALUE} ]] || ! is_valid_ssh_shell "${VALUE}"; then
 		VALUE="${DEFAULT_VALUE}"
+	fi
+
+	# SFTP users cannot have shell access
+	if [[ ${FORCE_SFTP} == true ]]; then
+		VALUE=/sbin/nologin
 	fi
 
 	printf "%s" "${VALUE}"
@@ -267,7 +318,7 @@ generate_ssh_host_keys ()
 
 OPTS_SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT:-false}
 OPTS_SSH_USER="$(get_ssh_user app-admin)"
-OPTS_SSH_USER_HOME_DIR="$(get_ssh_user_home_dir /home/${OPTS_SSH_USER})"
+OPTS_SSH_USER_HOME_DIR="$(get_ssh_user_home_dir)"
 
 # Docker ENV inheritance
 if [[ ${OPTS_SSH_INHERIT_ENVIRONMENT} == true ]] && [[ -s /etc/sshd-bootstrap.env ]]; then
@@ -286,23 +337,94 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	PASSWORD_LENGTH=16
 	REDACTED_VALUE="********"
 	OPTS_SSH_AUTHORIZED_KEYS="$(get_ssh_authorized_keys /etc/services-config/ssh/authorized_keys)"
+	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
 	OPTS_SSH_USER_PASSWORD_HASHED="${SSH_USER_PASSWORD_HASHED:-false}"
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password ${PASSWORD_LENGTH})}"
-	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
+	OPTS_SSH_USER_FORCE_SFTP="${SSH_USER_FORCE_SFTP:-false}"
 	OPTS_SSH_USER_SHELL="$(get_ssh_user_shell /bin/bash)"
 
+	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
+		SSHD_COMMAND=SFTP
+		SSH_USER_GROUPS=users
+		OPTS_SSH_CHROOT_DIRECTORY=$(get_ssh_chroot_directory %h)
+	else
+		SSHD_COMMAND=SSH
+	fi
+
 	# Initialise
-	echo "Initialising SSH."
+	echo "Initialising ${SSHD_COMMAND}."
 
 	# Generate new host keys
 	generate_ssh_host_keys
 
-	useradd -u 500 -m -G users,wheel -d ${OPTS_SSH_USER_HOME_DIR} -s ${OPTS_SSH_USER_SHELL} ${OPTS_SSH_USER}
-
-	if [[ ${DEFAULT_SSH_SUDO} != ${OPTS_SSH_SUDO} ]]; then
-		sed -i "s~^%wheel\\t.*$~%wheel\\t${OPTS_SSH_SUDO}~g" /etc/sudoers
+	# Create base directory for home 
+	if [[ -n ${OPTS_SSH_USER_HOME_DIR%/*} ]] && [[ ! -d ${OPTS_SSH_USER_HOME_DIR%/*} ]]; then
+		echo "Creating home base directory."
+		mkdir -pm 755 ${OPTS_SSH_USER_HOME_DIR%/*}
 	fi
 
+	useradd \
+		-u 500 \
+		-m \
+		-G ${SSH_USER_GROUPS:-users,wheel} \
+		-d ${OPTS_SSH_USER_HOME_DIR} \
+		-s ${OPTS_SSH_USER_SHELL} \
+		${OPTS_SSH_USER}
+
+	# SFTP users
+	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
+		SSHD_COMMAND=SFTP
+
+		# Get the ChrootDirectory path.
+		# %h and %u are replaced with the User's HOME and USERNAME respectively.
+		SSH_CHROOT_DIRECTORY_PATH="$(get_ssh_chroot_directory_path ${OPTS_SSH_CHROOT_DIRECTORY})"
+
+		if [[ ! -d ${SSH_CHROOT_DIRECTORY_PATH} ]] || [[ ${SSH_CHROOT_DIRECTORY_PATH} != ${OPTS_SSH_USER_HOME_DIR} ]]; then 
+			# ChrootDirectory like /chroot/%u or /home/chroot/%u
+			SSH_CHROOT_HOME_DIRECTORY_PATH=${SSH_CHROOT_DIRECTORY_PATH}${OPTS_SSH_USER_HOME_DIR}
+
+			mkdir -pm 711 ${SSH_CHROOT_DIRECTORY_PATH}
+			mkdir -pm 755 ${SSH_CHROOT_HOME_DIRECTORY_PATH}
+		else
+			# ChrootDirectory %h
+			SSH_CHROOT_HOME_DIRECTORY_PATH=${OPTS_SSH_USER_HOME_DIR}
+
+			chmod 750 ${OPTS_SSH_USER_HOME_DIR}
+		fi
+
+		# Create a user writeable data directory if no other directories are mounted.
+		if [[ -z $(ls -l ${SSH_CHROOT_HOME_DIRECTORY_PATH}/ | grep '^d') ]]; then
+			mkdir -m 700 ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
+
+			# Set user permissions on _data directory
+			chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
+		fi
+
+		if [[ ${SSH_CHROOT_DIRECTORY_PATH} != ${OPTS_SSH_USER_HOME_DIR} ]]; then
+			# ChrootDirectory must be owned by root user
+			chown root:root ${SSH_CHROOT_DIRECTORY_PATH}
+			chmod 711 ${SSH_CHROOT_DIRECTORY_PATH}
+		else
+			# ChrootDirectory must be owned by root user
+			chown root:${OPTS_SSH_USER} ${SSH_CHROOT_DIRECTORY_PATH}
+		fi
+
+		# Add group specific sshd configuration 
+		tee -a /etc/ssh/sshd_config > /dev/null <<-EOT
+			# Force SFTP
+			Match group ${SSH_USER_GROUPS}
+			AllowTcpForwarding no
+			X11Forwarding no
+			ChrootDirectory ${OPTS_SSH_CHROOT_DIRECTORY}
+			ForceCommand internal-sftp
+		EOT
+	else
+		sed -i \
+			-e '/# Force SFTP/,/ForceCommand internal-sftp/ { d; }' \
+			/etc/ssh/sshd_config
+	fi
+
+	# SSH require files
 	mkdir -m 700 ${OPTS_SSH_USER_HOME_DIR}/.ssh
 	touch ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 	chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_SSH_USER_HOME_DIR}/.ssh
@@ -315,6 +437,11 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	else
 		printf "%s" "${OPTS_SSH_AUTHORIZED_KEYS}" > ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
 		SSH_KEY_FINGERPRINTS="$(get_ssh_authorized_key_fingerprints)"
+	fi
+
+	# Set sudo access for the wheel group only
+	if [[ ${DEFAULT_SSH_SUDO} != ${OPTS_SSH_SUDO} ]]; then
+		sed -i "s~^%wheel\\t.*$~%wheel\\t${OPTS_SSH_SUDO}~g" /etc/sudoers
 	fi
 
 	tee -a /etc/sudoers > /dev/null <<-EOT
@@ -341,24 +468,32 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		else
 			echo "${OPTS_SSH_USER}:${SSH_USER_PASSWORD}" | chpasswd -e
 		fi
-	else 
+	else
 		echo "${OPTS_SSH_USER}:${OPTS_SSH_USER_PASSWORD}" | chpasswd
 	fi
 
 	# Only show user password if auto-generated and password is required for sudo
-	if [[ -n ${SSH_USER_PASSWORD} ]] || is_sudo_no_password_all "${OPTS_SSH_SUDO}"; then
+	if [[ -n ${SSH_USER_PASSWORD} ]] || is_sudo_no_password_all "${OPTS_SSH_SUDO}" \
+		|| [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
 		OPTS_SSH_USER_PASSWORD=${REDACTED_VALUE}
 		SSH_USER_PASSWORD=${REDACTED_VALUE}
+	fi
+
+	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
+		unset OPTS_SSH_SUDO
 	fi
 
 	cat <<-EOT
 
 		================================================================================
-		SSH Credentials
+		${SSHD_COMMAND} Credentials
 		--------------------------------------------------------------------------------
 		user : ${OPTS_SSH_USER}
 		password : ${OPTS_SSH_USER_PASSWORD}
-		sudo : ${OPTS_SSH_SUDO}
+		home : ${OPTS_SSH_USER_HOME_DIR}
+		chroot path : ${SSH_CHROOT_DIRECTORY_PATH:-N/A}
+		shell : ${OPTS_SSH_USER_SHELL}
+		sudo : ${OPTS_SSH_SUDO:-N/A}
 		key fingerprints : 
 		${SSH_KEY_FINGERPRINTS}
 		--------------------------------------------------------------------------------

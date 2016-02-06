@@ -64,6 +64,7 @@ RUN sed -i \
 	-e 's~^PasswordAuthentication yes~PasswordAuthentication no~g' \
 	-e 's~^#PermitRootLogin yes~PermitRootLogin no~g' \
 	-e 's~^#UseDNS yes~UseDNS no~g' \
+	-e 's~^\(.*\)/usr/libexec/openssh/sftp-server$~\1internal-sftp~g' \
 	/etc/ssh/sshd_config
 
 # -----------------------------------------------------------------------------
@@ -109,12 +110,14 @@ EXPOSE 22
 # Set default environment variables
 # -----------------------------------------------------------------------------
 ENV SSH_AUTHORIZED_KEYS ""
+ENV SSH_CHROOT_DIRECTORY "%h"
 ENV SSH_INHERIT_ENVIRONMENT false
 ENV SSH_SUDO "ALL=(ALL) ALL"
+ENV SSH_USER "app-admin"
+ENV SSH_USER_FORCE_SFTP = false
+ENV SSH_USER_HOME_DIR "/home/app-admin"
 ENV SSH_USER_PASSWORD ""
 ENV SSH_USER_PASSWORD_HASHED false
-ENV SSH_USER "app-admin"
-ENV SSH_USER_HOME_DIR "/home/app-admin"
 ENV SSH_USER_SHELL "/bin/bash"
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
