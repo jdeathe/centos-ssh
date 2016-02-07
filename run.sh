@@ -149,7 +149,7 @@ docker run \
 # 	--env "SSH_CHROOT_DIRECTORY=%h" \
 # 	--env "SSH_USER=app-sftp" \
 # 	--env "SSH_USER_FORCE_SFTP=true" \
-# 	--env "SSH_USER_HOME_DIR=/home/app-sftp" \
+# 	--env "SSH_USER_HOME=/home/app-sftp" \
 # 	${DOCKER_VOLUMES_FROM:-} \
 # 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
 # )
@@ -164,7 +164,7 @@ docker run \
 # 	--env "SSH_CHROOT_DIRECTORY=%h" \
 # 	--env "SSH_USER=app-sftp" \
 # 	--env "SSH_USER_FORCE_SFTP=true" \
-# 	--env "SSH_USER_HOME_DIR=/var/www/" \
+# 	--env "SSH_USER_HOME=/var/www/" \
 # 	--env "SSH_USER_UID=501" \
 # 	${DOCKER_VOLUMES_FROM:-} \
 # 	--volumes-from apache-php.app-1.1.1 \
@@ -181,7 +181,7 @@ docker run \
 # 	--env "SSH_CHROOT_DIRECTORY=/var/www" \
 # 	--env "SSH_USER=app-sftp" \
 # 	--env "SSH_USER_FORCE_SFTP=true" \
-# 	--env "SSH_USER_HOME_DIR=/app" \
+# 	--env "SSH_USER_HOME=/app" \
 #	--env "SSH_USER_UID=502" \
 # 	${DOCKER_VOLUMES_FROM:-} \
 # 	--volumes-from apache-php.app-1.1.1 \
@@ -208,7 +208,7 @@ docker run \
 # 	--env "SSH_USER_PASSWORD_HASHED=true" \
 # 	--env 'SSH_USER_PASSWORD=$6$salt/pepper.pot.$vXFjBSve4gdT2gmS3p4pXycFSmkN4yT6eE.FmuFTqiSzH1bRFzulKtlYmJIMvP0pfrL4rx6L78ZQ7hjbWNRff1' \
 # 	--env "SSH_USER_FORCE_SFTP=false" \
-# 	--env "SSH_USER_HOME_DIR=/home/app" \
+# 	--env "SSH_USER_HOME=/home/app" \
 # 	--env "SSH_USER_SHELL=/bin/sh" \
 #	--env "SSH_USER_UID=500" \
 # 	${DOCKER_VOLUMES_FROM:-} \

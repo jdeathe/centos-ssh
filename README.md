@@ -154,7 +154,7 @@ To run the a docker container from this image you can use the included [run.sh](
 
 #### Using environment variables
 
-The following example overrides the default "app-admin" SSH username and home directory path with "app-user". The same technique could also be applied to set the SSH_USER_PASSWORD value.
+The following example overrides the default "app-admin" SSH username and home directory path with "app-user" and "/home/app-user" respectively. The same technique could also be applied to set the SSH_USER_PASSWORD value.
 
 *Note:* Settings applied by environment variables will override those set within configuration volumes from release 1.3.1. Existing installations that use the sshd-bootstrap.conf saved on a configuration "data" volume will not allow override by the environment variables. Also users can update sshd-bootstrap.conf to prevent the value being replaced by that set using the environment variable.
 
@@ -165,7 +165,6 @@ $ docker stop ssh.pool-1.1.1 \
   --name ssh.pool-1.1.1 \
   -p :22 \
   --env "SSH_USER=app-user" \
-  --env "SSH_USER_HOME_DIR=/home/app-user" \
   jdeathe/centos-ssh:centos-7
 ```
 
@@ -211,7 +210,7 @@ SSH Credentials
 user : app-user
 password : QDQE12uVMyagLEsQ
 uid : 500
-home : /home/app-admin
+home : /home/app-user
 chroot path : N/A
 shell : /bin/bash
 sudo : ALL=(ALL) ALL
@@ -243,7 +242,7 @@ ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJl
 
 ##### SSH_CHROOT_DIRECTORY
 
-This option is only applicable when ```SSH_USER_FORCE_SFTP``` is set to `true`. When using the using the SFTP option the user is jailed into the ChrootDirectory. The value can contain the placeholders `%h` and `%u` which will be replaced with the values of ```SSH_USER_HOME_DIR``` and ```SSH_USER``` respectively. The default value of `%h` is the best choice in most cases but the user requires a sub-directory in their HOME directory which they have write access to. If no volume is mounted into the path of the SSH user's HOME directory the a directory named `_data` is created automatically. If you need the user to be able to write to their HOME directory they use an alternative value such as `/chroot/%u` so that the user's HOME path, (relative to the ChrootDirectory), becomes `/chroot/app-admin/home/app-admin` by default.
+This option is only applicable when ```SSH_USER_FORCE_SFTP``` is set to `true`. When using the using the SFTP option the user is jailed into the ChrootDirectory. The value can contain the placeholders `%h` and `%u` which will be replaced with the values of ```SSH_USER_HOME``` and ```SSH_USER``` respectively. The default value of `%h` is the best choice in most cases but the user requires a sub-directory in their HOME directory which they have write access to. If no volume is mounted into the path of the SSH user's HOME directory the a directory named `_data` is created automatically. If you need the user to be able to write to their HOME directory they use an alternative value such as `/chroot/%u` so that the user's HOME path, (relative to the ChrootDirectory), becomes `/chroot/app-admin/home/app-admin` by default.
 
 ```
 ...
@@ -283,7 +282,7 @@ On first run the SSH user is created with the default username of "app-admin". I
 
 ##### SSH_USER_FORCE_SFTP
 
-To force the use of the internal-sftp command set ```SSH_USER_FORCE_SFTP``` to `true`. This will prevent shell access, remove the ability to use `sudo` and restrict the user to the ChrootDirectory set using ```SSH_SHROOT_DIRECTORY```. Using SFTP in combination with --volumes-from another running container can be used to allow write access to an applications data volume - for example using the ```SSH_USER_HOME_DIR``` value to `/var/www/` could be used to allow access to the data volume of an Apache container.
+To force the use of the internal-sftp command set ```SSH_USER_FORCE_SFTP``` to `true`. This will prevent shell access, remove the ability to use `sudo` and restrict the user to the ChrootDirectory set using ```SSH_SHROOT_DIRECTORY```. Using SFTP in combination with --volumes-from another running container can be used to allow write access to an applications data volume - for example using the ```SSH_USER_HOME``` value to `/var/www/` could be used to allow access to the data volume of an Apache container.
 
 ```
 ...
@@ -291,13 +290,13 @@ To force the use of the internal-sftp command set ```SSH_USER_FORCE_SFTP``` to `
 ...
 ```
 
-##### SSH_USER_HOME_DIR
+##### SSH_USER_HOME
 
-On first run the SSH user is created with the default HOME directory of "/home/app-admin". If you require an alternative HOME directory ```SSH_USER_HOME_DIR``` can be used when running the container.
+On first run the SSH user is created with the default HOME directory of `/home/%u` where `%u` is replaced with the value of ```SSH_USER```. If you require an alternative HOME directory ```SSH_USER_HOME``` can be used when running the container.
 
 ```
 ...
-  --env "SSH_USER_HOME_DIR=/home/app-1" \
+  --env "SSH_USER_HOME=/home/app-1" \
 ...
 ```
 
