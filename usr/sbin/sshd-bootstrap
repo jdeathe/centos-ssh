@@ -122,17 +122,24 @@ is_valid_ssh_user_shell ()
 	return 1
 }
 
-is_valid_ssh_user_uid ()
+is_valid_ssh_user_id ()
 {
+	local GROUP_ID=500
 	local ID=${1}
-	local INTEGER_PATTERN='^[0-9]{3,}$'
+	local ID_PATTERN='^([0-9]{3,}):([0-9]{3,})$'
+	local USER_ID=500
 
 	if [[ -z ${ID} ]]; then
 		return 1
 	fi
 
-	if [[ ${ID} =~ ${INTEGER_PATTERN} ]] && (( ${ID} >= 500 )); then
-		return 0
+	if [[ ${ID} =~ ${ID_PATTERN} ]]; then
+		USER_ID="${BASH_REMATCH[1]}"
+		GROUP_ID="${BASH_REMATCH[2]}"
+
+		if (( ${USER_ID} >= 500 )) && (( ${GROUP_ID} >= 500 )); then
+			return 0
+		fi
 	fi
 
 	return 1
@@ -279,10 +286,38 @@ get_ssh_user_shell ()
 get_ssh_user_uid ()
 {
 	local DEFAULT_VALUE="${1:-500}"
-	local VALUE="${SSH_USER_UID:-}"
+	local ID=$(get_ssh_user_id)
+	local ID_PATTERN='^([0-9]{3,}):([0-9]{3,})$'
+	local VALUE="${DEFAULT_VALUE}"
 
-	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_uid "${VALUE}"; then
+	if [[ ${ID} =~ ${ID_PATTERN} ]]; then
+		VALUE="${BASH_REMATCH[1]}"
+	fi
+
+	printf "%d" "${VALUE}"
+}
+
+get_ssh_user_id ()
+{
+	local DEFAULT_VALUE="${1:-500:500}"
+	local VALUE="${SSH_USER_ID:-}"
+
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_id "${VALUE}"; then
 		VALUE="${DEFAULT_VALUE}"
+	fi
+
+	printf "%s" "${VALUE}"
+}
+
+get_ssh_user_gid ()
+{
+	local DEFAULT_VALUE="${1:-500}"
+	local ID=$(get_ssh_user_id)
+	local ID_PATTERN='^([0-9]{3,}):([0-9]{3,})$'
+	local VALUE="${DEFAULT_VALUE}"
+
+	if [[ ${ID} =~ ${ID_PATTERN} ]]; then
+		VALUE="${BASH_REMATCH[2]}"
 	fi
 
 	printf "%d" "${VALUE}"
@@ -375,6 +410,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	OPTS_SSH_USER_FORCE_SFTP="${SSH_USER_FORCE_SFTP:-false}"
 	OPTS_SSH_USER_SHELL="$(get_ssh_user_shell /bin/bash)"
 	OPTS_SSH_USER_UID="$(get_ssh_user_uid)"
+	OPTS_SSH_USER_GID="$(get_ssh_user_gid)"
 
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
 		SSHD_COMMAND=SFTP
@@ -396,9 +432,14 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		mkdir -pm 755 ${OPTS_SSH_USER_HOME%/*}
 	fi
 
+	groupadd \
+		-f \
+		-g ${OPTS_SSH_USER_GID} \
+		${OPTS_SSH_USER}
+
 	useradd \
 		-u ${OPTS_SSH_USER_UID} \
-		-U \
+		-g ${OPTS_SSH_USER_GID} \
 		-m \
 		-G ${SSH_USER_GROUPS:-users,wheel} \
 		-d ${OPTS_SSH_USER_HOME} \
@@ -520,11 +561,11 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	cat <<-EOT
 
 		================================================================================
-		${SSHD_COMMAND} Credentials
+		${SSHD_COMMAND} Details
 		--------------------------------------------------------------------------------
 		user : ${OPTS_SSH_USER}
 		password : ${OPTS_SSH_USER_PASSWORD}
-		uid : ${OPTS_SSH_USER_UID}
+		id : ${OPTS_SSH_USER_UID}:${OPTS_SSH_USER_GID}
 		home : ${OPTS_SSH_USER_HOME}
 		chroot path : ${SSH_CHROOT_DIRECTORY_PATH:-N/A}
 		shell : ${OPTS_SSH_USER_SHELL}

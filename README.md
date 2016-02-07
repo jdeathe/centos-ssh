@@ -205,11 +205,11 @@ The output of the logs should show the auto-generated password for the app-admin
 sshd-bootstrap stdout | Initialising SSH.
 sshd-bootstrap stdout |
 ================================================================================
-SSH Credentials
+SSH Details
 --------------------------------------------------------------------------------
 user : app-user
 password : QDQE12uVMyagLEsQ
-uid : 500
+id : 500:500
 home : /home/app-user
 chroot path : N/A
 shell : /bin/bash
@@ -345,13 +345,13 @@ On first run the SSH user is created with a default shell of "/bin/bash". If you
 ...
 ```
 
-##### SSH_USER_UID
+##### SSH_USER_ID
 
-Use ```SSH_USER_UID``` to set a specific UID for the ```SSH_USER```. The value should be greater than or equal to 500 - where the default is 500. This may be useful when running an SFTP container and mounting data volumes from an existing container.
+Use ```SSH_USER_ID``` to set a specific UID:GID for the ```SSH_USER```. The values should be 500 or more - the default being 500:500. This may be useful when running an SFTP container and mounting data volumes from an existing container.
 
 ```
 ...
-  --env "SSH_USER_UID=500" \
+  --env "SSH_USER_ID=500:500" \
 ...
 ```
 
