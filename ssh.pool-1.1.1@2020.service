@@ -51,7 +51,7 @@ Environment="SSH_USER_HOME=/home/%%u"
 Environment="SSH_USER_PASSWORD="
 Environment="SSH_USER_PASSWORD_HASHED=false"
 Environment="SSH_USER_SHELL=/bin/bash"
-Environment="SSH_USER_UID=500"
+Environment="SSH_USER_ID=500:500"
 
 # Initialisation: Load image from local storage if available, otherwise pull.
 ExecStartPre=/bin/sudo /bin/bash -c \
