@@ -75,7 +75,7 @@ is_valid_ssh_user ()
 	return 1
 }
 
-is_valid_ssh_user_home_dir ()
+is_valid_ssh_user_home ()
 {
 	local HOME_DIRECTORY="${1:-}"
 	local SAFE_DIRECTORY='^\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+$'
@@ -204,14 +204,14 @@ get_ssh_chroot_directory_path ()
 	local CHROOT_DIRECTORY="${1:-$(get_ssh_chroot_directory)}"
 	local DEFAULT_CHROOT_DIRECTORY_VALUE="%h"
 	local USER="$(get_ssh_user)"
-	local HOME="$(get_ssh_user_home_dir)"
+	local HOME="$(get_ssh_user_home)"
 	local VALUE=
 
 	if ! is_valid_ssh_chroot_directory "${CHROOT_DIRECTORY}"; then
 		CHROOT_DIRECTORY="${DEFAULT_CHROOT_DIRECTORY_VALUE}"
 	fi
 
-	# Replace %h with SSH_USER_HOME_DIR
+	# Replace %h with SSH_USER_HOME
 	VALUE="${CHROOT_DIRECTORY//'%h'/${HOME}}"
 
 	# Replace %u with SSH_USER
@@ -242,14 +242,18 @@ get_ssh_user ()
 	printf "%s" "${VALUE}"
 }
 
-get_ssh_user_home_dir ()
+get_ssh_user_home ()
 {
-	local DEFAULT_VALUE="${1:-/home/app-admin}"
-	local VALUE="${SSH_USER_HOME_DIR:-}"
+	local DEFAULT_VALUE="${1:-/home/%u}"
+	local USER="$(get_ssh_user)"
+	local VALUE="${SSH_USER_HOME:-}"
 
-	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_home_dir "${VALUE}"; then
+	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_home "${VALUE}"; then
 		VALUE="${DEFAULT_VALUE}"
 	fi
+
+	# Replace %u with SSH_USER
+	VALUE="${VALUE//'%u'/${USER}}"
 
 	printf "%s" "${VALUE}"
 }
@@ -346,7 +350,7 @@ generate_ssh_host_keys ()
 
 OPTS_SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT:-false}
 OPTS_SSH_USER="$(get_ssh_user app-admin)"
-OPTS_SSH_USER_HOME_DIR="$(get_ssh_user_home_dir)"
+OPTS_SSH_USER_HOME="$(get_ssh_user_home)"
 
 # Docker ENV inheritance
 if [[ ${OPTS_SSH_INHERIT_ENVIRONMENT} == true ]] && [[ -s /etc/sshd-bootstrap.env ]]; then
@@ -355,7 +359,7 @@ if [[ ${OPTS_SSH_INHERIT_ENVIRONMENT} == true ]] && [[ -s /etc/sshd-bootstrap.en
 		/etc/sshd-bootstrap.env > /etc/environment
 fi
 
-if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
+if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 
 	# Allow some time for supervisor_stdout to start
 	sleep 2 &
@@ -387,9 +391,9 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	generate_ssh_host_keys
 
 	# Create base directory for home 
-	if [[ -n ${OPTS_SSH_USER_HOME_DIR%/*} ]] && [[ ! -d ${OPTS_SSH_USER_HOME_DIR%/*} ]]; then
+	if [[ -n ${OPTS_SSH_USER_HOME%/*} ]] && [[ ! -d ${OPTS_SSH_USER_HOME%/*} ]]; then
 		echo "Creating home base directory."
-		mkdir -pm 755 ${OPTS_SSH_USER_HOME_DIR%/*}
+		mkdir -pm 755 ${OPTS_SSH_USER_HOME%/*}
 	fi
 
 	useradd \
@@ -397,7 +401,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		-U \
 		-m \
 		-G ${SSH_USER_GROUPS:-users,wheel} \
-		-d ${OPTS_SSH_USER_HOME_DIR} \
+		-d ${OPTS_SSH_USER_HOME} \
 		-s ${OPTS_SSH_USER_SHELL} \
 		${OPTS_SSH_USER}
 
@@ -409,17 +413,17 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		# %h and %u are replaced with the User's HOME and USERNAME respectively.
 		SSH_CHROOT_DIRECTORY_PATH="$(get_ssh_chroot_directory_path ${OPTS_SSH_CHROOT_DIRECTORY})"
 
-		if [[ ! -d ${SSH_CHROOT_DIRECTORY_PATH} ]] || [[ ${SSH_CHROOT_DIRECTORY_PATH} != ${OPTS_SSH_USER_HOME_DIR} ]]; then 
+		if [[ ! -d ${SSH_CHROOT_DIRECTORY_PATH} ]] || [[ ${SSH_CHROOT_DIRECTORY_PATH} != ${OPTS_SSH_USER_HOME} ]]; then 
 			# ChrootDirectory like /chroot/%u or /home/chroot/%u
-			SSH_CHROOT_HOME_DIRECTORY_PATH=${SSH_CHROOT_DIRECTORY_PATH}${OPTS_SSH_USER_HOME_DIR}
+			SSH_CHROOT_HOME_DIRECTORY_PATH=${SSH_CHROOT_DIRECTORY_PATH}${OPTS_SSH_USER_HOME}
 
 			mkdir -pm 711 ${SSH_CHROOT_DIRECTORY_PATH}
 			mkdir -pm 755 ${SSH_CHROOT_HOME_DIRECTORY_PATH}
 		else
 			# ChrootDirectory %h
-			SSH_CHROOT_HOME_DIRECTORY_PATH=${OPTS_SSH_USER_HOME_DIR}
+			SSH_CHROOT_HOME_DIRECTORY_PATH=${OPTS_SSH_USER_HOME}
 
-			chmod 750 ${OPTS_SSH_USER_HOME_DIR}
+			chmod 750 ${OPTS_SSH_USER_HOME}
 		fi
 
 		# Create a user writeable data directory if no other directories are mounted.
@@ -430,7 +434,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 			chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
 		fi
 
-		if [[ ${SSH_CHROOT_DIRECTORY_PATH} != ${OPTS_SSH_USER_HOME_DIR} ]]; then
+		if [[ ${SSH_CHROOT_DIRECTORY_PATH} != ${OPTS_SSH_USER_HOME} ]]; then
 			# ChrootDirectory must be owned by root user
 			chown root:root ${SSH_CHROOT_DIRECTORY_PATH}
 			chmod 711 ${SSH_CHROOT_DIRECTORY_PATH}
@@ -455,17 +459,17 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 	fi
 
 	# SSH require files
-	mkdir -m 700 ${OPTS_SSH_USER_HOME_DIR}/.ssh
-	touch ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
-	chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_SSH_USER_HOME_DIR}/.ssh
-	chmod 600 ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
+	mkdir -m 700 ${OPTS_SSH_USER_HOME}/.ssh
+	touch ${OPTS_SSH_USER_HOME}/.ssh/authorized_keys
+	chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_SSH_USER_HOME}/.ssh
+	chmod 600 ${OPTS_SSH_USER_HOME}/.ssh/authorized_keys
 
 	if ! is_valid_ssh_authorized_keys "${OPTS_SSH_AUTHORIZED_KEYS}"; then
 		printf -v SSH_KEY_FINGERPRINTS \
 			'ERROR: Public key validation failed.\nUnable to populate %s/.ssh/authorized_key\n' \
-			"${OPTS_SSH_USER_HOME_DIR}"
+			"${OPTS_SSH_USER_HOME}"
 	else
-		printf "%s" "${OPTS_SSH_AUTHORIZED_KEYS}" > ${OPTS_SSH_USER_HOME_DIR}/.ssh/authorized_keys
+		printf "%s" "${OPTS_SSH_AUTHORIZED_KEYS}" > ${OPTS_SSH_USER_HOME}/.ssh/authorized_keys
 		SSH_KEY_FINGERPRINTS="$(get_ssh_authorized_key_fingerprints)"
 	fi
 
@@ -521,7 +525,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME_DIR}/.ssh ]]; then
 		user : ${OPTS_SSH_USER}
 		password : ${OPTS_SSH_USER_PASSWORD}
 		uid : ${OPTS_SSH_USER_UID}
-		home : ${OPTS_SSH_USER_HOME_DIR}
+		home : ${OPTS_SSH_USER_HOME}
 		chroot path : ${SSH_CHROOT_DIRECTORY_PATH:-N/A}
 		shell : ${OPTS_SSH_USER_SHELL}
 		sudo : ${OPTS_SSH_SUDO:-N/A}
