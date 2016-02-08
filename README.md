@@ -11,7 +11,7 @@ The [Dockerfile](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
 
 Included in the build are the [SCL](https://www.softwarecollections.org/), [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/) and [vim-minimal](http://www.vim.org/) are along with python-setuptools, [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
 
-[Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run. To enable simple viewing of stdout for the sshd subprocess, supervisor-stdout is included. This allows you to see output from the supervisord controlled subprocesses with `docker logs <docker-container-name>`.
+[Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run. To enable simple viewing of stdout for the sshd subprocess, supervisor-stdout is included. This allows you to see output from the supervisord controlled subprocesses with `docker logs {container-name}`.
 
 SSH access is by public key authentication and, by default, the [Vagrant](http://www.vagrantup.com/) [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant) is required.
 
@@ -20,7 +20,7 @@ SSH access is by public key authentication and, by default, the [Vagrant](http:/
 SSH is not required in order to access a terminal for the running container. The simplest method is to use the docker exec command to run bash (or sh) as follows:
 
 ```
-$ docker exec -it <docker-name-or-id> bash
+$ docker exec -it {container-name-or-id} bash
 ```
 
 For cases where access to docker exec is not possible the preferred method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-6/command-keys.md) for details on how to set this up.
@@ -57,7 +57,7 @@ Connect using the `ssh` command line client with the [insecure private key](http
 
 ```
 $ ssh -p 2020 -i id_rsa_insecure \
-  app-admin@<docker-host-ip>
+  app-admin@{docker-host-ip}
 ```
 
 ### SFTP Mode
@@ -76,7 +76,7 @@ Connect using the `sftp` command line client with the [insecure private key](htt
 
 ```
 $ sftp -p 2021 -i id_rsa_insecure \
-  app-admin@<docker-host-ip>
+  app-admin@{docker-host-ip}
 ```
 
 ## Instructions
@@ -127,13 +127,13 @@ $ docker cp \
 
 #### Editing configuration
 
-To make changes to the configuration files you need a running container that uses the volumes from the configuration volume. To edit a single file you could use the following, where <path_to_file> can be one of the [required configuration files](https://github.com/jdeathe/centos-ssh/blob/centos-6/README.md#required-configuration-files), or you could run a ```bash``` shell and then make the changes required using ```vi```. On exiting the container it will be removed since we specify the ```--rm``` parameter.
+To make changes to the configuration files you need a running container that uses the volumes from the configuration volume. To edit a single file you could use the following, where {path_to_file} can be one of the [required configuration files](https://github.com/jdeathe/centos-ssh/blob/centos-6/README.md#required-configuration-files), or you could run a ```bash``` shell and then make the changes required using ```vi```. On exiting the container it will be removed since we specify the ```--rm``` parameter.
 
 ```
 $ docker run --rm -it \
   --volumes-from volume-config.ssh.pool-1.1.1 \
   jdeathe/centos-ssh:latest \
-  vi /etc/services-config/<path_to_file>
+  vi /etc/services-config/{path_to_file}
 ```
 
 ##### Required configuration files
@@ -383,15 +383,15 @@ $ docker port ssh.pool-1.1.1 22
 To connect to the running container use:
 
 ```
-$ ssh -p <container-port> \
+$ ssh -p {container-port} \
   -i ~/.ssh/id_rsa_insecure \
-  app-admin@<docker-host-ip> \
+  app-admin@{docker-host-ip} \
   -o StrictHostKeyChecking=no
 ```
 
 ### Custom Configuration
 
-If using the optional data volume for container configuration you are able to customise the configuration. In the following examples your custom docker configuration files should be located on the Docker host under the directory ```/var/lib/docker/volumes/<volume-name>/``` where ```<volume-name>``` should identify the applicable container name such as "volume-config.ssh.pool-1.1.1" if using named volumes or will be an ID generated automatically by Docker. To identify the correct path on the Docker host use the ```docker inspect``` command.
+If using the optional data volume for container configuration you are able to customise the configuration. In the following examples your custom docker configuration files should be located on the Docker host under the directory ```/var/lib/docker/volumes/{volume-name}/``` where ```{volume-name}``` should identify the applicable container name such as "volume-config.ssh.pool-1.1.1" if using named volumes or will be an ID generated automatically by Docker. To identify the correct path on the Docker host use the ```docker inspect``` command.
 
 #### [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-6/etc/services-config/ssh/authorized_keys)
 
@@ -413,17 +413,17 @@ $ docker cp ~/.ssh/id_rsa.pub \
 Alternatively, to replace the autorized_keys directly on a running container with the ```SSH_USER``` app-admin using SSH use:
 
 ```
-$ cat ~/.ssh/id_rsa.pub | ssh -p <container-port> \
+$ cat ~/.ssh/id_rsa.pub | ssh -p {container-port} \
   -i ~/.vagrant.d/insecure_private_key \
-  app-admin@<docker-host-ip> \
+  app-admin@{docker-host-ip} \
   "cat > ~/.ssh/authorized_keys"
 ```
 
 To connect to the running container use:
 
 ```
-$ ssh -p <container-port> \
-  app-admin@<docker-host-ip> \
+$ ssh -p {container-port} \
+  app-admin@{docker-host-ip} \
   -o StrictHostKeyChecking=no
 ```
 
