@@ -151,7 +151,7 @@ get_ssh_authorized_keys ()
 	local VALUE="${SSH_AUTHORIZED_KEYS:-}"
 
 	if [[ -z ${VALUE} ]] && [[ -s ${DEFAULT_PATH} ]]; then
-		VALUE="$(cat ${DEFAULT_PATH})"
+		VALUE="$(< ${DEFAULT_PATH})"
 	fi
 
 	printf -- "%s" "${VALUE}"
@@ -227,11 +227,37 @@ get_ssh_chroot_directory_path ()
 	printf "%s" "${VALUE}"
 }
 
+get_ssh_host_key_fingerprint ()
+{
+	local FINGERPRINT=
+	local INVALID_KEY_PATTERN='^/dev/stdin is not a public key file.$'
+	local PUBLIC_KEY_PATH
+	local SSH_KEY
+	local TYPE="${1:-rsa}"
+
+	case ${TYPE} in
+		rsa1|rsa|dsa|ecdsa|ed25519)
+			PUBLIC_KEY_PATH=/etc/ssh/ssh_host_${TYPE}_key.pub
+			SSH_KEY="$(< ${PUBLIC_KEY_PATH})"
+			FINGERPRINT=$(get_ssh_key_fingerprint "${SSH_KEY}")
+
+			if [[ -s ${PUBLIC_KEY_PATH} ]] && [[ ! ${FINGERPRINT} =~ ${INVALID_KEY_PATTERN} ]]; then
+				printf -- '%s\n' "${FINGERPRINT}" | awk '{ print $2; }'
+			else
+				printf -- '%s\n' "invalid-key"
+			fi
+			;;
+		*)
+			echo "invalid-key-type"
+			;;
+	esac
+}
+
 get_ssh_key_fingerprint ()
 {
 	local SSH_KEY="${1:-}"
 	local FINGERPRINT=$(
-		ssh-keygen -lf /dev/stdin <<< ${SSH_KEY}
+		ssh-keygen -lf /dev/stdin <<< "${SSH_KEY}"
 	)
 
 	printf -- "%s" "${FINGERPRINT}"
@@ -323,29 +349,38 @@ get_ssh_user_gid ()
 	printf "%d" "${VALUE}"
 }
 
-generate_new_ssh_host_key ()
+generate_ssh_host_key ()
 {
-	local TYPE=${1:-rsa}
-	local REPLACE=${2:-false}
+	local PRIVATE_KEY_PATH
+	local PUBLIC_KEY_PATH
+	local REPLACE=${1:-false}
 	local RESPONSE='n\n'
+	local TYPE=${2:-rsa}
 
 	if [[ ${REPLACE} == true ]] || [[ ${REPLACE} == 'y' ]]; then
 		RESPONSE='y\n'
 	fi
 
 	case ${TYPE} in
-		rsa|dsa|ecdsa|ed25519)
+		rsa1|rsa|dsa|ecdsa|ed25519)
+			if [[ ${TYPE} != rsa1 ]]; then
+				PRIVATE_KEY_PATH=/etc/ssh/ssh_host_${TYPE}_key
+				PUBLIC_KEY_PATH=/etc/ssh/ssh_host_${TYPE}_key.pub
+			else
+				PRIVATE_KEY_PATH=/etc/ssh/ssh_host_key
+				PUBLIC_KEY_PATH=/etc/ssh/ssh_host_key.pub
+			fi
 
 			echo -e ${RESPONSE} | ssh-keygen \
 				-q \
 				-C "" \
 				-N "" \
 				-t ${TYPE} \
-				-f /etc/ssh/ssh_host_${TYPE}_key \
+				-f ${PRIVATE_KEY_PATH} \
 				&> /dev/null
 
 			if [[ -x /sbin/restorecon ]]; then
-				/sbin/restorecon /etc/ssh/ssh_host_${TYPE}_key.pub
+				/sbin/restorecon ${PUBLIC_KEY_PATH}
 			fi
 
 			;;
@@ -357,7 +392,8 @@ generate_new_ssh_host_key ()
 
 generate_ssh_host_keys ()
 {
-	local VERSION="${1:-}"
+	local REPLACE=${1:-false}
+	local VERSION="${2:-}"
 
 	if [[ -z ${VERSION} ]] && [[ -e /etc/redhat-release ]]; then
 		VERSION=$(rpm -q --whatprovides redhat-release --queryformat "%{VERSION}")
@@ -368,14 +404,16 @@ generate_ssh_host_keys ()
 
 	case ${VERSION} in
 		6)
-			generate_new_ssh_host_key rsa true
-			generate_new_ssh_host_key dsa true
+			generate_ssh_host_key ${REPLACE} rsa1
+			generate_ssh_host_key ${REPLACE} rsa
+			generate_ssh_host_key ${REPLACE} dsa
 			;;
 		7)
-			generate_new_ssh_host_key rsa true
-			generate_new_ssh_host_key dsa true
-			generate_new_ssh_host_key ecdsa true
-			generate_new_ssh_host_key ed25519 true
+			generate_ssh_host_key ${REPLACE} rsa1
+			generate_ssh_host_key ${REPLACE} rsa
+			generate_ssh_host_key ${REPLACE} dsa
+			generate_ssh_host_key ${REPLACE} ecdsa
+			generate_ssh_host_key ${REPLACE} ed25519
 			;;
 		*)
 			echo "Unknown EL release ${VERSION} - skipping."
@@ -423,10 +461,18 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	# Initialise
 	echo "Initialising ${SSHD_COMMAND}."
 
+	# Fix symbolic links from services-config
+	if [[ -s /etc/services-config/ssh/sshd_config ]] \
+		&& [[ -f /etc/ssh/sshd_config ]] && ! [[ -L /etc/ssh/sshd_config ]]; then
+		ln -sf /etc/services-config/ssh/sshd_config /etc/ssh/sshd_config
+	fi
+
 	# Generate new host keys
 	generate_ssh_host_keys
 
-	# Create base directory for home 
+	SSH_HOST_KEY_FINGERPRINT_RSA="$(get_ssh_host_key_fingerprint rsa)"
+
+	# Create base directory for home
 	if [[ -n ${OPTS_SSH_USER_HOME%/*} ]] && [[ ! -d ${OPTS_SSH_USER_HOME%/*} ]]; then
 		echo "Creating home base directory."
 		mkdir -pm 755 ${OPTS_SSH_USER_HOME%/*}
@@ -454,7 +500,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		# %h and %u are replaced with the User's HOME and USERNAME respectively.
 		SSH_CHROOT_DIRECTORY_PATH="$(get_ssh_chroot_directory_path ${OPTS_SSH_CHROOT_DIRECTORY})"
 
-		if [[ ! -d ${SSH_CHROOT_DIRECTORY_PATH} ]] || [[ ${SSH_CHROOT_DIRECTORY_PATH} != ${OPTS_SSH_USER_HOME} ]]; then 
+		if [[ ! -d ${SSH_CHROOT_DIRECTORY_PATH} ]] || [[ ${SSH_CHROOT_DIRECTORY_PATH} != ${OPTS_SSH_USER_HOME} ]]; then
 			# ChrootDirectory like /chroot/%u or /home/chroot/%u
 			SSH_CHROOT_HOME_DIRECTORY_PATH=${SSH_CHROOT_DIRECTORY_PATH}${OPTS_SSH_USER_HOME}
 
@@ -469,9 +515,12 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 
 		# Create a user writeable data directory if no other directories are mounted.
 		if [[ -z $(ls -l ${SSH_CHROOT_HOME_DIRECTORY_PATH}/ | grep '^d') ]]; then
+			# Make and set user permissions on new _data directory
 			mkdir -m 700 ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
-
-			# Set user permissions on _data directory
+			chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
+		elif [[ -d ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data ]]; then
+			# Set user permissions on _data directory in case where it exists
+			chmod 700 ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
 			chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
 		fi
 
@@ -484,7 +533,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 			chown root:${OPTS_SSH_USER} ${SSH_CHROOT_DIRECTORY_PATH}
 		fi
 
-		# Add group specific sshd configuration 
+		# Add group specific sshd configuration
 		tee -a /etc/ssh/sshd_config > /dev/null <<-EOT
 			# Force SFTP
 			Match group ${SSH_USER_GROUPS}
@@ -570,10 +619,12 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		chroot path : ${SSH_CHROOT_DIRECTORY_PATH:-N/A}
 		shell : ${OPTS_SSH_USER_SHELL}
 		sudo : ${OPTS_SSH_SUDO:-N/A}
-		key fingerprints : 
+		key fingerprints :
 		${SSH_KEY_FINGERPRINTS}
+		rsa host key fingerprint :
+		${SSH_HOST_KEY_FINGERPRINT_RSA}
 		--------------------------------------------------------------------------------
-		
+
 	EOT
 
 	wait ${TIMEOUT_PID}
