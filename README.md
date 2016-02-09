@@ -216,6 +216,8 @@ shell : /bin/bash
 sudo : ALL=(ALL) ALL
 key fingerprints :
 dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6 (insecure key)
+rsa host key fingerprint :
+96:a3:f6:d7:32:d7:a5:38:f8:49:2c:5e:53:e4:86:30
 --------------------------------------------------------------------------------
 
 sshd stdout | Server listening on 0.0.0.0 port 22.
