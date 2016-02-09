@@ -114,10 +114,10 @@ if [[ ${#} -eq 0 ]]; then
 	echo "Running container ${DOCKER_NAME} as a background/daemon process."
 	DOCKER_OPERATOR_OPTIONS="-d"
 else
-	# This is useful for running commands like 'export' or 'env' to check the 
+	# This is useful for running commands like 'export' or 'env' to check the
 	# environment variables set by the --link docker option.
-	# 
-	# If you need to pipe to another command, quote the commands. e.g: 
+	#
+	# If you need to pipe to another command, quote the commands. e.g:
 	#   ./run.sh "env | grep MYSQL | sort"
 	printf "Running container %s with CMD [/bin/bash -c '%s']\n" "${DOCKER_NAME}" "${*}"
 	DOCKER_OPERATOR_OPTIONS="-it --entrypoint /bin/bash --env TERM=${TERM:-xterm}"
@@ -139,28 +139,28 @@ docker run \
 )
 
 # Forced SFTP
-# 	sftp -P 2020 -i ~/.ssh/id_rsa_insecure app-sftp@docker-host
+# To connect: sftp -P 2021 -i ~/.ssh/id_rsa_insecure app-sftp@docker-host
 # (
 # set -xe
 # docker run \
 # 	${DOCKER_OPERATOR_OPTIONS} \
 # 	--name ${DOCKER_NAME} \
-# 	-p ${DOCKER_HOST_PORT_SSH:-}:22 \
-# 	--env "SSH_CHROOT_DIRECTORY=%h" \
+# 	-p ${DOCKER_HOST_PORT_SFTP:-}:22 \
 # 	--env "SSH_USER=app-sftp" \
 # 	--env "SSH_USER_FORCE_SFTP=true" \
-# 	--env "SSH_USER_HOME=/home/app-sftp" \
 # 	${DOCKER_VOLUMES_FROM:-} \
+# 	-v volume-data.${DOCKER_NAME}.ssh-host-keys:/etc/ssh \
+# 	-v volume-data.${DOCKER_NAME}.user-home:/home/app-sftp/_data \
 # 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
 # )
 
-# Forced SFTP + apache-php linked volume
+# Forced SFTP + apache-php linked volume + persistent host keys
 # (
 # set -xe
 # docker run \
 # 	${DOCKER_OPERATOR_OPTIONS} \
 # 	--name ${DOCKER_NAME} \
-# 	-p ${DOCKER_HOST_PORT_SSH:-}:22 \
+# 	-p ${DOCKER_HOST_PORT_SFTP:-}:22 \
 # 	--env "SSH_CHROOT_DIRECTORY=%h" \
 # 	--env "SSH_USER=app-sftp" \
 # 	--env "SSH_USER_FORCE_SFTP=true" \
@@ -168,6 +168,7 @@ docker run \
 # 	--env "SSH_USER_ID=501:502" \
 # 	${DOCKER_VOLUMES_FROM:-} \
 # 	--volumes-from apache-php.app-1.1.1 \
+# 	-v volume-data.${DOCKER_NAME}.ssh-host-keys:/etc/ssh \
 # 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
 # )
 
@@ -177,14 +178,15 @@ docker run \
 # docker run \
 # 	${DOCKER_OPERATOR_OPTIONS} \
 # 	--name ${DOCKER_NAME} \
-# 	-p ${DOCKER_HOST_PORT_SSH:-}:22 \
+# 	-p ${DOCKER_HOST_PORT_SFTP:-}:22 \
 # 	--env "SSH_CHROOT_DIRECTORY=/var/www" \
 # 	--env "SSH_USER=app-sftp" \
 # 	--env "SSH_USER_FORCE_SFTP=true" \
 # 	--env "SSH_USER_HOME=/app" \
-#	--env "SSH_USER_ID=502:502" \
+# 	--env "SSH_USER_ID=502:502" \
 # 	${DOCKER_VOLUMES_FROM:-} \
 # 	--volumes-from apache-php.app-1.1.1 \
+# 	-v volume-data.${DOCKER_NAME}.ssh-host-keys:/etc/ssh \
 # 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
 # )
 
@@ -196,13 +198,13 @@ docker run \
 # docker run \
 # 	${DOCKER_OPERATOR_OPTIONS} \
 # 	--name ${DOCKER_NAME} \
-# 	-p ${DOCKER_HOST_PORT_SSH:-}:22 \
+# 	-p ${DOCKER_HOST_PORT_SFTP:-}:22 \
 # 	--env "SSH_AUTHORIZED_KEYS=
 # ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key
 # ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJlEHFYDmRgS+YQ+MA9PKHyriCPmVNs/6yVc2lopwPWioXt0+ulH/H43PgB6/4fkP0duauHsRtpp7z7dhqgZOXqdLUn/Ybp0rz0+yKUOBb9ggjE5n7hYyDGtZR9Y11pJ4TuRHmL6wv5mnj9WRzkUlJNYkr6X5b6yAxtQmX+2f33u2qGdAwADddE/uZ4vKnC0jFsv5FdvnwRf2diF/9AagDb7xhZ9U3hPOyLj31H/OUce4xBpGXRfkUYkeW8Qx+zEbEBVlGxDroIMZmHJIknBDAzVfft+lsg1Z06NCYOJ+hSew==
 # " \
 # 	--env "SSH_INHERIT_ENVIRONMENT=true" \
-#	--env "SSH_CHROOT_DIRECTORY=%h" \
+# 	--env "SSH_CHROOT_DIRECTORY=%h" \
 # 	--env "SSH_SUDO=ALL=(ALL) ALL" \
 # 	--env "SSH_USER=app-1" \
 # 	--env "SSH_USER_PASSWORD_HASHED=true" \
@@ -210,8 +212,9 @@ docker run \
 # 	--env "SSH_USER_FORCE_SFTP=false" \
 # 	--env "SSH_USER_HOME=/home/app" \
 # 	--env "SSH_USER_SHELL=/bin/sh" \
-#	--env "SSH_USER_ID=500:500" \
+# 	--env "SSH_USER_ID=500:500" \
 # 	${DOCKER_VOLUMES_FROM:-} \
+# 	-v volume-data.${DOCKER_NAME}.ssh-host-keys:/etc/ssh \
 # 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
 # )
 
@@ -229,6 +232,10 @@ fi
 # 	DOCKER_NAME_LINK_HOST=${DOCKER_NAME}.link-host
 
 # 	if [[ -n ${DOCKER_HOST_PORT_SSH} ]]; then
+# 		(( DOCKER_HOST_PORT_SSH ++ ))
+# 	fi
+
+# 	if [[ -n ${DOCKER_HOST_PORT_SFTP} ]]; then
 # 		(( DOCKER_HOST_PORT_SSH ++ ))
 # 	fi
 
