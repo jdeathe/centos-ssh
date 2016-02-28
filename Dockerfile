@@ -1,7 +1,7 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-7 7.2.1511 x86_64 / SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
+# CentOS-7 7.2.1511 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
 # 
 # =============================================================================
 FROM centos:centos7.2.1511

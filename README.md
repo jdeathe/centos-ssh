@@ -1,13 +1,18 @@
 centos-ssh
 ==========
 
-Docker Image of CentOS-7 7.2.1511 x86_64
+Docker Images of CentOS-6 6.7 x86_64 / CentOS-7 7.2.1511 x86_64
 
 Includes public key authentication, Automated password generation, supports custom configuration via environment variables and/or a configuration data volume.
 
 ## Overview & links
 
-The [Dockerfile](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile) can be used to build a base image that is the bases for several other docker images.
+The latest CentOS-6 / CentOS-7 based releases can be pulled from the centos-6 / centos-7 Docker tags respectively. For a specific release tag the convention is `centos-6-1.5.0` for the [1.5.0](https://github.com/jdeathe/centos-ssh/tree/1.5.0) release tag and `centos-7-2.0.0` for the [2.0.0](https://github.com/jdeathe/centos-ssh/tree/2.0.0) release tag.
+
+- centos-7 [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
+- centos-6 [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
+
+The Dockerfile can be used to build a base image that is the bases for several other docker images.
 
 Included in the build are the [SCL](https://www.softwarecollections.org/), [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/) and [vim-minimal](http://www.vim.org/) are along with python-setuptools, [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
 
@@ -69,7 +74,7 @@ $ docker run -d \
   --name sftp.pool-1.1.1 \
   -p 2021:22 \
   -e SSH_USER_FORCE_SFTP=true \
-  jdeathe/centos-ssh:latest
+  jdeathe/centos-ssh:centos-7
 ```
 
 Connect using the `sftp` command line client with the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant).
