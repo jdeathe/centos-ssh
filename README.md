@@ -1,13 +1,18 @@
 centos-ssh
 ==========
 
-Docker Image of CentOS-6 6.7 x86_64
+Docker Images of CentOS-6 6.7 x86_64 / CentOS-7 7.2.1511 x86_64
 
 Includes public key authentication, Automated password generation, supports custom configuration via environment variables and/or a configuration data volume.
 
 ## Overview & links
 
-The [Dockerfile](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile) can be used to build a base image that is the bases for several other docker images.
+The latest CentOS-6 / CentOS-7 based releases can be pulled from the centos-6 / centos-7 Docker tags respectively. For a specific release tag the convention is `centos-6-1.5.0` for the [1.5.0](https://github.com/jdeathe/centos-ssh/tree/1.5.0) release tag and `centos-7-2.0.0` for the [2.0.0](https://github.com/jdeathe/centos-ssh/tree/2.0.0) release tag.
+
+- centos-7 [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
+- centos-6 [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
+
+The Dockerfile can be used to build a base image that is the bases for several other docker images.
 
 Included in the build are the [SCL](https://www.softwarecollections.org/), [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/) and [vim-minimal](http://www.vim.org/) are along with python-setuptools, [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
 
@@ -35,7 +40,7 @@ Run up an SSH container named 'ssh.pool-1.1.1' from the docker image 'jdeathe/ce
 $ docker run -d \
   --name ssh.pool-1.1.1 \
   -p 2020:22 \
-  jdeathe/centos-ssh:latest
+  jdeathe/centos-ssh:centos-6
 ```
 
 Check the logs for the password (required for sudo˜).
@@ -69,7 +74,7 @@ $ docker run -d \
   --name sftp.pool-1.1.1 \
   -p 2021:22 \
   -e SSH_USER_FORCE_SFTP=true \
-  jdeathe/centos-ssh:latest
+  jdeathe/centos-ssh:centos-6
 ```
 
 Connect using the `sftp` command line client with the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant).
@@ -93,7 +98,7 @@ Naming of the volume is optional, it is possible to leave the naming up to Docke
 $ docker run \
   --name volume-config.ssh.pool-1.1.1 \
   -v /etc/services-config \
-  jdeathe/centos-ssh:latest \
+  jdeathe/centos-ssh:centos-6 \
   /bin/true
 ```
 
@@ -113,7 +118,7 @@ To create a named data volume, mounting our docker host's configuration director
 $ docker run \
   --name volume-config.ssh.pool-1.1.1 \
   -v volume-config.ssh.pool-1.1.1:/etc/services-config \
-  jdeathe/centos-ssh:latest \
+  jdeathe/centos-ssh:centos-6 \
   /bin/true
 ```
 
@@ -132,7 +137,7 @@ To make changes to the configuration files you need a running container that use
 ```
 $ docker run --rm -it \
   --volumes-from volume-config.ssh.pool-1.1.1 \
-  jdeathe/centos-ssh:latest \
+  jdeathe/centos-ssh:centos-6 \
   vi /etc/services-config/{path_to_file}
 ```
 
@@ -165,7 +170,7 @@ $ docker stop ssh.pool-1.1.1 \
   --name ssh.pool-1.1.1 \
   -p :22 \
   --env "SSH_USER=app-user" \
-  jdeathe/centos-ssh:latest
+  jdeathe/centos-ssh:centos-6
 ```
 
 #### Using configuration volume
@@ -179,7 +184,7 @@ $ docker stop ssh.pool-1.1.1 \
   --name ssh.pool-1.1.1 \
   -p :22 \
   --volumes-from volume-config.ssh.pool-1.1.1 \
-  jdeathe/centos-ssh:latest
+  jdeathe/centos-ssh:centos-6
 ```
 
 Now you can find out the app-admin, (sudoer), user's password by inspecting the container's logs
