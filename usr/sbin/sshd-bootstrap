@@ -35,7 +35,7 @@ is_valid_ssh_authorized_keys ()
 {
 	local AUTHORIZED_KEYS="${1:-}"
 	local IFS=
-	local INVALID_KEY_PATTERN='^/dev/stdin is not a public key file.$'
+	local INVALID_KEY_PATTERN='is not a public key file.$'
 	local SSH_KEY=
 
 	if [[ -z ${AUTHORIZED_KEYS} ]]; then
@@ -163,7 +163,7 @@ get_ssh_authorized_key_fingerprints ()
 	local FINGERPRINT=
 	local FINGERPRINTS=
 	local IFS=
-	local INVALID_KEY_PATTERN='^/dev/stdin is not a public key file.$'
+	local INVALID_KEY_PATTERN='is not a public key file.$'
 	local INSECURE_FINGERPRINT='dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6'
 	local SSH_KEY=
 
@@ -230,7 +230,7 @@ get_ssh_chroot_directory_path ()
 get_ssh_host_key_fingerprint ()
 {
 	local FINGERPRINT=
-	local INVALID_KEY_PATTERN='^/dev/stdin is not a public key file.$'
+	local INVALID_KEY_PATTERN='is not a public key file.$'
 	local PUBLIC_KEY_PATH
 	local SSH_KEY
 	local TYPE="${1:-rsa}"
@@ -255,10 +255,17 @@ get_ssh_host_key_fingerprint ()
 
 get_ssh_key_fingerprint ()
 {
+	local FINGERPRINT
 	local SSH_KEY="${1:-}"
-	local FINGERPRINT=$(
-		ssh-keygen -lf /dev/stdin <<< "${SSH_KEY}"
+	local SSH_KEY_FILE=$(mktemp)
+
+	echo "${SSH_KEY}" > ${SSH_KEY_FILE}
+
+	FINGERPRINT=$(
+		ssh-keygen -lf ${SSH_KEY_FILE}
 	)
+
+	rm -f ${SSH_KEY_FILE}
 
 	printf -- "%s" "${FINGERPRINT}"
 }
