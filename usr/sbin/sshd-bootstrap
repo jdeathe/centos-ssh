@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+TIMER_START=$(
+	date +%s.%N
+)
+
 source /etc/sshd-bootstrap.conf
 
 get_password ()
@@ -610,6 +614,13 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		unset OPTS_SSH_SUDO
 	fi
 
+	TIMER_TOTAL=$(
+		echo - | awk "\
+		{ T1="${TIMER_START}" } \
+		{ T2="$(date +%s.%N)" } \
+		{ print T2 - T1; }"
+	)
+
 	cat <<-EOT
 
 		================================================================================
@@ -627,6 +638,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		rsa host key fingerprint :
 		${SSH_HOST_KEY_FINGERPRINT_RSA}
 		--------------------------------------------------------------------------------
+		${TIMER_TOTAL}
 
 	EOT
 fi
