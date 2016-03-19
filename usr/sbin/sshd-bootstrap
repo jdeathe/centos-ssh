@@ -474,10 +474,11 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		ln -sf /etc/services-config/ssh/sshd_config /etc/ssh/sshd_config
 	fi
 
-	# Generate new host keys
-	generate_ssh_host_keys
-
-	SSH_HOST_KEY_FINGERPRINT_RSA="$(get_ssh_host_key_fingerprint rsa)"
+	$(
+		# Generate new host keys
+		generate_ssh_host_keys
+	) &
+	PIDS[0]=${!}
 
 	# Create base directory for home
 	if [[ -n ${OPTS_SSH_USER_HOME%/*} ]] && [[ ! -d ${OPTS_SSH_USER_HOME%/*} ]]; then
@@ -498,6 +499,28 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		-d ${OPTS_SSH_USER_HOME} \
 		-s ${OPTS_SSH_USER_SHELL} \
 		${OPTS_SSH_USER}
+
+	$(
+		# Set root user password
+		echo "root:${SSH_ROOT_PASSWORD:-$(get_password ${PASSWORD_LENGTH})}" | chpasswd
+	) &
+	PIDS[1]=${!}
+
+	# Set SSH user password
+	if [[ ${OPTS_SSH_USER_PASSWORD_HASHED} == true ]] && [[ -n ${SSH_USER_PASSWORD} ]]; then
+		# Hashed password must use SHA-512 hashing algorithm
+		if ! is_valid_ssh_user_password_hash "${SSH_USER_PASSWORD}"; then
+			echo "ERROR: Password hash not SHA-512 - setting new password."
+
+			SSH_USER_PASSWORD=
+			OPTS_SSH_USER_PASSWORD=$(get_password ${PASSWORD_LENGTH})
+			echo "${OPTS_SSH_USER}:${OPTS_SSH_USER_PASSWORD}" | chpasswd
+		else
+			echo "${OPTS_SSH_USER}:${SSH_USER_PASSWORD}" | chpasswd -e
+		fi
+	else
+		echo "${OPTS_SSH_USER}:${OPTS_SSH_USER_PASSWORD}" | chpasswd
+	fi
 
 	# SFTP users
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
@@ -581,27 +604,13 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		Defaults:root secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
 	EOT
 
-	# Set root user password
-	echo "root:${SSH_ROOT_PASSWORD:-$(get_password ${PASSWORD_LENGTH})}" | chpasswd
+	# Wait for background processes
+	wait ${PIDS[0]} && \
+		SSH_HOST_KEY_FINGERPRINT_RSA="$(get_ssh_host_key_fingerprint rsa)"
+	wait ${PIDS[1]}
 
 	# Never store the root password
 	SSH_ROOT_PASSWORD=${REDACTED_VALUE}
-
-	# Set SSH user password
-	if [[ ${OPTS_SSH_USER_PASSWORD_HASHED} == true ]] && [[ -n ${SSH_USER_PASSWORD} ]]; then
-		# Hashed password must use SHA-512 hashing algorithm
-		if ! is_valid_ssh_user_password_hash "${SSH_USER_PASSWORD}"; then
-			echo "ERROR: Password hash not SHA-512 - setting new password."
-
-			SSH_USER_PASSWORD=
-			OPTS_SSH_USER_PASSWORD=$(get_password ${PASSWORD_LENGTH})
-			echo "${OPTS_SSH_USER}:${OPTS_SSH_USER_PASSWORD}" | chpasswd
-		else
-			echo "${OPTS_SSH_USER}:${SSH_USER_PASSWORD}" | chpasswd -e
-		fi
-	else
-		echo "${OPTS_SSH_USER}:${OPTS_SSH_USER_PASSWORD}" | chpasswd
-	fi
 
 	# Only show user password if auto-generated and password is required for sudo
 	if [[ -n ${SSH_USER_PASSWORD} ]] || is_sudo_no_password_all "${OPTS_SSH_SUDO}" \
