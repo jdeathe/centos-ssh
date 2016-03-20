@@ -1,7 +1,4 @@
 # -----------------------------------------------------------------------------
-# Create a data container for the configuration volume:
-#     docker run -v /config --name volume-config.<service-name> busybox /bin/true
-#
 # To install:
 #     sudo cp <container-path>/<service-name>@<port>.service /etc/systemd/system/
 #     sudo systemctl daemon-reload
