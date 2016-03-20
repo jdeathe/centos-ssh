@@ -1,7 +1,4 @@
 # -----------------------------------------------------------------------------
-# Create a data container for the configuration volume:
-#     docker run -v /config --name volume-config.<service-name> busybox /bin/true
-#
 # To install:
 #     sudo cp <container-path>/<service-name>@<port>.service /etc/systemd/system/
 #     sudo systemctl daemon-reload
@@ -32,7 +29,7 @@ RestartSec=30
 TimeoutStartSec=1200
 Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/services-packages"
 Environment="DOCKER_IMAGE_NAME=jdeathe/centos-ssh"
-Environment="DOCKER_IMAGE_TAG=centos-7"
+Environment="DOCKER_IMAGE_TAG=centos-7-2.0.0"
 Environment="SERVICE_UNIT_NAME=ssh"
 Environment="SERVICE_UNIT_APP_GROUP=app-1"
 Environment="SERVICE_UNIT_SHARED_GROUP=pool-1"
