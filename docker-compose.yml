@@ -48,7 +48,7 @@
 #     # - "volume-config.ssh:/etc/services-config"
 #   command: /bin/true
 ssh.pool-1.1.1:
-  image: "jdeathe/centos-ssh:latest"
+  image: "jdeathe/centos-ssh:centos-6"
   container_name: "ssh.pool-1.1.1"
   ports:
     - "2020:22"
