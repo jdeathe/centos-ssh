@@ -7,74 +7,7 @@ if [[ ${DIR_PATH} == */* ]] && [[ ${DIR_PATH} != $( pwd ) ]]; then
 fi
 
 source run.conf
-
-have_docker_container_name ()
-{
-	local NAME=$1
-
-	if [[ -z ${NAME} ]]; then
-		return 1
-	fi
-
-	if [[ -n $(docker ps -a | awk -v pattern="^${NAME}$" '$NF ~ pattern { print $NF; }') ]]; then
-		return 0
-	fi
-
-	return 1
-}
-
-is_docker_container_name_running ()
-{
-	local NAME=$1
-
-	if [[ -z ${NAME} ]]; then
-		return 1
-	fi
-
-	if [[ -n $(docker ps | awk -v pattern="^${NAME}$" '$NF ~ pattern { print $NF; }') ]]; then
-		return 0
-	fi
-
-	return 1
-}
-
-show_docker_container_name_status ()
-{
-	local NAME=$1
-
-	if [[ -z ${NAME} ]]; then
-		return 1
-	fi
-
-	docker ps | \
-		awk \
-			-v pattern="${NAME}$" \
-			'$NF ~ pattern { print $0; }'
-
-}
-
-
-remove_docker_container_name ()
-{
-	local NAME=$1
-
-	if have_docker_container_name ${NAME}; then
-		if is_docker_container_name_running ${NAME}; then
-			echo "Stopping container ${NAME}"
-			docker stop ${NAME} &> /dev/null
-
-			if [[ ${?} -ne 0 ]]; then
-				return 1
-			fi
-		fi
-		echo "Removing container ${NAME}"
-		docker rm ${NAME} &> /dev/null
-
-		if [[ ${?} -ne 0 ]]; then
-			return 1
-		fi
-	fi
-}
+source docker-helpers.sh
 
 # Configuration volume
 if [[ ${VOLUME_CONFIG_ENABLED} == true ]] && ! have_docker_container_name ${VOLUME_CONFIG_NAME}; then
@@ -219,11 +152,12 @@ docker run \
 # )
 
 if is_docker_container_name_running ${DOCKER_NAME}; then
-	printf -- "\n%s:\n" 'Docker process status'
+	printf -- "\n%s:\n" 'Docker container status'
 	show_docker_container_name_status ${DOCKER_NAME}
 	printf -- " ${COLOUR_POSITIVE}--->${COLOUR_RESET} %s\n" 'Container running'
 elif [[ ${#} -eq 0 ]]; then
 	printf -- " ${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" 'ERROR'
+	exit 1
 fi
 
 # Linked container test
