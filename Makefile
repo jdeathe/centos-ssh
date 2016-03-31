@@ -52,16 +52,17 @@ IS_DOCKER_RELEASE_TAG := $(shell if [[ $(DOCKER_IMAGE_TAG) =~ $(DOCKER_IMAGE_REL
 	require-docker-release-tag \
 	restart \
 	rm \
+	rmi \
 	run \
 	start \
 	stop \
 	terminate \
 	unpause
 
-all: | prerequisites build images install start ps
+all: prerequisites | clean build images install start ps
 
 # build NO_CACHE=[{false,true}]
-build: | prerequisites require-docker-image-tag
+build: prerequisites require-docker-image-tag
 	@ echo "$(PREFIX_STEP) Building $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"
 	@ if [[ $(NO_CACHE) == true ]]; then \
 			echo "$(PREFIX_SUB_STEP) Skipping cache"; \
@@ -77,19 +78,9 @@ build: | prerequisites require-docker-image-tag
 			exit 1; \
 		fi
 
-clean: | prerequisites terminate require-docker-image-tag
-	@ if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) ]]; then \
-			echo "$(PREFIX_STEP) Untagging image"; \
-			$(docker) rmi $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG); \
-		fi
-	@ if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) ]]; then \
-			echo "$(PREFIX_SUB_STEP_NEGATIVE) Image cleanup failed"; \
-			exit 1; \
-		else \
-			echo "$(PREFIX_SUB_STEP_POSITIVE) Image cleanup complete"; \
-		fi
+clean: prerequisites | terminate rm rmi
 
-create: | prerequisites
+create: prerequisites
 	@ echo "$(PREFIX_STEP) Creating container"
 	@ set -x; $(docker) create \
 			--name $(DOCKER_NAME) \
@@ -101,9 +92,10 @@ create: | prerequisites
 			echo "$(PREFIX_SUB_STEP_POSITIVE) Container created"; \
 		else \
 			echo "$(PREFIX_SUB_STEP_NEGATIVE) Container creation failed"; \
+			exit 1; \
 		fi
 
-dist: | prerequisites require-docker-release-tag pull
+dist: prerequisites require-docker-release-tag | pull
 	@ if [[ -s $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
 			echo "$(PREFIX_STEP) Saving package"; \
 			echo "$(PREFIX_SUB_STEP) Package path: $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
@@ -127,7 +119,7 @@ dist: | prerequisites require-docker-release-tag pull
 				fi; \
 		fi
 
-distclean: | prerequisites require-docker-release-tag clean
+distclean: prerequisites require-docker-release-tag | clean
 	@ if [[ -e $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
 			echo "$(PREFIX_STEP) Deleting $(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz package"; \
 			find $(PACKAGE_PATH) \
@@ -141,37 +133,34 @@ distclean: | prerequisites require-docker-release-tag clean
 			echo "$(PREFIX_STEP_POSITIVE) Package cleanup complete"; \
 		fi
 
-exec: | prerequisites
+exec: prerequisites
 	@ $(docker) exec -it $(DOCKER_NAME) $(filter-out $@, $(MAKECMDGOALS))
 %:; @:
 
-images: | prerequisites
+images: prerequisites
 	@ $(docker) images \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG);
 
 install: | prerequisites terminate create
 
-logs: | prerequisites
+logs: prerequisites
 	@ $(docker) logs $(DOCKER_NAME)
 
-load: | prerequisites require-docker-release-tag
-	@ echo "$(PREFIX_STEP) Loading image from package $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
+load: prerequisites require-docker-release-tag
+	@ echo "$(PREFIX_STEP) Loading image from package"; \
+		echo "$(PREFIX_SUB_STEP) Package path: $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
 		if [[ ! -s $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
 			echo "$(PREFIX_STEP_NEGATIVE) Package not found"; \
 			echo "$(PREFIX_SUB_STEP_NEGATIVE) To create a package try: DOCKER_IMAGE_TAG=\"$(DOCKER_IMAGE_TAG)\" make dist"; \
 			exit 1; \
 		else \
-			if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) ]]; then \
-				echo "$(PREFIX_STEP) Untagging image"; \
-				$(docker) rmi $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG); \
-			fi; \
 			$(xz) -dc $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz | \
 				$(docker) load; \
 			echo "$(PREFIX_SUB_STEP) $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG))"; \
 			echo "$(PREFIX_SUB_STEP_POSITIVE) Image loaded"; \
 		fi
 
-pause: | prerequisites require-docker-container
+pause: prerequisites require-docker-container
 	@ echo "$(PREFIX_STEP) Pausing container"
 	@ $(docker) pause $(DOCKER_NAME) 1> /dev/null
 	@ echo "$(PREFIX_SUB_STEP_POSITIVE) Container paused"
@@ -189,18 +178,19 @@ ifeq ($(get-docker-info),)
 	$(error "Unable to connect to docker host.")
 endif
 
-pull: | prerequisites require-docker-image-tag
+pull: prerequisites require-docker-image-tag
 	@ echo "$(PREFIX_STEP) Pulling image from registry"
 	@ $(docker) pull \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG); \
 		if [[ $${?} -eq 0 ]]; then \
+			echo "$(PREFIX_SUB_STEP) $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG))"; \
 			echo "$(PREFIX_SUB_STEP_POSITIVE) Image pulled"; \
 		else \
 			echo "$(PREFIX_SUB_STEP_NEGATIVE) Error pulling image"; \
 			exit 1; \
-		fi; \
+		fi
 
-ps: | prerequisites require-docker-container
+ps: prerequisites require-docker-container
 	@ $(docker) ps -as --filter "name=$(DOCKER_NAME)";
 
 require-docker-container:
@@ -218,12 +208,12 @@ ifeq ($(IS_DOCKER_RELEASE_TAG),)
 	$(error "Invalid DOCKER_IMAGE_TAG value $(DOCKER_IMAGE_TAG). A release tag is required for this operation.")
 endif
 
-restart: | prerequisites require-docker-container
+restart: prerequisites require-docker-container
 	@ echo "$(PREFIX_STEP) Restarting container"
 	@ $(docker) restart $(DOCKER_NAME) 1> /dev/null
 	@ echo "$(PREFIX_SUB_STEP_POSITIVE) Container restarted"
 
-rm: | prerequisites
+rm: prerequisites
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; then \
 			echo "$(PREFIX_STEP) Removing container"; \
 			$(docker) rm -f $(DOCKER_NAME); \
@@ -235,10 +225,37 @@ rm: | prerequisites
 			exit 1; \
 		fi
 
-run: | prerequisites require-docker-image-tag
-	@ env DOCKER_IMAGE_TAG=$(DOCKER_IMAGE_TAG) $(SHELL) run.sh
+rmi: prerequisites require-docker-image-tag
+	@ if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) ]]; then \
+			echo "$(PREFIX_STEP) Untagging image"; \
+			echo "$(PREFIX_SUB_STEP) $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) : $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"; \
+			$(docker) rmi \
+				$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null; \
+			if [[ $${?} -eq 0 ]]; then \
+				echo "$(PREFIX_SUB_STEP_POSITIVE) Image untagged"; \
+			else \
+				echo "$(PREFIX_SUB_STEP_NEGATIVE) Error untagging image"; \
+				exit 1; \
+			fi; \
+		fi
 
-start: | prerequisites require-docker-container
+run: prerequisites require-docker-image-tag
+	@ echo "$(PREFIX_STEP) Running container"
+	@ set -x; $(docker) run \
+			--detach \
+			--name $(DOCKER_NAME) \
+			--publish $(DOCKER_HOST_PORT_SSH):22 \
+			--restart $(DOCKER_RESTART_POLICY) \
+			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null;
+	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running") ]]; then \
+			echo "$(PREFIX_SUB_STEP) $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running")"; \
+			echo "$(PREFIX_SUB_STEP_POSITIVE) Container running"; \
+		else \
+			echo "$(PREFIX_SUB_STEP_NEGATIVE) Container run failed"; \
+			exit 1; \
+		fi
+
+start: prerequisites require-docker-container 
 	@ echo "$(PREFIX_STEP) Starting container"
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]] \
 			&& [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running") ]]; then \
@@ -248,9 +265,10 @@ start: | prerequisites require-docker-container
 			echo "$(PREFIX_SUB_STEP_POSITIVE) Container started"; \
 		else \
 			echo "$(PREFIX_SUB_STEP_NEGATIVE) Container start failed"; \
+			exit 1; \
 		fi
 
-stop: | prerequisites
+stop: prerequisites
 	@ echo "$(PREFIX_STEP) Stopping container"
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]] \
 			&& [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running") ]]; then \
@@ -264,7 +282,7 @@ stop: | prerequisites
 			exit 1; \
 		fi
 
-terminate: | prerequisites
+terminate: prerequisites
 ifneq ($(shell $(docker) ps -aq --filter "name=$(DOCKER_NAME)"),)
 	@ echo "$(PREFIX_STEP) Terminating container"
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=paused") ]]; then \
@@ -285,9 +303,11 @@ ifneq ($(shell $(docker) ps -aq --filter "name=$(DOCKER_NAME)"),)
 			echo "$(PREFIX_SUB_STEP_NEGATIVE) Container termination failed"; \
 			exit 1; \
 		fi
+else
+	@ echo "$(PREFIX_STEP) Container termination skipped"
 endif
 
-unpause: | prerequisites require-docker-container
+unpause: prerequisites require-docker-container
 	@ echo "$(PREFIX_STEP) Unpausing container"
 	@ $(docker) unpause $(DOCKER_NAME) 1> /dev/null
 	@ echo "$(PREFIX_SUB_STEP_POSITIVE) Container unpaused"
