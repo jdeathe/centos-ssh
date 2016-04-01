@@ -59,7 +59,7 @@ IS_DOCKER_RELEASE_TAG := $(shell if [[ $(DOCKER_IMAGE_TAG) =~ $(DOCKER_IMAGE_REL
 	terminate \
 	unpause
 
-all: prerequisites | clean build images install start ps
+all: prerequisites | build images install start ps
 
 # build NO_CACHE=[{false,true}]
 build: prerequisites require-docker-image-tag
