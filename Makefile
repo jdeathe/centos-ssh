@@ -137,16 +137,19 @@ dist: prerequisites require-docker-release-tag | pull
 
 distclean: prerequisites require-docker-release-tag | clean
 	@ if [[ -e $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
-			echo "$(PREFIX_STEP) Deleting $(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz package"; \
+			echo "$(PREFIX_STEP) Deleting package"; \
+			echo "$(PREFIX_SUB_STEP) Package path: $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
 			find $(PACKAGE_PATH) \
 				-name $(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz \
 				-delete; \
-		fi
-	@ if [[ -e $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) Package cleanup failed"; \
-			exit 1; \
+			if [[ ! -e $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
+				echo "$(PREFIX_SUB_STEP_POSITIVE) Package cleanup complete"; \
+			else \
+				echo "$(PREFIX_SUB_STEP_NEGATIVE) Package cleanup failed"; \
+				exit 1; \
+			fi; \
 		else \
-			echo "$(PREFIX_STEP_POSITIVE) Package cleanup complete"; \
+			echo "$(PREFIX_STEP) Package cleanup skipped"; \
 		fi
 
 exec: prerequisites
@@ -230,30 +233,34 @@ restart: prerequisites require-docker-container
 	@ echo "$(PREFIX_SUB_STEP_POSITIVE) Container restarted"
 
 rm: prerequisites
-	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; then \
-			echo "$(PREFIX_STEP) Removing container"; \
-			$(docker) rm -f $(DOCKER_NAME); \
-		fi
-	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; then \
-			echo "$(PREFIX_SUB_STEP_POSITIVE) Container removed"; \
+ifneq ($(shell $(docker) ps -aq --filter "name=$(DOCKER_NAME)"),)
+	@ echo "$(PREFIX_STEP) Removing container"; \
+		$(docker) rm -f $(DOCKER_NAME); \
+		if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; then \
+				echo "$(PREFIX_SUB_STEP_POSITIVE) Container removed"; \
 		else \
 			echo "$(PREFIX_SUB_STEP_NEGATIVE) Container removal failed"; \
 			exit 1; \
 		fi
+else
+	@ echo "$(PREFIX_STEP) Container removal skipped"
+endif
 
 rmi: prerequisites require-docker-image-tag
-	@ if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) ]]; then \
-			echo "$(PREFIX_STEP) Untagging image"; \
-			echo "$(PREFIX_SUB_STEP) $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) : $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"; \
-			$(docker) rmi \
-				$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null; \
-			if [[ $${?} -eq 0 ]]; then \
-				echo "$(PREFIX_SUB_STEP_POSITIVE) Image untagged"; \
-			else \
-				echo "$(PREFIX_SUB_STEP_NEGATIVE) Error untagging image"; \
-				exit 1; \
-			fi; \
+ifneq ($(shell $(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)),)
+	@ echo "$(PREFIX_STEP) Untagging image"; \
+		echo "$(PREFIX_SUB_STEP) $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) : $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"; \
+		$(docker) rmi \
+			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null; \
+		if [[ $${?} -eq 0 ]]; then \
+			echo "$(PREFIX_SUB_STEP_POSITIVE) Image untagged"; \
+		else \
+			echo "$(PREFIX_SUB_STEP_NEGATIVE) Error untagging image"; \
+			exit 1; \
 		fi
+else
+	@ echo "$(PREFIX_STEP) Untagging image skipped"
+endif
 
 run: prerequisites require-docker-image-tag
 	@ echo "$(PREFIX_STEP) Running container"
