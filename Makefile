@@ -100,7 +100,8 @@ clean: prerequisites | terminate rmi
 
 create: prerequisites
 	@ echo "$(PREFIX_STEP) Creating container"
-	@ set -x; $(docker) create \
+	@ set -x; \
+		$(docker) create \
 			$(DOCKER_CONTAINER_PARAMETERS) \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null;
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=created") ]]; then \
@@ -264,7 +265,8 @@ endif
 
 run: prerequisites require-docker-image-tag
 	@ echo "$(PREFIX_STEP) Running container"
-	@ set -x; $(docker) run \
+	@ set -x; \
+		$(docker) run \
 			--detach \
 			$(DOCKER_CONTAINER_PARAMETERS) \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null;
