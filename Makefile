@@ -31,6 +31,24 @@ get-docker-info := $(shell $(docker) info)
 IS_DOCKER_IMAGE_TAG := $(shell if [[ $(DOCKER_IMAGE_TAG) =~ $(DOCKER_IMAGE_TAG_PATTERN) ]]; then echo $(DOCKER_IMAGE_TAG); else echo ''; fi)
 IS_DOCKER_RELEASE_TAG := $(shell if [[ $(DOCKER_IMAGE_TAG) =~ $(DOCKER_IMAGE_RELEASE_TAG_PATTERN) ]]; then echo $(DOCKER_IMAGE_TAG); else echo ''; fi)
 
+# Common parameters of create and run targets
+define DOCKER_CONTAINER_PARAMETERS
+--name $(DOCKER_NAME) \
+--publish $(DOCKER_HOST_PORT_SSH):22 \
+--restart $(DOCKER_RESTART_POLICY) \
+--env "SSH_AUTHORIZED_KEYS=$(SSH_AUTHORIZED_KEYS)" \
+--env "SSH_CHROOT_DIRECTORY=$(SSH_CHROOT_DIRECTORY)" \
+--env "SSH_INHERIT_ENVIRONMENT=$(SSH_INHERIT_ENVIRONMENT)" \
+--env "SSH_SUDO=$(SSH_SUDO)" \
+--env "SSH_USER=$(SSH_USER)" \
+--env "SSH_USER_FORCE_SFTP=$(SSH_USER_FORCE_SFTP)" \
+--env "SSH_USER_HOME=$(SSH_USER_HOME)" \
+--env "SSH_USER_PASSWORD=$(SSH_USER_PASSWORD)" \
+--env "SSH_USER_PASSWORD_HASHED=$(SSH_USER_PASSWORD_HASHED)" \
+--env "SSH_USER_SHELL=$(SSH_USER_SHELL)" \
+--env "SSH_USER_ID=$(SSH_USER_ID)"
+endef
+
 .PHONY: \
 	all \
 	build \
@@ -83,9 +101,7 @@ clean: prerequisites | terminate rm rmi
 create: prerequisites
 	@ echo "$(PREFIX_STEP) Creating container"
 	@ set -x; $(docker) create \
-			--name $(DOCKER_NAME) \
-			--publish $(DOCKER_HOST_PORT_SSH):22 \
-			--restart $(DOCKER_RESTART_POLICY) \
+			$(DOCKER_CONTAINER_PARAMETERS) \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null;
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=created") ]]; then \
 			echo "$(PREFIX_SUB_STEP) $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=created")"; \
@@ -243,9 +259,7 @@ run: prerequisites require-docker-image-tag
 	@ echo "$(PREFIX_STEP) Running container"
 	@ set -x; $(docker) run \
 			--detach \
-			--name $(DOCKER_NAME) \
-			--publish $(DOCKER_HOST_PORT_SSH):22 \
-			--restart $(DOCKER_RESTART_POLICY) \
+			$(DOCKER_CONTAINER_PARAMETERS) \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null;
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running") ]]; then \
 			echo "$(PREFIX_SUB_STEP) $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running")"; \
