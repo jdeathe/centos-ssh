@@ -96,7 +96,7 @@ build: prerequisites require-docker-image-tag
 			exit 1; \
 		fi
 
-clean: prerequisites | terminate rm rmi
+clean: prerequisites | terminate rmi
 
 create: prerequisites
 	@ echo "$(PREFIX_STEP) Creating container"
