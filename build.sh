@@ -7,23 +7,7 @@ if [[ ${DIR_PATH} == */* ]] && [[ ${DIR_PATH} != $( pwd ) ]]; then
 fi
 
 source build.conf
-
-show_docker_image ()
-{
-	local NAME=$1
-	local NAME_PARTS=(${NAME//:/ })
-
-	# Set 'latest' tag if no tag requested
-	if [[ ${#NAME_PARTS[@]} == 1 ]]; then
-		NAME_PARTS[1]='latest'
-	fi
-
-	docker images | \
-		awk \
-			-v FS='[ ]+' \
-			-v pattern="^${NAME_PARTS[0]}[ ]+${NAME_PARTS[1]} " \
-			'$0 ~ pattern { print $0; }'
-}
+source docker-helpers.sh
 
 NO_CACHE=$1
 
