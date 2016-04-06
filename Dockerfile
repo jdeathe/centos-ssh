@@ -109,16 +109,16 @@ EXPOSE 22
 # -----------------------------------------------------------------------------
 # Set default environment variables
 # -----------------------------------------------------------------------------
-ENV SSH_AUTHORIZED_KEYS ""
-ENV SSH_CHROOT_DIRECTORY "%h"
-ENV SSH_INHERIT_ENVIRONMENT false
-ENV SSH_SUDO "ALL=(ALL) ALL"
-ENV SSH_USER "app-admin"
-ENV SSH_USER_FORCE_SFTP false
-ENV SSH_USER_HOME "/home/%u"
-ENV SSH_USER_PASSWORD ""
-ENV SSH_USER_PASSWORD_HASHED false
-ENV SSH_USER_SHELL "/bin/bash"
-ENV SSH_USER_ID "500:500"
+ENV SSH_AUTHORIZED_KEYS="" \
+	SSH_CHROOT_DIRECTORY="%h" \
+	SSH_INHERIT_ENVIRONMENT=false \
+	SSH_SUDO="ALL=(ALL) ALL" \
+	SSH_USER="app-admin" \
+	SSH_USER_FORCE_SFTP=false \
+	SSH_USER_HOME="/home/%u" \
+	SSH_USER_PASSWORD="" \
+	SSH_USER_PASSWORD_HASHED=false \
+	SSH_USER_SHELL="/bin/bash" \
+	SSH_USER_ID="500:500"
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
