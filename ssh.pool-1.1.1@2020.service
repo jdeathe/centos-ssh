@@ -64,7 +64,7 @@ ExecStartPre=/bin/sudo /bin/bash -c \
 # Create a data container for the configuration volume
 ExecStartPre=/bin/sudo /bin/bash -c \
   "if [[ ${VOLUME_CONFIG_ENABLED} == true ]] && [[ ${VOLUME_CONFIG_NAMED} == true ]]; then \
-    if [[ ${VOLUME_CONFIG_NAME} != $(/usr/bin/docker ps -a | /bin/awk -v pattern=\"^${VOLUME_CONFIG_NAME}$\" '$NF ~ pattern { print $NF; }') ]]; then \
+    if [[ -z $(/usr/bin/docker ps -aq --filter "name=${VOLUME_CONFIG_NAME}") ]]; then \
       /usr/bin/docker run \
         --name ${VOLUME_CONFIG_NAME}.tmp \
         ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
@@ -79,7 +79,7 @@ ExecStartPre=/bin/sudo /bin/bash -c \
       /usr/bin/docker kill ${VOLUME_CONFIG_NAME}.tmp; \
     fi; \
   elif [[ ${VOLUME_CONFIG_ENABLED} == true ]] && [[ ${VOLUME_CONFIG_NAMED} != true ]]; then \
-    if [[ ${VOLUME_CONFIG_NAME} != $(/usr/bin/docker ps -a | /bin/awk -v pattern=\"^${VOLUME_CONFIG_NAME}$\" '$NF ~ pattern { print $NF; }') ]]; then \
+    if [[ -z $(/usr/bin/docker ps -aq --filter "name=${VOLUME_CONFIG_NAME}") ]]; then \
       /usr/bin/docker run \
         --name ${VOLUME_CONFIG_NAME} \
         -v /etc/services-config \
@@ -91,8 +91,8 @@ ExecStartPre=/bin/sudo /bin/bash -c \
 # Remove existing container (and stop if running). This allows it to
 # be re-created on startup but not removed on exit as with --rm.
 ExecStartPre=/bin/sudo /bin/bash -c \
-  "if [[ %p == $(/usr/bin/docker ps -a | /bin/awk -v pattern='^%p$' '$NF ~ pattern { print $NF; }') ]]; then \
-    if [[ %p == $(/usr/bin/docker ps | /bin/awk -v pattern='^%p$' '$NF ~ pattern { print $NF; }') ]]; then \
+  "if [[ -n $(/usr/bin/docker ps -aq --filter "name=%p") ]]; then \
+    if [[ -n $(/usr/bin/docker ps -aq --filter "name=%p" --filter "status=running") ]]; then \
       /usr/bin/docker stop %p; \
     fi; \
     /usr/bin/docker rm %p; \
@@ -100,7 +100,7 @@ ExecStartPre=/bin/sudo /bin/bash -c \
 
 # Startup
 ExecStart=/bin/sudo /bin/bash -c \
-  "if [[ ${VOLUME_CONFIG_NAME} == $(/usr/bin/docker ps -a | /bin/awk -v pattern=\"^${VOLUME_CONFIG_NAME}$\" '$NF ~ pattern { print $NF; }') ]]; then \
+  "if [[ -n $(/usr/bin/docker ps -aq --filter "name=${VOLUME_CONFIG_NAME}") ]]; then \
     /usr/bin/docker run \
       --name %p \
       -p %i:22 \
