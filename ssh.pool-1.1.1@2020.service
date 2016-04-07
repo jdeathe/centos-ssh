@@ -112,7 +112,7 @@ ExecStart=/bin/sudo /bin/bash -c \
       --env \"SSH_USER_PASSWORD=${SSH_USER_PASSWORD}\" \
       --env \"SSH_USER_PASSWORD_HASHED=${SSH_USER_PASSWORD_HASHED}\" \
       --env \"SSH_USER_SHELL=${SSH_USER_SHELL}\" \
-      --env \"SSH_USER_UID=${SSH_USER_UID}\" \
+      --env \"SSH_USER_ID=${SSH_USER_ID}\" \
       --volumes-from volume-config.%p \
       ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   else \
@@ -128,7 +128,7 @@ ExecStart=/bin/sudo /bin/bash -c \
       --env \"SSH_USER_PASSWORD=${SSH_USER_PASSWORD}\" \
       --env \"SSH_USER_PASSWORD_HASHED=${SSH_USER_PASSWORD_HASHED}\" \
       --env \"SSH_USER_SHELL=${SSH_USER_SHELL}\" \
-      --env \"SSH_USER_UID=${SSH_USER_UID}\" \
+      --env \"SSH_USER_ID=${SSH_USER_ID}\" \
       ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   fi"
 
