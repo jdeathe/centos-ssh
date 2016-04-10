@@ -15,6 +15,17 @@ have_docker_container_name ()
 	return 1
 }
 
+have_docker_image ()
+{
+	local NAME=$1
+
+	if [[ -n $(show_docker_image ${NAME}) ]]; then
+		return 0
+	fi
+
+	return 1
+}
+
 is_docker_container_name_running ()
 {
 	local NAME=$1
@@ -28,6 +39,28 @@ is_docker_container_name_running ()
 	fi
 
 	return 1
+}
+
+remove_docker_container_name ()
+{
+	local NAME=$1
+
+	if have_docker_container_name ${NAME}; then
+		if is_docker_container_name_running ${NAME}; then
+			echo "Stopping container ${NAME}"
+			docker stop ${NAME} &> /dev/null
+
+			if [[ ${?} -ne 0 ]]; then
+				return 1
+			fi
+		fi
+		echo "Removing container ${NAME}"
+		docker rm ${NAME} &> /dev/null
+
+		if [[ ${?} -ne 0 ]]; then
+			return 1
+		fi
+	fi
 }
 
 show_docker_container_name_status ()
@@ -60,26 +93,4 @@ show_docker_image ()
 			-v FS='[ ]+' \
 			-v pattern="^${NAME_PARTS[0]}[ ]+${NAME_PARTS[1]} " \
 			'$0 ~ pattern { print $0; }'
-}
-
-remove_docker_container_name ()
-{
-	local NAME=$1
-
-	if have_docker_container_name ${NAME}; then
-		if is_docker_container_name_running ${NAME}; then
-			echo "Stopping container ${NAME}"
-			docker stop ${NAME} &> /dev/null
-
-			if [[ ${?} -ne 0 ]]; then
-				return 1
-			fi
-		fi
-		echo "Removing container ${NAME}"
-		docker rm ${NAME} &> /dev/null
-
-		if [[ ${?} -ne 0 ]]; then
-			return 1
-		fi
-	fi
 }
