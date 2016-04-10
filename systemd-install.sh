@@ -8,117 +8,43 @@ fi
 
 source run.conf
 
-have_docker_container_name ()
-{
-	local NAME=$1
-
-	if [[ -z ${NAME} ]]; then
-		return 1
-	fi
-
-	if [[ -n $(docker ps -a | awk -v pattern="^${NAME}$" '$NF ~ pattern { print $NF; }') ]]; then
-		return 0
-	fi
-
-	return 1
-}
-
-have_docker_image ()
-{
-	local NAME=$1
-
-	if [[ -n $(show_docker_image ${NAME}) ]]; then
-		return 0
-	fi
-
-	return 1
-}
-
-is_docker_container_name_running ()
-{
-	local NAME=$1
-
-	if [[ -z ${NAME} ]]; then
-		return 1
-	fi
-
-	if [[ -n $(docker ps | awk -v pattern="^${NAME}$" '$NF ~ pattern { print $NF; }') ]]; then
-		return 0
-	fi
-
-	return 1
-}
-
-remove_docker_container_name ()
-{
-	local NAME=$1
-
-	if have_docker_container_name ${NAME}; then
-		if is_docker_container_name_running ${NAME}; then
-			echo "Stopping container ${NAME}"
-			docker stop ${NAME} &> /dev/null
-
-			if [[ ${?} -ne 0 ]]; then
-				return 1
-			fi
-		fi
-		echo "Removing container ${NAME}"
-		docker rm ${NAME} &> /dev/null
-
-		if [[ ${?} -ne 0 ]]; then
-			return 1
-		fi
-	fi
-}
-
-show_docker_image ()
-{
-	local NAME=$1
-	local NAME_PARTS=(${NAME//:/ })
-
-	# Set 'latest' tag if no tag requested
-	if [[ ${#NAME_PARTS[@]} == 1 ]]; then
-		NAME_PARTS[1]='latest'
-	fi
-
-	docker images | \
-		awk \
-			-v FS='[ ]+' \
-			-v pattern="^${NAME_PARTS[0]}[ ]+${NAME_PARTS[1]} " \
-			'$0 ~ pattern { print $0; }'
-}
-
 SERVICE_UNIT_LONG_NAME=${SERVICE_UNIT_LONG_NAME:-ssh.pool-1.1.1}
 SERVICE_UNIT_FILE_NAME=${SERVICE_UNIT_FILE_NAME:-${SERVICE_UNIT_LONG_NAME}@2020.service}
-
-# Stop the service and remove containers.
-sudo systemctl stop ${SERVICE_UNIT_FILE_NAME} &> /dev/null
-remove_docker_container_name volume-config.${SERVICE_UNIT_LONG_NAME}
-remove_docker_container_name ${SERVICE_UNIT_LONG_NAME}
 
 # Copy systemd definition into place and enable it.
 sudo cp ${SERVICE_UNIT_FILE_NAME} /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable /etc/systemd/system/${SERVICE_UNIT_FILE_NAME}
+sudo systemctl enable -f /etc/systemd/system/${SERVICE_UNIT_FILE_NAME}
 
-printf -- "\nInstalling %s\n" ${SERVICE_UNIT_FILE_NAME}
-sudo systemctl restart ${SERVICE_UNIT_FILE_NAME} &
-INSTALL_PID=${!}
+# Stop the service and remove containers.
+sudo systemctl stop ${SERVICE_UNIT_FILE_NAME} &> /dev/null
 
-# Tail the systemd unit logs unitl installation completes.
-journalctl -fu ${SERVICE_UNIT_FILE_NAME} &
-LOG_PID=${!}
-wait ${INSTALL_PID}
-INSTALL_STATUS=${?}
+# Terminate the container(s)
+sudo docker rm -f volume-config.${SERVICE_UNIT_LONG_NAME} &> /dev/null
+sudo docker rm -f ${SERVICE_UNIT_LONG_NAME} &> /dev/null
+
+printf -- "---> Installing %s\n" ${SERVICE_UNIT_FILE_NAME}
+sudo systemctl start ${SERVICE_UNIT_FILE_NAME} &
+PIDS[0]=${!}
+PIDS[1]=$(ps --ppid ${PIDS[0]} -o pid=)
+
+# Tail the systemd unit logs unitl installation completes
+sudo journalctl -fu ${SERVICE_UNIT_FILE_NAME} &
+PIDS[2]=${!}
+PIDS[3]=$(ps --ppid ${PIDS[2]} -o pid=)
+
+# Wait for installtion to complete
+[[ -n ${PIDS[1]} ]] && wait ${PIDS[1]}
+[[ -n ${PIDS[0]} ]] && wait ${PIDS[0]}
+
 # Allow time for the container bootstrap to complete
 sleep 5
-kill -9 ${LOG_PID}
+sudo kill -15 ${PIDS[2]} ${PIDS[3]}
 
-printf -- "\nService status:\n"
-if [[ ${INSTALL_STATUS} -eq 0 ]]; then
-	sudo systemctl status -l ${SERVICE_UNIT_FILE_NAME}
-	printf -- "\n ${COLOUR_POSITIVE}--->${COLOUR_RESET} %s\n" 'Install complete'
+if sudo systemctl -q is-active ${SERVICE_UNIT_FILE_NAME}; then
+	printf -- " ---> %s\n${COLOUR_POSITIVE} --->${COLOUR_RESET} %s\n" ${SERVICE_UNIT_FILE_NAME} 'Install complete'
 else
+	printf -- "\nService status:\n"
 	sudo systemctl status -l ${SERVICE_UNIT_FILE_NAME}
-	printf -- "\n ${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" 'ERROR'
+	printf -- "\n${COLOUR_NEGATIVE} --->${COLOUR_RESET} %s\n" 'Install error'
 fi
