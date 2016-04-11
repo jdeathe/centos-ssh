@@ -18,10 +18,10 @@
 
 [Unit]
 Description=CentOS / Supervisor / OpenSSH // pool-1.1.1
-After=etcd2.service
-After=docker.service
 Requires=docker.service
 Requires=etcd2.service
+After=etcd2.service
+After=docker.service
 
 [Service]
 Restart=on-failure
