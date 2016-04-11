@@ -64,7 +64,7 @@ ExecStartPre=/bin/sudo /bin/bash -c \
 # Create a data container for the configuration volume
 ExecStartPre=/bin/sudo /bin/bash -c \
   "if [[ ${VOLUME_CONFIG_ENABLED} == true ]] && [[ ${VOLUME_CONFIG_NAMED} == true ]]; then \
-    if [[ -z $(/usr/bin/docker ps -aq --filter "name=${VOLUME_CONFIG_NAME}") ]]; then \
+    if [[ -z $(/usr/bin/docker ps -aq --filter \"name=${VOLUME_CONFIG_NAME}\") ]]; then \
       /usr/bin/docker run \
         --name ${VOLUME_CONFIG_NAME}.tmp \
         ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
@@ -79,7 +79,7 @@ ExecStartPre=/bin/sudo /bin/bash -c \
       /usr/bin/docker kill ${VOLUME_CONFIG_NAME}.tmp; \
     fi; \
   elif [[ ${VOLUME_CONFIG_ENABLED} == true ]] && [[ ${VOLUME_CONFIG_NAMED} != true ]]; then \
-    if [[ -z $(/usr/bin/docker ps -aq --filter "name=${VOLUME_CONFIG_NAME}") ]]; then \
+    if [[ -z $(/usr/bin/docker ps -aq --filter \"name=${VOLUME_CONFIG_NAME}\") ]]; then \
       /usr/bin/docker run \
         --name ${VOLUME_CONFIG_NAME} \
         -v /etc/services-config \
