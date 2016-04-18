@@ -19,8 +19,8 @@
 [Unit]
 Description=CentOS / Supervisor / OpenSSH // pool-1.1.1
 Requires=docker.service
-Requires=etcd2.service
-After=etcd2.service
+# Requires=etcd2.service
+# After=etcd2.service
 After=docker.service
 
 [Service]
@@ -88,14 +88,16 @@ ExecStartPre=/bin/bash -c \
     fi; \
   fi"
 
-# Remove existing container (and stop if running). This allows it to
-# be re-created on startup but not removed on exit as with --rm.
+# Terminate existing container to allow for redeployment
 ExecStartPre=/bin/bash -c \
   "if [[ -n $(/usr/bin/docker ps -aq --filter \"name=%p\") ]]; then \
+    if [[ -n $(/usr/bin/docker ps -aq --filter \"name=%p\" --filter \"status=paused\") ]]; then \
+      /usr/bin/docker unpause %p; \
+    fi; \
     if [[ -n $(/usr/bin/docker ps -aq --filter \"name=%p\" --filter \"status=running\") ]]; then \
       /usr/bin/docker stop %p; \
     fi; \
-    /usr/bin/docker rm %p; \
+    /usr/bin/docker rm -f %p; \
   fi"
 
 # Startup
@@ -135,10 +137,17 @@ ExecStart=/bin/bash -c \
       ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   fi"
 
-ExecStartPost=/usr/bin/etcdctl set /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE} %H:%i
+# ExecStartPost=/usr/bin/etcdctl \
+#   set \
+#   /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE} \
+#   %H:%i
 
+# Shutdown
 ExecStop=/usr/bin/docker stop --time 10 %p
-ExecStopPost=/usr/bin/etcdctl rm /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE}
+
+# ExecStopPost=/usr/bin/etcdctl \
+#   rm \
+#   /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE}
 
 [Install]
 WantedBy=multi-user.target
