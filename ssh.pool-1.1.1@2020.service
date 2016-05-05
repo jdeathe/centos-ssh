@@ -1,6 +1,12 @@
 # -----------------------------------------------------------------------------
 # To install:
 #     sudo cp <container-path>/<service-name>@<port>.service /etc/systemd/system/
+#
+#   If not installing to a CoreOS distribution replace etcd2.service 
+#   with etcd.service using:
+#     sudo sed -i -e 's~etcd2.service~etcd.service~g' \
+#       /etc/systemd/system/<service-name>@<port>.service
+#
 #     sudo systemctl daemon-reload
 #     sudo systemctl enable -f /etc/systemd/system/<service-name>@<port>.service
 #
@@ -19,8 +25,8 @@
 [Unit]
 Description=CentOS / Supervisor / OpenSSH // ssh.pool-1.1.1
 Requires=docker.service
-# Requires=etcd2.service
-# After=etcd2.service
+Requires=etcd2.service
+After=etcd2.service
 After=docker.service
 
 [Service]
@@ -137,17 +143,22 @@ ExecStart=/bin/bash -c \
       ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   fi"
 
-# ExecStartPost=/usr/bin/etcdctl \
-#   set \
-#   /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE} \
-#   %H:%i
+# Register service state
+ExecStartPost=/usr/bin/etcdctl \
+  set \
+  /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE} \
+  %H:%i
 
 # Shutdown
 ExecStop=/usr/bin/docker stop --time 10 %p
 
-# ExecStopPost=/usr/bin/etcdctl \
-#   rm \
-#   /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE}
+# Unregister service state
+ExecStopPost=/bin/bash -c \
+  "if [[ -n $(/usr/bin/etcdctl get /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE} &> /dev/null ) ]]; then \
+    /usr/bin/etcdctl \
+      rm \
+      /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE}; \
+  fi"
 
 [Install]
 WantedBy=multi-user.target
