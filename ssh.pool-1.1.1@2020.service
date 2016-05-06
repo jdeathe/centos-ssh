@@ -14,7 +14,7 @@
 #     sudo systemctl [start|stop|restart|kill|status] <service-name>@<port>.service
 #
 # Debugging:
-#     journalctl -fn 50 u <service-name>@<port>.service
+#     journalctl -fn 50 -u <service-name>@<port>.service
 #
 # To uninstall:
 #     sudo systemctl disable -f /etc/systemd/system/<service-name>@<port>.service
@@ -23,7 +23,7 @@
 # -----------------------------------------------------------------------------
 
 [Unit]
-Description=CentOS / Supervisor / OpenSSH // ssh.pool-1.1.1
+Description=CentOS / Supervisor / OpenSSH // %p
 Requires=docker.service
 Requires=etcd2.service
 After=etcd2.service
@@ -36,11 +36,6 @@ TimeoutStartSec=1200
 Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/services-packages"
 Environment="DOCKER_IMAGE_NAME=jdeathe/centos-ssh"
 Environment="DOCKER_IMAGE_TAG=centos-7-2.0.1"
-Environment="SERVICE_UNIT_NAME=ssh"
-Environment="SERVICE_UNIT_APP_GROUP=app-1"
-Environment="SERVICE_UNIT_SHARED_GROUP=pool-1"
-Environment="SERVICE_UNIT_LOCAL_ID=1"
-Environment="SERVICE_UNIT_INSTANCE=1"
 Environment="VOLUME_CONFIG_ENABLED=false"
 Environment="VOLUME_CONFIG_NAMED=false"
 Environment="VOLUME_CONFIG_NAME=volume-config.%p"
@@ -143,21 +138,21 @@ ExecStart=/bin/bash -c \
       ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   fi"
 
-# Register service state
+# Register service
 ExecStartPost=/usr/bin/etcdctl \
   set \
-  /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE} \
+  /services/%p \
   %H:%i
 
 # Shutdown
 ExecStop=/usr/bin/docker stop --time 10 %p
 
-# Unregister service state
+# Unregister service
 ExecStopPost=/bin/bash -c \
-  "if [[ -n $(/usr/bin/etcdctl get /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE} &> /dev/null ) ]]; then \
+  "if [[ -n $(/usr/bin/etcdctl get /services/%p &> /dev/null ) ]]; then \
     /usr/bin/etcdctl \
       rm \
-      /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE}; \
+      /services/%p; \
   fi"
 
 [Install]
