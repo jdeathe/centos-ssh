@@ -47,28 +47,25 @@ replace_etcd_service_name ()
 	fi
 }
 
-SERVICE_UNIT_LONG_NAME=${SERVICE_UNIT_LONG_NAME:-ssh.pool-1.1.1}
-SERVICE_UNIT_FILE_NAME=${SERVICE_UNIT_FILE_NAME:-${SERVICE_UNIT_LONG_NAME}@2020.service}
-
 # Copy systemd definition into place and enable it.
-cp ${SERVICE_UNIT_FILE_NAME} /etc/systemd/system/
-replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_FILE_NAME}
+cp ${SERVICE_UNIT_TEMPLATE_NAME} /etc/systemd/system/
+replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
 systemctl daemon-reload
-systemctl enable -f /etc/systemd/system/${SERVICE_UNIT_FILE_NAME}
+systemctl enable -f ${SERVICE_UNIT_TEMPLATE_NAME}
 
 # Stop the service and remove containers.
-systemctl stop ${SERVICE_UNIT_FILE_NAME} &> /dev/null
+systemctl stop ${SERVICE_UNIT_INSTANCE_NAME} &> /dev/null
 
 # Terminate the container(s)
 docker rm -f volume-config.${SERVICE_UNIT_LONG_NAME} &> /dev/null
 docker rm -f ${SERVICE_UNIT_LONG_NAME} &> /dev/null
 
-printf -- "---> Installing %s\n" ${SERVICE_UNIT_FILE_NAME}
-systemctl start ${SERVICE_UNIT_FILE_NAME} &
+printf -- "---> Installing %s\n" ${SERVICE_UNIT_INSTANCE_NAME}
+systemctl start ${SERVICE_UNIT_INSTANCE_NAME} &
 PIDS[0]=${!}
 
 # Tail the systemd unit logs unitl installation completes
-journalctl -fu ${SERVICE_UNIT_FILE_NAME} &
+journalctl -fu ${SERVICE_UNIT_INSTANCE_NAME} &
 PIDS[1]=${!}
 
 # Wait for installtion to complete
@@ -77,11 +74,13 @@ PIDS[1]=${!}
 # Allow time for the container bootstrap to complete
 sleep 5
 kill -15 ${PIDS[1]}
+wait ${PIDS[1]} 2> /dev/null
 
-if systemctl -q is-active ${SERVICE_UNIT_FILE_NAME}; then
-	printf -- " ---> %s\n${COLOUR_POSITIVE} --->${COLOUR_RESET} %s\n" ${SERVICE_UNIT_FILE_NAME} 'Install complete'
+if systemctl -q is-active ${SERVICE_UNIT_INSTANCE_NAME}; then
+	printf -- " ---> Service unit is active: %s\n" "$(systemctl list-units --type=service | grep ssh.pool-1.1@1.service)"
+	printf -- "${COLOUR_POSITIVE} --->${COLOUR_RESET} %s\n" 'Install complete'
 else
 	printf -- "\nService status:\n"
-	systemctl status -l ${SERVICE_UNIT_FILE_NAME}
+	systemctl status -ln 50 ${SERVICE_UNIT_INSTANCE_NAME}
 	printf -- "\n${COLOUR_NEGATIVE} --->${COLOUR_RESET} %s\n" 'Install error'
 fi
