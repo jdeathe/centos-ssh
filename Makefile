@@ -176,7 +176,7 @@ load: prerequisites require-docker-release-tag
 		else \
 			$(xz) -dc $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz | \
 				$(docker) load; \
-			echo "$(PREFIX_SUB_STEP) $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG))"; \
+			echo "$(PREFIX_SUB_STEP) $$( if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) ]]; then echo $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)); else echo $$($(docker) images -q docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)); fi; )"; \
 			echo "$(PREFIX_SUB_STEP_POSITIVE) Image loaded"; \
 		fi
 
@@ -203,7 +203,7 @@ pull: prerequisites require-docker-image-tag
 	@ $(docker) pull \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG); \
 		if [[ $${?} -eq 0 ]]; then \
-			echo "$(PREFIX_SUB_STEP) $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG))"; \
+			echo "$(PREFIX_SUB_STEP) $$( if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) ]]; then echo $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)); else echo $$($(docker) images -q docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)); fi; )"; \
 			echo "$(PREFIX_SUB_STEP_POSITIVE) Image pulled"; \
 		else \
 			echo "$(PREFIX_SUB_STEP_NEGATIVE) Error pulling image"; \
@@ -248,20 +248,20 @@ else
 endif
 
 rmi: prerequisites require-docker-image-tag
-ifneq ($(shell $(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)),)
-	@ echo "$(PREFIX_STEP) Untagging image"; \
-		echo "$(PREFIX_SUB_STEP) $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) : $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"; \
-		$(docker) rmi \
-			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null; \
-		if [[ $${?} -eq 0 ]]; then \
-			echo "$(PREFIX_SUB_STEP_POSITIVE) Image untagged"; \
+	@ if [[ -n $$( if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) ]]; then echo $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)); else echo $$($(docker) images -q docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)); fi; ) ]]; then \
+			echo "$(PREFIX_STEP) Untagging image"; \
+			echo "$(PREFIX_SUB_STEP) $$( if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) ]]; then echo $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)); else echo $$($(docker) images -q docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)); fi; ) : $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)"; \
+			$(docker) rmi \
+				$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null; \
+			if [[ $${?} -eq 0 ]]; then \
+				echo "$(PREFIX_SUB_STEP_POSITIVE) Image untagged"; \
+			else \
+				echo "$(PREFIX_SUB_STEP_NEGATIVE) Error untagging image"; \
+				exit 1; \
+			fi; \
 		else \
-			echo "$(PREFIX_SUB_STEP_NEGATIVE) Error untagging image"; \
-			exit 1; \
+			echo "$(PREFIX_STEP) Untagging image skipped"; \
 		fi
-else
-	@ echo "$(PREFIX_STEP) Untagging image skipped"
-endif
 
 run: prerequisites require-docker-image-tag
 	@ echo "$(PREFIX_STEP) Running container"
