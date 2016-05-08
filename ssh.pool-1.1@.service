@@ -1,25 +1,30 @@
 # -----------------------------------------------------------------------------
+# Where:
+#    {service-unit-instance-name} = {service-unit-name}.{service-unit-group-name}.{service-unit-local-id}@{service-unit-instance}
+#    {service-unit-long-name} = {service-unit-name}.{service-unit-group-name}.{service-unit-local-id}.{service-unit-instance}
+#
 # To install:
-#     sudo cp <container-path>/<service-name>@<port>.service /etc/systemd/system/
+#     sudo cp {container-path}/{service-unit-name}.{service-unit-group-name}.{service-unit-local-id}@.service \
+#       /etc/systemd/system/
 #
 #   If not installing to a CoreOS distribution replace etcd2.service 
 #   with etcd.service using:
 #     sudo sed -i -e 's~etcd2.service~etcd.service~g' \
-#       /etc/systemd/system/<service-name>@<port>.service
+#       /etc/systemd/system/{service-unit-name}.{service-unit-group-name}.{service-unit-local-id}@.service
 #
 #     sudo systemctl daemon-reload
-#     sudo systemctl enable -f /etc/systemd/system/<service-name>@<port>.service
+#     sudo systemctl enable -f {service-unit-instance-name}.service
 #
 # Start using:
-#     sudo systemctl [start|stop|restart|kill|status] <service-name>@<port>.service
+#     sudo systemctl [start|stop|restart|kill|status] {service-unit-instance-name}.service
 #
 # Debugging:
-#     journalctl -fn 50 -u <service-name>@<port>.service
+#     journalctl -fn 50 -u {service-unit-instance-name}.service
 #
 # To uninstall:
-#     sudo systemctl disable -f /etc/systemd/system/<service-name>@<port>.service
-#     sudo systemctl stop /etc/systemd/system/<service-name>@<port>.service
-#     sudo docker rm <service-name>
+#     sudo systemctl disable -f /etc/systemd/system/{service-unit-instance-name}.service
+#     sudo systemctl stop /etc/systemd/system/{service-unit-instance-name}.service
+#     sudo docker rm -f {service-unit-long-name}
 # -----------------------------------------------------------------------------
 
 [Unit]
