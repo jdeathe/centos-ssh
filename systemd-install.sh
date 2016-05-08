@@ -6,11 +6,6 @@ if [[ ${DIR_PATH} == */* ]] && [[ ${DIR_PATH} != $( pwd ) ]] ; then
 	cd ${DIR_PATH}
 fi
 
-if [[ ${EUID} -ne 0 ]]; then
-	echo "Please run as root."
-	exit 1
-fi
-
 source run.conf
 
 is_coreos_distribution ()
@@ -46,6 +41,18 @@ replace_etcd_service_name ()
 		sed -i -e 's~etcd2.service~etcd.service~g' ${FILE_PATH}
 	fi
 }
+
+# Abort if systemd not supported
+if ! type -p systemctl &> /dev/null; then
+	printf -- "${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" 'Systemd installation not supported.'
+	exit 1
+fi
+
+# Abort if not run by root user or with sudo
+if [[ ${EUID} -ne 0 ]]; then
+	printf -- "${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" 'Please run as root.'
+	exit 1
+fi
 
 # Copy systemd definition into place and enable it.
 cp ${SERVICE_UNIT_TEMPLATE_NAME} /etc/systemd/system/
