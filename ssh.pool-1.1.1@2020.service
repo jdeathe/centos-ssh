@@ -56,7 +56,7 @@ Environment="SSH_USER_ID=500:500"
 
 # Initialisation: Load image from local storage if available, otherwise pull.
 ExecStartPre=/bin/bash -c \
-  "if [[ -z $(/usr/bin/docker images | awk -v FS='[ ]+' -v pattern=\"^(docker.io/)?${DOCKER_IMAGE_NAME}[ ]+${DOCKER_IMAGE_TAG} \" '$0 ~ pattern { print $1\":\"$2; }') ]]; then \
+  "if [[ -z $( if [[ -n $(/usr/bin/docker images -q ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}) ]]; then echo $(/usr/bin/docker images -q ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}); else echo $(/usr/bin/docker images -q docker.io/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}); fi; ) ]]; then \
     if [[ -f ${DOCKER_IMAGE_PACKAGE_PATH}/${DOCKER_IMAGE_NAME}.${DOCKER_IMAGE_TAG}.tar.xz ]]; then \
       /usr/bin/xz -dc ${DOCKER_IMAGE_PACKAGE_PATH}/${DOCKER_IMAGE_NAME}.${DOCKER_IMAGE_TAG}.tar.xz | /usr/bin/docker load; \
     else \
