@@ -58,7 +58,8 @@ fi
 cp ${SERVICE_UNIT_GROUP_NAME}.1@.service /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
 replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
 systemctl daemon-reload
-systemctl enable -f ${SERVICE_UNIT_TEMPLATE_NAME}
+
+systemctl enable -f ${SERVICE_UNIT_INSTANCE_NAME}
 
 # Stop the service and remove containers.
 systemctl stop ${SERVICE_UNIT_INSTANCE_NAME} &> /dev/null
