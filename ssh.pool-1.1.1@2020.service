@@ -36,6 +36,7 @@ TimeoutStartSec=1200
 Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/services-packages"
 Environment="DOCKER_IMAGE_NAME=jdeathe/centos-ssh"
 Environment="DOCKER_IMAGE_TAG=centos-7-2.0.1"
+Environment="SERVICE_UNIT_PORT_MAP_TCP_22=%i"
 Environment="VOLUME_CONFIG_ENABLED=false"
 Environment="VOLUME_CONFIG_NAMED=false"
 Environment="VOLUME_CONFIG_NAME=volume-config.%p"
