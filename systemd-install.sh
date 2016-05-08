@@ -58,16 +58,14 @@ fi
 cp ${SERVICE_UNIT_GROUP_NAME}.1@.service /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
 replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
 systemctl daemon-reload
-systemctl enable -f ${SERVICE_UNIT_TEMPLATE_NAME}
 
-# Stop the service and remove containers.
+systemctl enable -f ${SERVICE_UNIT_INSTANCE_NAME}
+
+# Stop the service
 systemctl stop ${SERVICE_UNIT_INSTANCE_NAME} &> /dev/null
 
-# Terminate the container(s)
-docker rm -f volume-config.${SERVICE_UNIT_LONG_NAME} &> /dev/null
-docker rm -f ${SERVICE_UNIT_LONG_NAME} &> /dev/null
-
 printf -- "---> Installing %s\n" ${SERVICE_UNIT_INSTANCE_NAME}
+# Systemd ExecStartPre command should exist to terminate any existing containers
 systemctl start ${SERVICE_UNIT_INSTANCE_NAME} &
 PIDS[0]=${!}
 
