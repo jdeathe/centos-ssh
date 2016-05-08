@@ -23,7 +23,7 @@
 # -----------------------------------------------------------------------------
 
 [Unit]
-Description=centos-ssh // %p
+Description=centos-ssh // %p.%i
 Requires=docker.service
 Requires=etcd2.service
 After=etcd2.service
@@ -35,12 +35,12 @@ RestartSec=30
 TimeoutStartSec=1200
 Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/services-packages"
 Environment="DOCKER_IMAGE_NAME=jdeathe/centos-ssh"
-Environment="DOCKER_IMAGE_TAG=centos-6-1.5.1"
-Environment="SERVICE_UNIT_PORT_MAP_TCP_22=%i"
+Environment="DOCKER_IMAGE_TAG=centos-7-2.0.1"
+Environment="SERVICE_UNIT_PORT_MAP_TCP_22=2020"
 Environment="VOLUME_CONFIG_ENABLED=false"
 Environment="VOLUME_CONFIG_NAMED=false"
-Environment="VOLUME_CONFIG_NAME=volume-config.%p"
-Environment="VOLUME_DATA_NAME=volume-data.%p"
+Environment="VOLUME_CONFIG_NAME=volume-config.%p.%i"
+Environment="VOLUME_DATA_NAME=volume-data.%p.%i"
 Environment="SSH_AUTHORIZED_KEYS=ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
 Environment="SSH_CHROOT_DIRECTORY=%h"
 Environment="SSH_INHERIT_ENVIRONMENT=false"
@@ -92,22 +92,22 @@ ExecStartPre=/bin/bash -c \
 
 # Terminate existing container to allow for redeployment
 ExecStartPre=/bin/bash -c \
-  "if [[ -n $(/usr/bin/docker ps -aq --filter \"name=%p\") ]]; then \
-    if [[ -n $(/usr/bin/docker ps -aq --filter \"name=%p\" --filter \"status=paused\") ]]; then \
-      /usr/bin/docker unpause %p; \
+  "if [[ -n $(/usr/bin/docker ps -aq --filter \"name=%p.%i\") ]]; then \
+    if [[ -n $(/usr/bin/docker ps -aq --filter \"name=%p.%i\" --filter \"status=paused\") ]]; then \
+      /usr/bin/docker unpause %p.%i; \
     fi; \
-    if [[ -n $(/usr/bin/docker ps -aq --filter \"name=%p\" --filter \"status=running\") ]]; then \
-      /usr/bin/docker stop %p; \
+    if [[ -n $(/usr/bin/docker ps -aq --filter \"name=%p%i\" --filter \"status=running\") ]]; then \
+      /usr/bin/docker stop %p.%i; \
     fi; \
-    /usr/bin/docker rm -f %p; \
+    /usr/bin/docker rm -f %p.%i; \
   fi"
 
 # Startup
 ExecStart=/bin/bash -c \
   "if [[ -n $(/usr/bin/docker ps -aq --filter \"name=${VOLUME_CONFIG_NAME}\") ]]; then \
     /usr/bin/docker run \
-      --name %p \
-      -p %i:22 \
+      --name %p.%i \
+      -p $(( ${SERVICE_UNIT_PORT_MAP_TCP_22} + $(awk -F. '$0=$NF' <<< %p) - 1 )):22 \
       --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
       --env \"SSH_CHROOT_DIRECTORY=${SSH_CHROOT_DIRECTORY}\" \
       --env \"SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT}\" \
@@ -119,12 +119,12 @@ ExecStart=/bin/bash -c \
       --env \"SSH_USER_PASSWORD_HASHED=${SSH_USER_PASSWORD_HASHED}\" \
       --env \"SSH_USER_SHELL=${SSH_USER_SHELL}\" \
       --env \"SSH_USER_ID=${SSH_USER_ID}\" \
-      --volumes-from volume-config.%p \
+      --volumes-from volume-config.%p.%i \
       ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   else \
     /usr/bin/docker run \
-      --name %p \
-      -p %i:22 \
+      --name %p.%i \
+      -p $(( ${SERVICE_UNIT_PORT_MAP_TCP_22} + $(awk -F. '$0=$NF' <<< %p) - 1 )):22 \
       --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
       --env \"SSH_CHROOT_DIRECTORY=${SSH_CHROOT_DIRECTORY}\" \
       --env \"SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT}\" \
@@ -140,21 +140,26 @@ ExecStart=/bin/bash -c \
   fi"
 
 # Register service
-ExecStartPost=/usr/bin/etcdctl \
-  set \
-  /services/%p \
-  %H:%i
+ExecStartPost=/bin/bash -c \
+  "/usr/bin/etcdctl \
+    set \
+    /services/%p.%i \
+    %H:$(( ${SERVICE_UNIT_PORT_MAP_TCP_22} + $(awk -F. '$0=$NF' <<< %p) - 1 )); \
+  "
 
 # Shutdown
-ExecStop=/usr/bin/docker stop --time 10 %p
+ExecStop=/usr/bin/docker stop --time 10 %p.%i
 
 # Unregister service
 ExecStopPost=/bin/bash -c \
-  "if [[ -n $(/usr/bin/etcdctl get /services/%p &> /dev/null ) ]]; then \
+  "if [[ -n $(/usr/bin/etcdctl get /services/%p.%i &> /dev/null ) ]]; then \
     /usr/bin/etcdctl \
       rm \
-      /services/%p; \
+      /services/%p.%i; \
   fi"
 
 [Install]
 WantedBy=multi-user.target
+
+[X-Fleet]
+Conflicts=%p.*@%i.service
