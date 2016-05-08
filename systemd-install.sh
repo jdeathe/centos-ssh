@@ -61,14 +61,11 @@ systemctl daemon-reload
 
 systemctl enable -f ${SERVICE_UNIT_INSTANCE_NAME}
 
-# Stop the service and remove containers.
+# Stop the service
 systemctl stop ${SERVICE_UNIT_INSTANCE_NAME} &> /dev/null
 
-# Terminate the container(s)
-docker rm -f volume-config.${SERVICE_UNIT_LONG_NAME} &> /dev/null
-docker rm -f ${SERVICE_UNIT_LONG_NAME} &> /dev/null
-
 printf -- "---> Installing %s\n" ${SERVICE_UNIT_INSTANCE_NAME}
+# Systemd ExecStartPre command should exist to terminate any existing containers
 systemctl start ${SERVICE_UNIT_INSTANCE_NAME} &
 PIDS[0]=${!}
 
