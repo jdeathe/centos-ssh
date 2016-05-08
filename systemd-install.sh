@@ -55,7 +55,7 @@ if [[ ${EUID} -ne 0 ]]; then
 fi
 
 # Copy systemd definition into place and enable it.
-cp ${SERVICE_UNIT_TEMPLATE_NAME} /etc/systemd/system/
+cp ${SERVICE_UNIT_GROUP_NAME}.1@.service /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
 replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
 systemctl daemon-reload
 systemctl enable -f ${SERVICE_UNIT_TEMPLATE_NAME}
@@ -84,7 +84,7 @@ kill -15 ${PIDS[1]}
 wait ${PIDS[1]} 2> /dev/null
 
 if systemctl -q is-active ${SERVICE_UNIT_INSTANCE_NAME}; then
-	printf -- " ---> Service unit is active: %s\n" "$(systemctl list-units --type=service | grep ssh.pool-1.1@1.service)"
+	printf -- " ---> Service unit is active: %s\n" "$(systemctl list-units --type=service | grep ${SERVICE_UNIT_INSTANCE_NAME})"
 	printf -- "${COLOUR_POSITIVE} --->${COLOUR_RESET} %s\n" 'Install complete'
 else
 	printf -- "\nService status:\n"
