@@ -82,6 +82,10 @@ docker run \
 	${DOCKER_IMAGE_REPOSITORY_NAME}${@:+ -c }"${@}"
 )
 
+if [[ -n ${DOCKER_HOST_PORT_SSH} ]]; then
+	DOCKER_HOST_PORT_SFTP=$(( ${DOCKER_HOST_PORT_SSH} + 1 ))
+fi
+
 # Forced SFTP
 # To connect: sftp -P 2021 -i ~/.ssh/id_rsa_insecure app-sftp@docker-host
 # (
