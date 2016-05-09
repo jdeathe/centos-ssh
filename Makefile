@@ -34,7 +34,7 @@ IS_DOCKER_RELEASE_TAG := $(shell if [[ $(DOCKER_IMAGE_TAG) =~ $(DOCKER_IMAGE_REL
 # Common parameters of create and run targets
 define DOCKER_CONTAINER_PARAMETERS
 --name $(DOCKER_NAME) \
---publish $(DOCKER_HOST_PORT_SSH):22 \
+--publish $(DOCKER_PORT_MAP_TCP_22):22 \
 --restart $(DOCKER_RESTART_POLICY) \
 --env "SSH_AUTHORIZED_KEYS=$(SSH_AUTHORIZED_KEYS)" \
 --env "SSH_CHROOT_DIRECTORY=$(SSH_CHROOT_DIRECTORY)" \
