@@ -115,7 +115,7 @@ ExecStart=/bin/bash -c \
   "if [[ -n $(/usr/bin/docker ps -aq --filter \"name=${VOLUME_CONFIG_NAME}\") ]]; then \
     /usr/bin/docker run \
       --name %p.%i \
-      -p $(( ${DOCKER_PORT_MAP_TCP_22} + $(awk -F. '$0=$NF' <<< %p) - 1 )):22 \
+      -p $(( ${DOCKER_PORT_MAP_TCP_22} + $(/bin/awk -F. '$0=$NF' <<< %p) - 1 )):22 \
       --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
       --env \"SSH_CHROOT_DIRECTORY=${SSH_CHROOT_DIRECTORY}\" \
       --env \"SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT}\" \
@@ -132,7 +132,7 @@ ExecStart=/bin/bash -c \
   else \
     /usr/bin/docker run \
       --name %p.%i \
-      -p $(( ${DOCKER_PORT_MAP_TCP_22} + $(awk -F. '$0=$NF' <<< %p) - 1 )):22 \
+      -p $(( ${DOCKER_PORT_MAP_TCP_22} + $(/bin/awk -F. '$0=$NF' <<< %p) - 1 )):22 \
       --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
       --env \"SSH_CHROOT_DIRECTORY=${SSH_CHROOT_DIRECTORY}\" \
       --env \"SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT}\" \
@@ -152,7 +152,7 @@ ExecStartPost=/bin/bash -c \
   "/usr/bin/etcdctl \
     set \
     /services/%p.%i \
-    %H:$(( ${DOCKER_PORT_MAP_TCP_22} + $(awk -F. '$0=$NF' <<< %p) - 1 )); \
+    %H:$(( ${DOCKER_PORT_MAP_TCP_22} + $(/bin/awk -F. '$0=$NF' <<< %p) - 1 )); \
   "
 
 # Shutdown
