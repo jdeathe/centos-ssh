@@ -4,8 +4,8 @@ export PATH := ${PATH}
 include make.conf
 
 # UI constants
-COLOUR_NEGATIVE := \033[0;31m
-COLOUR_POSITIVE := \033[0;32m
+COLOUR_NEGATIVE := \033[1;31m
+COLOUR_POSITIVE := \033[1;32m
 COLOUR_RESET := \033[0m
 CHARACTER_STEP := --->
 PREFIX_STEP := $(shell printf -- '%s ' "$(CHARACTER_STEP)")
