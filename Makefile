@@ -292,18 +292,16 @@ start: prerequisites require-docker-container
 			exit 1; \
 		fi
 
-stop: prerequisites
+stop: prerequisites require-docker-container
 	@ echo "$(PREFIX_STEP) Stopping container"
-	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]] \
-			&& [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running") ]]; then \
+	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running") ]]; then \
 			$(docker) stop $(DOCKER_NAME) 1> /dev/null; \
-		fi;
-	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]] \
-			&& [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=exited") ]]; then \
-			echo "$(PREFIX_SUB_STEP_POSITIVE) Container stopped"; \
-		else \
-			echo "$(PREFIX_SUB_STEP_NEGATIVE) Error stopping container"; \
-			exit 1; \
+			if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=exited") ]]; then \
+				echo "$(PREFIX_SUB_STEP_POSITIVE) Container stopped"; \
+			else \
+				echo "$(PREFIX_SUB_STEP_NEGATIVE) Error stopping container"; \
+				exit 1; \
+			fi; \
 		fi
 
 terminate: prerequisites
