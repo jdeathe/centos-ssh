@@ -214,9 +214,11 @@ ps: prerequisites require-docker-container
 	@ $(docker) ps -as --filter "name=$(DOCKER_NAME)";
 
 require-docker-container:
-ifeq ($(shell $(docker) ps -aq --filter "name=$(DOCKER_NAME)"),)
-	$(error "This operation requires the $(DOCKER_NAME) docker container. Install it with: make install")
-endif
+	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container."; \
+			echo "$(PREFIX_SUB_STEP) Try Install it with: make install"; \
+			exit 1; \
+		fi
 
 require-docker-image-tag:
 ifeq ($(IS_DOCKER_IMAGE_TAG),)
