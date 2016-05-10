@@ -172,7 +172,7 @@ logs: prerequisites
 	@ $(docker) logs $(DOCKER_NAME)
 
 logs-delayed: prerequisites
-	@ sleep 3
+	@ sleep 2
 	@ $(MAKE) logs
 
 load: prerequisites require-docker-release-tag
