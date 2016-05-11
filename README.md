@@ -230,7 +230,7 @@ sshd stdout | Server listening on :: port 22.
 2016-02-01 02:26:54,464 INFO exited: sshd-bootstrap (exit status 0; expected)
 ```
 
-#### Runtime Environment Variables
+#### Environment Variables
 
 There are several environmental variables defined at runtime these allow the operator to customise the running container.
 
@@ -244,6 +244,17 @@ As detailed below the public key added for the SSH user is insecure by default. 
 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key
 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJlEHFYDmRgS+YQ+MA9PKHyriCPmVNs/6yVc2lopwPWioXt0+ulH/H43PgB6/4fkP0duauHsRtpp7z7dhqgZOXqdLUn/Ybp0rz0+yKUOBb9ggjE5n7hYyDGtZR9Y11pJ4TuRHmL6wv5mnj9WRzkUlJNYkr6X5b6yAxtQmX+2f33u2qGdAwADddE/uZ4vKnC0jFsv5FdvnwRf2diF/9AagDb7xhZ9U3hPOyLj31H/OUce4xBpGXRfkUYkeW8Qx+zEbEBVlGxDroIMZmHJIknBDAzVfft+lsg1Z06NCYOJ+hSew== another public key
 "  \
+...
+```
+
+##### SSH_AUTOSTART_SSHD && SSH_AUTOSTART_SSHD_BOOTSTRAP
+
+It may be desirable to prevent the startup of the sshd daemon and/or sshd-bootstrap script. For example, when using an image built from this Dockerfile as the source for another Dockerfile you could disable both sshd and sshd-booststrap from startup by setting ```SSH_AUTOSTART_SSHD``` and ```SSH_AUTOSTART_SSHD_BOOTSTRAP``` to `false`. The benefit of this is to reduce the number of running processes in the final container.
+
+```
+...
+  --env "SSH_AUTOSTART_SSHD=false" \
+  --env "SSH_AUTOSTART_SSHD_BOOTSTRAP=false" \
 ...
 ```
 
