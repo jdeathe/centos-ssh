@@ -110,6 +110,8 @@ EXPOSE 22
 # Set default environment variables
 # -----------------------------------------------------------------------------
 ENV SSH_AUTHORIZED_KEYS="" \
+	SSH_AUTOSTART_SSHD=true \
+	SSH_AUTOSTART_SSHD_BOOTSTRAP=true \
 	SSH_CHROOT_DIRECTORY="%h" \
 	SSH_INHERIT_ENVIRONMENT=false \
 	SSH_SUDO="ALL=(ALL) ALL" \
