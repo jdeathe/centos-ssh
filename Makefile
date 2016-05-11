@@ -33,6 +33,8 @@ define DOCKER_CONTAINER_PARAMETERS
 --publish $(DOCKER_PORT_MAP_TCP_22):22 \
 --restart $(DOCKER_RESTART_POLICY) \
 --env "SSH_AUTHORIZED_KEYS=$(SSH_AUTHORIZED_KEYS)" \
+--env "SSH_AUTOSTART_SSHD=$(SSH_AUTOSTART_SSHD)" \
+--env "SSH_AUTOSTART_SSHD_BOOTSTRAP=$(SSH_AUTOSTART_SSHD_BOOTSTRAP)" \
 --env "SSH_CHROOT_DIRECTORY=$(SSH_CHROOT_DIRECTORY)" \
 --env "SSH_INHERIT_ENVIRONMENT=$(SSH_INHERIT_ENVIRONMENT)" \
 --env "SSH_SUDO=$(SSH_SUDO)" \
@@ -170,7 +172,7 @@ logs: prerequisites
 	@ $(docker) logs $(DOCKER_NAME)
 
 logs-delayed: prerequisites
-	@ sleep 3
+	@ sleep 2
 	@ $(MAKE) logs
 
 load: prerequisites require-docker-release-tag

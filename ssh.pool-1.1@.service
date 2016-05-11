@@ -48,6 +48,8 @@ Environment="VOLUME_CONFIG_NAMED=false"
 Environment="VOLUME_CONFIG_NAME=volume-config.%p.%i"
 Environment="VOLUME_DATA_NAME=volume-data.%p.%i"
 Environment="SSH_AUTHORIZED_KEYS=ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
+Environment="SSH_AUTOSTART_SSHD=true"
+Environment="SSH_AUTOSTART_SSHD_BOOTSTRAP=true"
 Environment="SSH_CHROOT_DIRECTORY=%h"
 Environment="SSH_INHERIT_ENVIRONMENT=false"
 Environment="SSH_SUDO=ALL=(ALL) ALL"
@@ -117,6 +119,8 @@ ExecStart=/bin/bash -c \
       --name %p.%i \
       -p $(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$NF' <<< %p) - 1 )):22 \
       --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
+      --env \"SSH_AUTOSTART_SSHD=${SSH_AUTOSTART_SSHD}\" \
+      --env \"SSH_AUTOSTART_SSHD_BOOTSTRAP=${SSH_AUTOSTART_SSHD_BOOTSTRAP}\" \
       --env \"SSH_CHROOT_DIRECTORY=${SSH_CHROOT_DIRECTORY}\" \
       --env \"SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT}\" \
       --env \"SSH_SUDO=${SSH_SUDO}\" \
@@ -134,6 +138,8 @@ ExecStart=/bin/bash -c \
       --name %p.%i \
       -p $(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$NF' <<< %p) - 1 )):22 \
       --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
+      --env \"SSH_AUTOSTART_SSHD=${SSH_AUTOSTART_SSHD}\" \
+      --env \"SSH_AUTOSTART_SSHD_BOOTSTRAP=${SSH_AUTOSTART_SSHD_BOOTSTRAP}\" \
       --env \"SSH_CHROOT_DIRECTORY=${SSH_CHROOT_DIRECTORY}\" \
       --env \"SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT}\" \
       --env \"SSH_SUDO=${SSH_SUDO}\" \
