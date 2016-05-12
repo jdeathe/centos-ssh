@@ -54,23 +54,19 @@ if [[ ${EUID} -ne 0 ]]; then
 	exit 1
 fi
 
-# Copy systemd definition into place and enable it.
+# Copy systemd unit-files into place.
 cp ${SERVICE_UNIT_GROUP_NAME}.1@.service /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
-replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
+cp register-${SERVICE_UNIT_GROUP_NAME}.1@.service /etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}
+replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}
 systemctl daemon-reload
-
-systemctl enable -f ${SERVICE_UNIT_INSTANCE_NAME}
-
-# Stop the service
-systemctl stop ${SERVICE_UNIT_INSTANCE_NAME} &> /dev/null
 
 printf -- "---> Installing %s\n" ${SERVICE_UNIT_INSTANCE_NAME}
 # Systemd ExecStartPre command should exist to terminate any existing containers
-systemctl start ${SERVICE_UNIT_INSTANCE_NAME} &
+systemctl restart ${SERVICE_UNIT_INSTANCE_NAME} &
 PIDS[0]=${!}
 
 # Tail the systemd unit logs unitl installation completes
-journalctl -fu ${SERVICE_UNIT_INSTANCE_NAME} &
+journalctl -fn 0 -u ${SERVICE_UNIT_INSTANCE_NAME} &
 PIDS[1]=${!}
 
 # Wait for installtion to complete
@@ -82,7 +78,12 @@ kill -15 ${PIDS[1]}
 wait ${PIDS[1]} 2> /dev/null
 
 if systemctl -q is-active ${SERVICE_UNIT_INSTANCE_NAME}; then
-	printf -- " ---> Service unit is active: %s\n" "$(systemctl list-units --type=service | grep ${SERVICE_UNIT_INSTANCE_NAME})"
+	printf -- " ---> Service unit is active: %s\n" "$(systemctl list-units --type=service | grep "^[ ]*${SERVICE_UNIT_INSTANCE_NAME}")"
+	if systemctl -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}; then
+		printf -- " ---> Service register unit is active: %s\n" "$(systemctl list-units --type=service | grep "^[ ]*${SERVICE_UNIT_REGISTER_INSTANCE_NAME}")"
+		systemctl enable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
+	fi
+	systemctl enable -f ${SERVICE_UNIT_INSTANCE_NAME}
 	printf -- "${COLOUR_POSITIVE} --->${COLOUR_RESET} %s\n" 'Install complete'
 else
 	printf -- "\nService status:\n"

@@ -1,0 +1,82 @@
+# -----------------------------------------------------------------------------
+# Naming convention:
+#
+#    register-ssh.pool-1.1@.service = {service-unit-template-name}
+#          |        |    |
+#          |        |    +------ {service-unit-local-id}
+#          |        +----------- {service-unit-group-name}
+#          +-------------------- {service-unit-name}
+#
+#    register-ssh.pool-1.1@1.service = {service-unit-instance-name}
+#          |        |    | |
+#          |        |    | +---- {service-unit-instance}
+#          |        |    +------ {service-unit-local-id}
+#          |        +----------- {service-unit-group-name}
+#          +-------------------- {service-unit-name}
+#
+#    register-ssh.pool-1.1.1 = {service-unit-long-name}
+#          |        |    | |
+#          |        |    | +---- {service-unit-instance}
+#          |        |    +------ {service-unit-local-id}
+#          |        +----------- {service-unit-group-name}
+#          +-------------------- {service-unit-name}
+#
+# To install:
+#     sudo cp {service-unit-template-name} /etc/systemd/system/
+#     sudo systemctl daemon-reload
+#
+# Persist system reboot:
+#     sudo systemctl enable -f {service-unit-instance-name}
+#
+# Debugging:
+#     sudo systemctl status {service-unit-instance-name}
+#     journalctl -fn 50 -u {service-unit-instance-name}
+#
+# To uninstall:
+#     sudo systemctl disable -f {service-unit-instance-name}
+#     sudo systemctl stop {service-unit-instance-name}
+#     sudo rm /etc/systemd/system/{service-unit-template-name}
+#     sudo docker rm -f {service-unit-long-name}
+# -----------------------------------------------------------------------------
+
+[Unit]
+Description=centos-ssh etcd registration // %p.%i
+Requires=etcd2.service
+After=etcd2.service
+BindsTo=ssh.pool-1.1@%i.service
+
+[Service]
+TimeoutStartSec=0
+Environment="DOCKER_PORT_MAP_TCP_22=2020"
+Environment="REGISTER_ETCD_PARAMETERS=--debug --no-sync"
+Environment="REGISTER_KEY_PATH=/services"
+Environment="REGISTER_TTL=60"
+Environment="REGISTER_UPDATE_INTERVAL=30"
+
+# Register service
+ExecStart=/bin/bash -c \
+  "while true; \
+    /usr/bin/etcdctl \
+      ${REGISTER_ETCD_PARAMETERS} \
+      set \
+      ${REGISTER_KEY_PATH}/%p.%i \
+      %H:$(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$NF' <<< %p) - 1 )) \
+      --ttl ${REGISTER_TTL}; \
+    do sleep ${REGISTER_UPDATE_INTERVAL}; \
+  done"
+
+# Unregister service
+ExecStop=/bin/bash -c \
+  "if [[ -n $(/usr/bin/etcdctl get ${REGISTER_KEY_PATH}/%p.%i &> /dev/null ) ]]; then \
+    /usr/bin/etcdctl \
+      ${REGISTER_ETCD_PARAMETERS} \
+      rm \
+      ${REGISTER_KEY_PATH}/%p.%i; \
+  fi"
+
+[Install]
+WantedBy=ssh.pool-1.1@%i.service
+DefaultInstance=1
+
+[X-Fleet]
+MachineOf=ssh.pool-1.1@%i.service

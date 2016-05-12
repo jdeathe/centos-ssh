@@ -1,36 +1,54 @@
 # -----------------------------------------------------------------------------
-# Where:
-#    {service-unit-instance-name} = {service-unit-name}.{service-unit-group-name}.{service-unit-local-id}@{service-unit-instance}
-#    {service-unit-long-name} = {service-unit-name}.{service-unit-group-name}.{service-unit-local-id}.{service-unit-instance}
+# Naming convention:
+#
+#    ssh.pool-1.1@.service = {service-unit-template-name}
+#     |    |    |
+#     |    |    +------ {service-unit-local-id}
+#     |    +----------- {service-unit-group-name}
+#     +---------------- {service-unit-name}
+#
+#    ssh.pool-1.1@1.service = {service-unit-instance-name}
+#     |    |    | |
+#     |    |    | +---- {service-unit-instance}
+#     |    |    +------ {service-unit-local-id}
+#     |    +----------- {service-unit-group-name}
+#     +---------------- {service-unit-name}
+#
+#    ssh.pool-1.1.1 = {service-unit-long-name}
+#     |    |    | |
+#     |    |    | +---- {service-unit-instance}
+#     |    |    +------ {service-unit-local-id}
+#     |    +----------- {service-unit-group-name}
+#     +---------------- {service-unit-name}
 #
 # To install:
-#     sudo cp {container-path}/{service-unit-name}.{service-unit-group-name}.{service-unit-local-id}@.service \
-#       /etc/systemd/system/
-#
-#   If not installing to a CoreOS distribution replace etcd2.service 
-#   with etcd.service using:
-#     sudo sed -i -e 's~etcd2.service~etcd.service~g' \
-#       /etc/systemd/system/{service-unit-name}.{service-unit-group-name}.{service-unit-local-id}@.service
-#
+#     sudo cp {service-unit-template-name} /etc/systemd/system/
 #     sudo systemctl daemon-reload
-#     sudo systemctl enable -f {service-unit-instance-name}.service
 #
 # Start using:
-#     sudo systemctl [start|stop|restart|kill|status] {service-unit-instance-name}.service
+#     sudo systemctl [start|stop|restart|kill|status] {service-unit-instance-name}
+#
+# Persist system reboot:
+#     sudo systemctl enable -f {service-unit-instance-name}
 #
 # Debugging:
-#     journalctl -fn 50 -u {service-unit-instance-name}.service
+#     sudo systemctl status {service-unit-instance-name}
+#     journalctl -fn 50 -u {service-unit-instance-name}
 #
 # To uninstall:
-#     sudo systemctl disable -f /etc/systemd/system/{service-unit-instance-name}.service
-#     sudo systemctl stop /etc/systemd/system/{service-unit-instance-name}.service
+#     sudo systemctl disable -f {service-unit-instance-name}
+#     sudo systemctl stop {service-unit-instance-name}
+#     sudo rm /etc/systemd/system/{service-unit-template-name}
 #     sudo docker rm -f {service-unit-long-name}
 # -----------------------------------------------------------------------------
 
 [Unit]
 Description=centos-ssh // %p.%i
 Requires=docker.service
-Requires=etcd2.service
+Wants=etcd.service
+Wants=etcd2.service
+Wants=register-%p@%i.service
+After=etcd.service
 After=etcd2.service
 After=docker.service
 
@@ -153,24 +171,8 @@ ExecStart=/bin/bash -c \
       ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   fi"
 
-# Register service
-ExecStartPost=/bin/bash -c \
-  "/usr/bin/etcdctl \
-    set \
-    /services/%p.%i \
-    %H:$(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$NF' <<< %p) - 1 )); \
-  "
-
 # Shutdown
 ExecStop=/usr/bin/docker stop --time 10 %p.%i
-
-# Unregister service
-ExecStopPost=/bin/bash -c \
-  "if [[ -n $(/usr/bin/etcdctl get /services/%p.%i &> /dev/null ) ]]; then \
-    /usr/bin/etcdctl \
-      rm \
-      /services/%p.%i; \
-  fi"
 
 [Install]
 WantedBy=multi-user.target
