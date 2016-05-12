@@ -58,7 +58,7 @@ ExecStart=/bin/bash -c \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
       set \
-      ${REGISTER_KEY_PATH}/%p.%i \
+      ${REGISTER_KEY_PATH}/$(/usr/bin/sed 's/register-//' <<< %p).%i \
       %H:$(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$1' <<< %i) - 1 )) \
       --ttl ${REGISTER_TTL}; \
     do sleep ${REGISTER_UPDATE_INTERVAL}; \
@@ -70,7 +70,7 @@ ExecStop=/bin/bash -c \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
       rm \
-      ${REGISTER_KEY_PATH}/%p.%i; \
+      ${REGISTER_KEY_PATH}/$(/usr/bin/sed 's/register-//' <<< %p).%i; \
   fi"
 
 [Install]
