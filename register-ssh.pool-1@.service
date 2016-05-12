@@ -1,13 +1,12 @@
 # -----------------------------------------------------------------------------
 # Naming convention:
 #
-#    register-ssh.pool-1.1@.service = {service-unit-template-name}
-#          |        |    |
-#          |        |    +------ {service-unit-local-id}
+#    register-ssh.pool-1@.service = {service-unit-template-name}
+#          |        |
 #          |        +----------- {service-unit-group-name}
 #          +-------------------- {service-unit-name}
 #
-#    register-ssh.pool-1.1@1.service = {service-unit-instance-name}
+#    register-ssh.pool-1@1.1.service = {service-unit-instance-name}
 #          |        |    | |
 #          |        |    | +---- {service-unit-instance}
 #          |        |    +------ {service-unit-local-id}
@@ -43,7 +42,7 @@
 Description=centos-ssh etcd registration // %p.%i
 Requires=etcd2.service
 After=etcd2.service
-BindsTo=ssh.pool-1.1@%i.service
+BindsTo=ssh.pool-1@%i.service
 
 [Service]
 TimeoutStartSec=0
@@ -60,7 +59,7 @@ ExecStart=/bin/bash -c \
       ${REGISTER_ETCD_PARAMETERS} \
       set \
       ${REGISTER_KEY_PATH}/%p.%i \
-      %H:$(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$NF' <<< %p) - 1 )) \
+      %H:$(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$1' <<< %i) - 1 )) \
       --ttl ${REGISTER_TTL}; \
     do sleep ${REGISTER_UPDATE_INTERVAL}; \
   done"
@@ -75,8 +74,8 @@ ExecStop=/bin/bash -c \
   fi"
 
 [Install]
-WantedBy=ssh.pool-1.1@%i.service
+WantedBy=ssh.pool-1@%i.service
 DefaultInstance=1
 
 [X-Fleet]
-MachineOf=ssh.pool-1.1@%i.service
+MachineOf=ssh.pool-1@%i.service

@@ -1,13 +1,12 @@
 # -----------------------------------------------------------------------------
 # Naming convention:
 #
-#    ssh.pool-1.1@.service = {service-unit-template-name}
-#     |    |    |
-#     |    |    +------ {service-unit-local-id}
+#    ssh.pool-1@.service = {service-unit-template-name}
+#     |    |
 #     |    +----------- {service-unit-group-name}
 #     +---------------- {service-unit-name}
 #
-#    ssh.pool-1.1@1.service = {service-unit-instance-name}
+#    ssh.pool-1@1.1.service = {service-unit-instance-name}
 #     |    |    | |
 #     |    |    | +---- {service-unit-instance}
 #     |    |    +------ {service-unit-local-id}
@@ -135,7 +134,7 @@ ExecStart=/bin/bash -c \
   "if [[ -n $(/usr/bin/docker ps -aq --filter \"name=${VOLUME_CONFIG_NAME}\") ]]; then \
     /usr/bin/docker run \
       --name %p.%i \
-      -p $(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$NF' <<< %p) - 1 )):22 \
+      -p $(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$1' <<< %i) - 1 )):22 \
       --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
       --env \"SSH_AUTOSTART_SSHD=${SSH_AUTOSTART_SSHD}\" \
       --env \"SSH_AUTOSTART_SSHD_BOOTSTRAP=${SSH_AUTOSTART_SSHD_BOOTSTRAP}\" \
@@ -154,7 +153,7 @@ ExecStart=/bin/bash -c \
   else \
     /usr/bin/docker run \
       --name %p.%i \
-      -p $(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$NF' <<< %p) - 1 )):22 \
+      -p $(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$1' <<< %i) - 1 )):22 \
       --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
       --env \"SSH_AUTOSTART_SSHD=${SSH_AUTOSTART_SSHD}\" \
       --env \"SSH_AUTOSTART_SSHD_BOOTSTRAP=${SSH_AUTOSTART_SSHD_BOOTSTRAP}\" \
@@ -178,4 +177,4 @@ ExecStop=/usr/bin/docker stop --time 10 %p.%i
 WantedBy=multi-user.target
 
 [X-Fleet]
-Conflicts=%p.*@%i.service
+Conflicts=%p@*.%i.service

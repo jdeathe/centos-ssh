@@ -55,8 +55,8 @@ if [[ ${EUID} -ne 0 ]]; then
 fi
 
 # Copy systemd unit-files into place.
-cp ${SERVICE_UNIT_GROUP_NAME}.1@.service /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
-cp register-${SERVICE_UNIT_GROUP_NAME}.1@.service /etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}
+cp ${SERVICE_UNIT_TEMPLATE_NAME} /etc/systemd/system/
+cp ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} /etc/systemd/system/
 replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}
 systemctl daemon-reload
 
