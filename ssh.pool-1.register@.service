@@ -1,24 +1,27 @@
 # -----------------------------------------------------------------------------
 # Naming convention:
 #
-#    register-ssh.pool-1@.service = {service-unit-template-name}
-#          |        |
-#          |        +----------- {service-unit-group-name}
-#          +-------------------- {service-unit-name}
+#    ssh.pool-1.register@.service = {service-unit-template-name}
+#     |     |      |
+#     |     |      +------------ {service-unit-companion-name}
+#     |     +------------------- {service-unit-group-name}
+#     +------------------------- {service-unit-name}
 #
-#    register-ssh.pool-1@1.1.service = {service-unit-instance-name}
-#          |        |    | |
-#          |        |    | +---- {service-unit-instance}
-#          |        |    +------ {service-unit-local-id}
-#          |        +----------- {service-unit-group-name}
-#          +-------------------- {service-unit-name}
+#    ssh.pool-1.register@1.1.service = {service-unit-instance-name}
+#     |     |      |     | |
+#     |     |      |     | +---- {service-unit-instance}
+#     |     |      |     +------ {service-unit-local-id}
+#     |     |      +------------ {service-unit-companion-name}
+#     |     +------------------- {service-unit-group-name}
+#     +------------------------- {service-unit-name}
 #
-#    register-ssh.pool-1.1.1 = {service-unit-long-name}
-#          |        |    | |
-#          |        |    | +---- {service-unit-instance}
-#          |        |    +------ {service-unit-local-id}
-#          |        +----------- {service-unit-group-name}
-#          +-------------------- {service-unit-name}
+#    ssh.pool-1.1.1.register = {service-unit-long-name}
+#     |     |   | |    |
+#     |     |   | |    +-------- {service-unit-companion-name}
+#     |     |   | +------------- {service-unit-instance}
+#     |     |   +--------------- {service-unit-local-id}
+#     |     +------------------- {service-unit-group-name}
+#     +------------------------- {service-unit-name}
 #
 # To install:
 #     sudo cp {service-unit-template-name} /etc/systemd/system/
@@ -39,7 +42,7 @@
 # -----------------------------------------------------------------------------
 
 [Unit]
-Description=centos-ssh etcd registration // %p.%i
+Description=centos-ssh etcd registration // %p@%i
 Requires=etcd2.service
 After=etcd2.service
 BindsTo=ssh.pool-1@%i.service
@@ -58,7 +61,7 @@ ExecStart=/bin/bash -c \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
       set \
-      ${REGISTER_KEY_PREFIX}/$(/usr/bin/sed 's/register-//' <<< %p).%i \
+      ${REGISTER_KEY_PREFIX}/$(/usr/bin/sed 's/.register//' <<< %p).%i \
       %H:$(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$1' <<< %i) - 1 )) \
       --ttl ${REGISTER_TTL}; \
     sleep ${REGISTER_UPDATE_INTERVAL}; \
@@ -66,11 +69,11 @@ ExecStart=/bin/bash -c \
 
 # Unregister service
 ExecStop=/bin/bash -c \
-  "if [[ -n $(/usr/bin/etcdctl get ${REGISTER_KEY_PATH}/%p.%i &> /dev/null ) ]]; then \
+  "if [[ -n $(/usr/bin/etcdctl get ${REGISTER_KEY_PREFIX}/$(/usr/bin/sed 's/.register//' <<< %p).%i &> /dev/null ) ]]; then \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
       rm \
-      ${REGISTER_KEY_PATH}/$(/usr/bin/sed 's/register-//' <<< %p).%i; \
+      ${REGISTER_KEY_PREFIX}/$(/usr/bin/sed 's/.register//' <<< %p).%i; \
   fi"
 
 [Install]

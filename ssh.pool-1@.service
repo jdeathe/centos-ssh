@@ -42,11 +42,11 @@
 # -----------------------------------------------------------------------------
 
 [Unit]
-Description=centos-ssh // %p.%i
+Description=centos-ssh // %p@%i
 Requires=docker.service
 Wants=etcd.service
 Wants=etcd2.service
-Wants=register-%p@%i.service
+Wants=%p.register@%i.service
 After=etcd.service
 After=etcd2.service
 After=docker.service
