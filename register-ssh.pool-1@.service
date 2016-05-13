@@ -75,7 +75,7 @@ ExecStop=/bin/bash -c \
 
 [Install]
 WantedBy=ssh.pool-1@%i.service
-DefaultInstance=1
+DefaultInstance=1.1
 
 [X-Fleet]
 MachineOf=ssh.pool-1@%i.service
