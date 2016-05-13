@@ -48,20 +48,20 @@ BindsTo=ssh.pool-1@%i.service
 TimeoutStartSec=0
 Environment="DOCKER_PORT_MAP_TCP_22=2020"
 Environment="REGISTER_ETCD_PARAMETERS=--debug --no-sync"
-Environment="REGISTER_KEY_PATH=/services"
+Environment="REGISTER_KEY_PREFIX=/services"
 Environment="REGISTER_TTL=60"
 Environment="REGISTER_UPDATE_INTERVAL=30"
 
 # Register service
 ExecStart=/bin/bash -c \
-  "while true; \
+  "while true; do \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
       set \
-      ${REGISTER_KEY_PATH}/$(/usr/bin/sed 's/register-//' <<< %p).%i \
+      ${REGISTER_KEY_PREFIX}/$(/usr/bin/sed 's/register-//' <<< %p).%i \
       %H:$(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$1' <<< %i) - 1 )) \
       --ttl ${REGISTER_TTL}; \
-    do sleep ${REGISTER_UPDATE_INTERVAL}; \
+    sleep ${REGISTER_UPDATE_INTERVAL}; \
   done"
 
 # Unregister service
