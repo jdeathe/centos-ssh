@@ -48,7 +48,7 @@ After=etcd2.service
 BindsTo=ssh.pool-1@%i.service
 
 [Service]
-TimeoutStartSec=2
+TimeoutStartSec=0
 Environment="REGISTER_ETCD_PARAMETERS=--debug"
 Environment="REGISTER_KEY_ROOT=/services/ssh.pool-1.%i"
 Environment="REGISTER_TTL=60"
@@ -77,7 +77,7 @@ ExecStart=/bin/bash -c \
       ${REGISTER_ETCD_PARAMETERS} \
       mk \
       ${REGISTER_KEY_ROOT}/ports/tcp/22 \
-      $(/usr/bin/sed 's/^[0-9.]*://' <<< $(/usr/bin/docker port ssh.pool-1.%i 22)) \
+      $(/usr/bin/sed 's/^[0-9.]*://' <<< $(if ! /usr/bin/docker port ssh.pool-1.%i 22 &> /dev/null; then echo ''; else /usr/bin/docker port ssh.pool-1.%i 22; fi)) \
       --ttl ${REGISTER_TTL}; \
   fi; \
   while true; do \
@@ -92,7 +92,7 @@ ExecStart=/bin/bash -c \
       ${REGISTER_ETCD_PARAMETERS} \
       update \
       ${REGISTER_KEY_ROOT}/ports/tcp/22 \
-      $(/usr/bin/sed 's/^[0-9.]*://' <<< $(/usr/bin/docker port ssh.pool-1.%i 22)) \
+      $(/usr/bin/sed 's/^[0-9.]*://' <<< $(if ! /usr/bin/docker port ssh.pool-1.%i 22 &> /dev/null; then echo ''; else /usr/bin/docker port ssh.pool-1.%i 22; fi)) \
       --ttl ${REGISTER_TTL}; \
   done"
 
