@@ -49,7 +49,7 @@ BindsTo=ssh.pool-1@%i.service
 
 [Service]
 TimeoutStartSec=2
-Environment="REGISTER_ETCD_PARAMETERS=--debug --no-sync --endpoint http://127.0.0.1:2379"
+Environment="REGISTER_ETCD_PARAMETERS=--debug"
 Environment="REGISTER_KEY_ROOT=/services/ssh.pool-1.%i"
 Environment="REGISTER_TTL=60"
 Environment="REGISTER_UPDATE_INTERVAL=30"
@@ -97,7 +97,7 @@ ExecStart=/bin/bash -c \
   done"
 
 # Unregister service
-ExecStartPre=/bin/bash -c \
+ExecStop=/bin/bash -c \
   "if /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} ls ${REGISTER_KEY_ROOT} &> /dev/null; then \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
