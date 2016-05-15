@@ -62,7 +62,7 @@ systemctl daemon-reload
 
 printf -- "---> Installing %s\n" ${SERVICE_UNIT_INSTANCE_NAME}
 # Systemd ExecStartPre command should exist to terminate any existing containers
-systemctl restart ${SERVICE_UNIT_INSTANCE_NAME} ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} &
+systemctl restart ${SERVICE_UNIT_INSTANCE_NAME} ${SERVICE_UNIT_REGISTER_INSTANCE_NAME} &
 PIDS[0]=${!}
 
 # Tail the systemd unit logs unitl installation completes
