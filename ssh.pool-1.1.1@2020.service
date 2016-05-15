@@ -164,7 +164,7 @@ ExecStop=/usr/bin/docker stop --time 10 %p
 
 # Unregister service
 ExecStopPost=/bin/bash -c \
-  "if [[ -n $(/usr/bin/etcdctl get /services/%p &> /dev/null ) ]]; then \
+  "if /usr/bin/etcdctl get /services/%p &> /dev/null; then \
     /usr/bin/etcdctl \
       rm \
       /services/${SERVICE_UNIT_NAME}/${SERVICE_UNIT_SHARED_GROUP}/${SERVICE_UNIT_LOCAL_ID}.${SERVICE_UNIT_INSTANCE}; \
