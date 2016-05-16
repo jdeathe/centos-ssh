@@ -49,6 +49,7 @@ BindsTo=ssh.pool-1@%i.service
 
 [Service]
 TimeoutStartSec=0
+KillMode=none
 Environment="REGISTER_ETCD_PARAMETERS="
 Environment="REGISTER_KEY_ROOT=/services/ssh.pool-1.%i"
 Environment="REGISTER_TTL=60"
@@ -78,7 +79,7 @@ ExecStart=/bin/bash -c \
       mk \
       ${REGISTER_KEY_ROOT}/ports/tcp/22 \
       $(/usr/bin/sed 's/^[0-9.]*://' <<< $(if ! /usr/bin/docker port ssh.pool-1.%i 22 &> /dev/null; then echo ''; else /usr/bin/docker port ssh.pool-1.%i 22; fi)) \
-      --ttl ${REGISTER_TTL}; \
+      --ttl ${REGISTER_TTL} 2> /dev/null; \
     sleep 0.5; \
   done; \
   while true; do \
