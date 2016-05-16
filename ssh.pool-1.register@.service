@@ -49,7 +49,7 @@ BindsTo=ssh.pool-1@%i.service
 
 [Service]
 TimeoutStartSec=0
-Environment="REGISTER_ETCD_PARAMETERS=--debug"
+Environment="REGISTER_ETCD_PARAMETERS="
 Environment="REGISTER_KEY_ROOT=/services/ssh.pool-1.%i"
 Environment="REGISTER_TTL=60"
 Environment="REGISTER_UPDATE_INTERVAL=55"
