@@ -26,8 +26,6 @@
 # To install:
 #     sudo cp {service-unit-template-name} /etc/systemd/system/
 #     sudo systemctl daemon-reload
-#
-# Persist system reboot:
 #     sudo systemctl enable -f {service-unit-instance-name}
 #
 # Debugging:
@@ -46,10 +44,11 @@ Description=centos-ssh etcd registration // %p@%i
 Requires=etcd2.service
 After=etcd2.service
 BindsTo=ssh.pool-1@%i.service
+RefuseManualStart=true
+RefuseManualStop=true
 
 [Service]
-TimeoutStartSec=0
-KillMode=none
+TimeoutStartSec=1200
 Environment="REGISTER_ETCD_PARAMETERS="
 Environment="REGISTER_KEY_ROOT=/services/ssh.pool-1.%i"
 Environment="REGISTER_TTL=60"
@@ -67,13 +66,7 @@ ExecStartPre=/bin/bash -c \
 
 # Register service
 ExecStart=/bin/bash -c \
-  "/usr/bin/etcdctl \
-    ${REGISTER_ETCD_PARAMETERS} \
-    mk \
-    ${REGISTER_KEY_ROOT}/hostname \
-    %H \
-    --ttl ${REGISTER_TTL}; \
-  while ! /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} get ${REGISTER_KEY_ROOT}/ports/tcp/22 &> /dev/null; do \
+  "while ! /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} get ${REGISTER_KEY_ROOT}/ports/tcp/22 &> /dev/null; do \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
       mk \
@@ -82,19 +75,25 @@ ExecStart=/bin/bash -c \
       --ttl ${REGISTER_TTL} 2> /dev/null; \
     sleep 0.5; \
   done; \
+  /usr/bin/etcdctl \
+    ${REGISTER_ETCD_PARAMETERS} \
+    mk \
+    ${REGISTER_KEY_ROOT}/hostname \
+    %H \
+    --ttl ${REGISTER_TTL}; \
   while true; do \
     sleep ${REGISTER_UPDATE_INTERVAL}; \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
       update \
-      ${REGISTER_KEY_ROOT}/hostname \
-      %H \
+      ${REGISTER_KEY_ROOT}/ports/tcp/22 \
+      $(/usr/bin/sed 's/^[0-9.]*://' <<< $(if ! /usr/bin/docker port ssh.pool-1.%i 22 &> /dev/null; then echo ''; else /usr/bin/docker port ssh.pool-1.%i 22; fi)) \
       --ttl ${REGISTER_TTL}; \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
       update \
-      ${REGISTER_KEY_ROOT}/ports/tcp/22 \
-      $(/usr/bin/sed 's/^[0-9.]*://' <<< $(if ! /usr/bin/docker port ssh.pool-1.%i 22 &> /dev/null; then echo ''; else /usr/bin/docker port ssh.pool-1.%i 22; fi)) \
+      ${REGISTER_KEY_ROOT}/hostname \
+      %H \
       --ttl ${REGISTER_TTL}; \
   done"
 

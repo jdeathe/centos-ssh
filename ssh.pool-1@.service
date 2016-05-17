@@ -23,12 +23,10 @@
 # To install:
 #     sudo cp {service-unit-template-name} /etc/systemd/system/
 #     sudo systemctl daemon-reload
+#     sudo systemctl enable -f {service-unit-instance-name}
 #
 # Start using:
 #     sudo systemctl [start|stop|restart|kill|status] {service-unit-instance-name}
-#
-# Persist system reboot:
-#     sudo systemctl enable -f {service-unit-instance-name}
 #
 # Debugging:
 #     sudo systemctl status {service-unit-instance-name}
@@ -175,6 +173,7 @@ ExecStop=/usr/bin/docker stop --time 10 %p.%i
 
 [Install]
 WantedBy=multi-user.target
+DefaultInstance=1.1
 
 [X-Fleet]
 Conflicts=%p@*.%i.service
