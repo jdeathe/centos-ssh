@@ -32,14 +32,8 @@ replace_etcd_service_name ()
 	fi
 
 	# CoreOS uses etcd.service and etcd2.service for version 1 and 2 of ETCD 
-	# respectively but has both available. Use etcd2.service in the systemd 
-	# unit file and rename for other distributions where etcd.service is the 
-	# only name used.
-	if is_coreos_distribution; then
-		echo "---> CoreOS distribution."
-		echo " ---> Renaming etcd.service to etcd2.service in unit file."
-		sed -i -e 's~etcd.service~etcd2.service~g' ${FILE_PATH}
-	fi
+	# respectively but has both available. Others use only etcd.service.
+	sed -i -e 's~etcd.service~etcd2.service~g' ${FILE_PATH}
 }
 
 # Abort if systemd not supported
@@ -54,15 +48,21 @@ if [[ ${EUID} -ne 0 ]]; then
 	exit 1
 fi
 
+printf -- "---> Installing %s\n" ${SERVICE_UNIT_INSTANCE_NAME}
+
 # Copy systemd unit-files into place.
 cp ${SERVICE_UNIT_TEMPLATE_NAME} /etc/systemd/system/
 cp ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} /etc/systemd/system/
-replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
-replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}
+
+if is_coreos_distribution; then
+	echo "---> CoreOS distribution."
+	echo " ---> Renaming etcd.service to etcd2.service in unit files."
+	replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
+	replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}
+fi
 
 systemctl daemon-reload
 
-printf -- "---> Installing %s\n" ${SERVICE_UNIT_INSTANCE_NAME}
 systemctl enable -f ${SERVICE_UNIT_INSTANCE_NAME}
 systemctl enable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
 systemctl restart ${SERVICE_UNIT_INSTANCE_NAME} &
