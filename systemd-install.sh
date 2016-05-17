@@ -35,10 +35,10 @@ replace_etcd_service_name ()
 	# respectively but has both available. Use etcd2.service in the systemd 
 	# unit file and rename for other distributions where etcd.service is the 
 	# only name used.
-	if ! is_coreos_distribution; then
-		echo "---> Not a CoreOS distribution."
-		echo " ---> Renaming etcd2.service to etcd.service in unit file."
-		sed -i -e 's~etcd2.service~etcd.service~g' ${FILE_PATH}
+	if is_coreos_distribution; then
+		echo "---> CoreOS distribution."
+		echo " ---> Renaming etcd.service to etcd2.service in unit file."
+		sed -i -e 's~etcd.service~etcd2.service~g' ${FILE_PATH}
 	fi
 }
 
@@ -57,6 +57,7 @@ fi
 # Copy systemd unit-files into place.
 cp ${SERVICE_UNIT_TEMPLATE_NAME} /etc/systemd/system/
 cp ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} /etc/systemd/system/
+replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
 replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}
 
 systemctl daemon-reload

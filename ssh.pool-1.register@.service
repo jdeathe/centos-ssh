@@ -40,8 +40,8 @@
 
 [Unit]
 Description=centos-ssh etcd registration // %p@%i
-Requires=etcd2.service
-After=etcd2.service
+Requires=etcd.service
+After=etcd.service
 BindsTo=ssh.pool-1@%i.service
 RefuseManualStart=true
 RefuseManualStop=true
