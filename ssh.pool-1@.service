@@ -126,7 +126,7 @@ ExecStartPre=/bin/bash -c \
 # Startup
 ExecStart=/bin/bash -c \
   "if [[ -n $(/usr/bin/docker ps -aq --filter \"name=${VOLUME_CONFIG_NAME}\") ]]; then \
-    /usr/bin/docker run \
+    exec /usr/bin/docker run \
       --name %p.%i \
       -p $(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$1' <<< %i) - 1 )):22 \
       --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
@@ -145,7 +145,7 @@ ExecStart=/bin/bash -c \
       --volumes-from volume-config.%p.%i \
       ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   else \
-    /usr/bin/docker run \
+    exec /usr/bin/docker run \
       --name %p.%i \
       -p $(( ${DOCKER_PORT_MAP_TCP_22} + $(/usr/bin/awk -F. '$0=$1' <<< %i) - 1 )):22 \
       --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
