@@ -34,9 +34,8 @@
 #
 # To uninstall:
 #     sudo systemctl disable -f {service-unit-instance-name}
-#     sudo systemctl stop {service-unit-instance-name}
 #     sudo rm /etc/systemd/system/{service-unit-template-name}
-#     sudo docker rm -f {service-unit-long-name}
+#     sudo systemctl daemon-reload
 # -----------------------------------------------------------------------------
 
 [Unit]
@@ -48,7 +47,6 @@ RefuseManualStart=true
 RefuseManualStop=true
 
 [Service]
-TimeoutStartSec=1200
 Environment="REGISTER_ETCD_PARAMETERS="
 Environment="REGISTER_KEY_ROOT=/services/ssh.pool-1.%i"
 Environment="REGISTER_TTL=60"
@@ -108,8 +106,8 @@ ExecStop=/bin/bash -c \
   fi"
 
 [Install]
-WantedBy=ssh.pool-1@%i.service
 DefaultInstance=1.1
+RequiredBy=ssh.pool-1@%i.service
 
 [X-Fleet]
 MachineOf=ssh.pool-1@%i.service

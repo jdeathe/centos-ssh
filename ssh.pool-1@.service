@@ -42,9 +42,6 @@
 [Unit]
 Description=centos-ssh // %p@%i
 Requires=docker.service
-Wants=etcd.service
-Wants=etcd2.service
-Wants=%p.register@%i.service
 After=etcd.service
 After=etcd2.service
 After=docker.service
@@ -53,7 +50,6 @@ After=docker.service
 Restart=on-failure
 RestartSec=30
 TimeoutStartSec=1200
-KillMode=none
 Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/services-packages"
 Environment="DOCKER_IMAGE_NAME=jdeathe/centos-ssh"
 Environment="DOCKER_IMAGE_TAG=centos-7-2.0.1"
@@ -172,8 +168,8 @@ ExecStart=/bin/bash -c \
 ExecStop=/usr/bin/docker stop --time 10 %p.%i
 
 [Install]
-WantedBy=multi-user.target
 DefaultInstance=1.1
+WantedBy=multi-user.target
 
 [X-Fleet]
 Conflicts=%p@*.%i.service
