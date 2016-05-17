@@ -61,11 +61,9 @@ replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_N
 
 systemctl daemon-reload
 
-systemctl enable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
-systemctl enable -f ${SERVICE_UNIT_INSTANCE_NAME}
-
 printf -- "---> Installing %s\n" ${SERVICE_UNIT_INSTANCE_NAME}
-# Systemd ExecStartPre command should exist to terminate any existing containers
+systemctl enable -f ${SERVICE_UNIT_INSTANCE_NAME}
+systemctl enable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
 systemctl restart ${SERVICE_UNIT_INSTANCE_NAME} &
 PIDS[0]=${!}
 
@@ -81,11 +79,9 @@ sleep 5
 kill -15 ${PIDS[1]}
 wait ${PIDS[1]} 2> /dev/null
 
-if systemctl -q is-active ${SERVICE_UNIT_INSTANCE_NAME}; then
-	printf -- " ---> Service unit is active: %s\n" "$(systemctl list-units --type=service | grep "^[ ]*${SERVICE_UNIT_INSTANCE_NAME}")"
-	if systemctl -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}; then
-		printf -- " ---> Service register unit is active: %s\n" "$(systemctl list-units --type=service | grep "^[ ]*${SERVICE_UNIT_REGISTER_INSTANCE_NAME}")"
-	fi
+if systemctl -q is-active ${SERVICE_UNIT_INSTANCE_NAME} && systemctl -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}; then
+	printf -- "---> Service unit is active: %s\n" "$(systemctl list-units --type=service | grep "^[ ]*${SERVICE_UNIT_INSTANCE_NAME}")"
+	printf -- "---> Service register unit is active: %s\n" "$(systemctl list-units --type=service | grep "^[ ]*${SERVICE_UNIT_REGISTER_INSTANCE_NAME}")"
 	printf -- "${COLOUR_POSITIVE} --->${COLOUR_RESET} %s\n" 'Install complete'
 else
 	printf -- "\nService status:\n"
