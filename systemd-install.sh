@@ -32,14 +32,8 @@ replace_etcd_service_name ()
 	fi
 
 	# CoreOS uses etcd.service and etcd2.service for version 1 and 2 of ETCD 
-	# respectively but has both available. Use etcd2.service in the systemd 
-	# unit file and rename for other distributions where etcd.service is the 
-	# only name used.
-	if ! is_coreos_distribution; then
-		echo "---> Not a CoreOS distribution."
-		echo " ---> Renaming etcd2.service to etcd.service in unit file."
-		sed -i -e 's~etcd2.service~etcd.service~g' ${FILE_PATH}
-	fi
+	# respectively but has both available. Others use only etcd.service.
+	sed -i -e 's~etcd.service~etcd2.service~g' ${FILE_PATH}
 }
 
 # Abort if systemd not supported
@@ -54,23 +48,27 @@ if [[ ${EUID} -ne 0 ]]; then
 	exit 1
 fi
 
-# Copy systemd definition into place and enable it.
-cp ${SERVICE_UNIT_GROUP_NAME}.1@.service /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
-replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
+printf -- "---> Installing %s\n" ${SERVICE_UNIT_INSTANCE_NAME}
+
+# Copy systemd unit-files into place.
+cp ${SERVICE_UNIT_TEMPLATE_NAME} /etc/systemd/system/
+cp ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} /etc/systemd/system/
+
+if is_coreos_distribution; then
+	echo "---> CoreOS distribution."
+	echo " ---> Overriding etcd.service with etcd2.service in unit file templates."
+	replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}
+fi
+
 systemctl daemon-reload
 
 systemctl enable -f ${SERVICE_UNIT_INSTANCE_NAME}
-
-# Stop the service
-systemctl stop ${SERVICE_UNIT_INSTANCE_NAME} &> /dev/null
-
-printf -- "---> Installing %s\n" ${SERVICE_UNIT_INSTANCE_NAME}
-# Systemd ExecStartPre command should exist to terminate any existing containers
-systemctl start ${SERVICE_UNIT_INSTANCE_NAME} &
+systemctl enable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
+systemctl restart ${SERVICE_UNIT_INSTANCE_NAME} &
 PIDS[0]=${!}
 
 # Tail the systemd unit logs unitl installation completes
-journalctl -fu ${SERVICE_UNIT_INSTANCE_NAME} &
+journalctl -fn 0 -u ${SERVICE_UNIT_INSTANCE_NAME} &
 PIDS[1]=${!}
 
 # Wait for installtion to complete
@@ -81,8 +79,9 @@ sleep 5
 kill -15 ${PIDS[1]}
 wait ${PIDS[1]} 2> /dev/null
 
-if systemctl -q is-active ${SERVICE_UNIT_INSTANCE_NAME}; then
-	printf -- " ---> Service unit is active: %s\n" "$(systemctl list-units --type=service | grep ${SERVICE_UNIT_INSTANCE_NAME})"
+if systemctl -q is-active ${SERVICE_UNIT_INSTANCE_NAME} && systemctl -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}; then
+	printf -- "---> Service unit is active: %s\n" "$(systemctl list-units --type=service | grep "^[ ]*${SERVICE_UNIT_INSTANCE_NAME}")"
+	printf -- "---> Service register unit is active: %s\n" "$(systemctl list-units --type=service | grep "^[ ]*${SERVICE_UNIT_REGISTER_INSTANCE_NAME}")"
 	printf -- "${COLOUR_POSITIVE} --->${COLOUR_RESET} %s\n" 'Install complete'
 else
 	printf -- "\nService status:\n"
