@@ -8,6 +8,34 @@ fi
 
 source run.conf
 
+is_coreos_distribution ()
+{
+	if [[ -n $( [[ -e /etc/os-release ]] && grep ^ID=coreos$ /etc/os-release ) ]]; then
+		return 0
+	fi
+
+	return 1
+}
+
+replace_etcd_service_name ()
+{
+	local FILE_PATH=${1}
+
+	if [[ -z ${FILE_PATH} ]]; then
+		echo "Path to the service's unit file is required."
+		return 1
+	fi
+
+	if ! [[ -s ${FILE_PATH} ]]; then
+		echo "Unit file not found."
+		return 1
+	fi
+
+	# CoreOS uses etcd.service and etcd2.service for version 1 and 2 of ETCD 
+	# respectively but has both available. Others use only etcd.service.
+	sed -i -e 's~etcd.service~etcd2.service~g' ${FILE_PATH}
+}
+
 # Abort if systemd not supported
 if ! type -p systemctl &> /dev/null; then
 	printf -- "${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" 'Systemd installation not supported.'
@@ -25,6 +53,12 @@ printf -- "---> Installing %s\n" ${SERVICE_UNIT_INSTANCE_NAME}
 # Copy systemd unit-files into place.
 cp ${SERVICE_UNIT_TEMPLATE_NAME} /etc/systemd/system/
 cp ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} /etc/systemd/system/
+
+if is_coreos_distribution; then
+	echo "---> CoreOS distribution."
+	echo " ---> Overriding etcd.service with etcd2.service in unit file templates."
+	replace_etcd_service_name /etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}
+fi
 
 systemctl daemon-reload
 
