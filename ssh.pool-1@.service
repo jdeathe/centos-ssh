@@ -42,7 +42,6 @@
 [Unit]
 Description=centos-ssh // %p@%i
 Requires=docker.service
-After=etcd.service
 After=docker.service
 
 [Service]
