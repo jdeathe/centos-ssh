@@ -25,10 +25,10 @@ RUN rpm --rebuilddb \
 	epel-release \
 	https://centos7.iuscommunity.org/ius-release.rpm \
 	vim-minimal-7.4.160-1.el7 \
-	sudo-1.8.6p7-16.el7 \
-	openssh-6.6.1p1-23.el7_2 \
-	openssh-server-6.6.1p1-23.el7_2 \
-	openssh-clients-6.6.1p1-23.el7_2 \
+	sudo-1.8.6p7-17.el7_2 \
+	openssh-6.6.1p1-25.el7_2 \
+	openssh-server-6.6.1p1-25.el7_2 \
+	openssh-clients-6.6.1p1-25.el7_2 \
 	python-setuptools-0.9.8-4.el7 \
 	yum-plugin-versionlock-1.1.31-34.el7 \
 	&& yum versionlock add \
@@ -48,7 +48,7 @@ RUN rpm --rebuilddb \
 # We require supervisor-stdout to allow output of services started by 
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
-RUN easy_install 'supervisor == 3.2.0' 'supervisor-stdout == 0.1.1' \
+RUN easy_install 'supervisor == 3.2.3' 'supervisor-stdout == 0.1.1' \
 	&& mkdir -p /var/log/supervisor/
 
 # -----------------------------------------------------------------------------
@@ -109,16 +109,18 @@ EXPOSE 22
 # -----------------------------------------------------------------------------
 # Set default environment variables
 # -----------------------------------------------------------------------------
-ENV SSH_AUTHORIZED_KEYS ""
-ENV SSH_CHROOT_DIRECTORY "%h"
-ENV SSH_INHERIT_ENVIRONMENT false
-ENV SSH_SUDO "ALL=(ALL) ALL"
-ENV SSH_USER "app-admin"
-ENV SSH_USER_FORCE_SFTP false
-ENV SSH_USER_HOME "/home/%u"
-ENV SSH_USER_PASSWORD ""
-ENV SSH_USER_PASSWORD_HASHED false
-ENV SSH_USER_SHELL "/bin/bash"
-ENV SSH_USER_ID "500:500"
+ENV SSH_AUTHORIZED_KEYS="" \
+	SSH_AUTOSTART_SSHD=true \
+	SSH_AUTOSTART_SSHD_BOOTSTRAP=true \
+	SSH_CHROOT_DIRECTORY="%h" \
+	SSH_INHERIT_ENVIRONMENT=false \
+	SSH_SUDO="ALL=(ALL) ALL" \
+	SSH_USER="app-admin" \
+	SSH_USER_FORCE_SFTP=false \
+	SSH_USER_HOME="/home/%u" \
+	SSH_USER_PASSWORD="" \
+	SSH_USER_PASSWORD_HASHED=false \
+	SSH_USER_SHELL="/bin/bash" \
+	SSH_USER_ID="500:500"
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
