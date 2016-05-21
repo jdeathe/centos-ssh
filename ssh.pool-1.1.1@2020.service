@@ -36,7 +36,7 @@ TimeoutStartSec=1200
 KillMode=none
 Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/services-packages"
 Environment="DOCKER_IMAGE_NAME=jdeathe/centos-ssh"
-Environment="DOCKER_IMAGE_TAG=centos-6-1.5.1"
+Environment="DOCKER_IMAGE_TAG=centos-6-1.5.2"
 Environment="DOCKER_PORT_MAP_TCP_22=%i"
 Environment="SERVICE_UNIT_NAME=ssh"
 Environment="SERVICE_UNIT_APP_GROUP=app-1"
