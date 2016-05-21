@@ -50,7 +50,7 @@ RestartSec=30
 TimeoutStartSec=1200
 Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/services-packages"
 Environment="DOCKER_IMAGE_NAME=jdeathe/centos-ssh"
-Environment="DOCKER_IMAGE_TAG=centos-7-2.0.1"
+Environment="DOCKER_IMAGE_TAG=centos-7-2.0.2"
 Environment="DOCKER_PORT_MAP_TCP_22=2020"
 Environment="VOLUME_CONFIG_ENABLED=false"
 Environment="VOLUME_CONFIG_NAMED=false"
