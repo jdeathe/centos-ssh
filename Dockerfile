@@ -25,12 +25,12 @@ RUN rpm --rebuilddb \
 	epel-release \
 	https://centos6.iuscommunity.org/ius-release.rpm \
 	vim-minimal-7.4.629-5.el6 \
-	sudo-1.8.6p3-20.el6_7 \
-	openssh-5.3p1-114.el6_7 \
-	openssh-server-5.3p1-114.el6_7 \
-	openssh-clients-5.3p1-114.el6_7 \
+	sudo-1.8.6p3-24.el6 \
+	openssh-5.3p1-117.el6 \
+	openssh-server-5.3p1-117.el6 \
+	openssh-clients-5.3p1-117.el6 \
 	python-setuptools-0.6.10-3.el6 \
-	yum-plugin-versionlock-1.1.30-30.el6 \
+	yum-plugin-versionlock-1.1.30-37.el6 \
 	&& yum versionlock add \
 	vim-minimal \
 	sudo \
@@ -98,7 +98,7 @@ RUN mkdir -p /etc/supervisord.d/ \
 # -----------------------------------------------------------------------------
 # Purge
 # -----------------------------------------------------------------------------
-RUN rm -rf /etc/ld.so.cache \ 
+RUN rm -rf /etc/ld.so.cache \
 	; rm -rf /sbin/sln \
 	; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,gnome/help,cracklib,il8n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
 	; rm -rf /{root,tmp,var/cache/{ldconfig,yum}}/* \
