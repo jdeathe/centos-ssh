@@ -10,14 +10,12 @@ get_password ()
 {
 	local PASSWORD_LENGTH=${1:-8}
 	local PASSWORD=$(
-		head -n 4096 /dev/urandom 2> /dev/null | \
-		tr -cd '[:alnum:]' 2> /dev/null | \
-		head -c ${PASSWORD_LENGTH} 2> /dev/null
+		head -n 4096 /dev/urandom | \
+		tr -cd '[:alnum:]' | \
+		cut -c1-${PASSWORD_LENGTH}
 	)
 
 	printf -- "%s" "${PASSWORD}"
-
-	return 0
 }
 
 is_sudo_no_password_all ()
