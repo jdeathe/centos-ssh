@@ -10,14 +10,12 @@ get_password ()
 {
 	local PASSWORD_LENGTH=${1:-8}
 	local PASSWORD=$(
-		head -n 4096 /dev/urandom 2> /dev/null | \
-		tr -cd '[:alnum:]' 2> /dev/null | \
-		head -c ${PASSWORD_LENGTH} 2> /dev/null
+		head -n 4096 /dev/urandom | \
+		tr -cd '[:alnum:]' | \
+		cut -c1-${PASSWORD_LENGTH}
 	)
 
 	printf -- "%s" "${PASSWORD}"
-
-	return 0
 }
 
 is_sudo_no_password_all ()
@@ -207,7 +205,7 @@ get_ssh_chroot_directory ()
 		VALUE="${DEFAULT_VALUE}"
 	fi
 
-	printf "%s" "${VALUE}"
+	printf -- "%s" "${VALUE}"
 }
 
 get_ssh_chroot_directory_path ()
@@ -228,7 +226,7 @@ get_ssh_chroot_directory_path ()
 	# Replace %u with SSH_USER
 	VALUE="${VALUE//'%u'/${USER}}"
 
-	printf "%s" "${VALUE}"
+	printf -- "%s" "${VALUE}"
 }
 
 get_ssh_host_key_fingerprint ()
@@ -283,7 +281,7 @@ get_ssh_user ()
 		VALUE="${DEFAULT_VALUE}"
 	fi
 
-	printf "%s" "${VALUE}"
+	printf -- "%s" "${VALUE}"
 }
 
 get_ssh_user_home ()
@@ -299,7 +297,7 @@ get_ssh_user_home ()
 	# Replace %u with SSH_USER
 	VALUE="${VALUE//'%u'/${USER}}"
 
-	printf "%s" "${VALUE}"
+	printf -- "%s" "${VALUE}"
 }
 
 get_ssh_user_shell ()
@@ -317,7 +315,7 @@ get_ssh_user_shell ()
 		VALUE=/sbin/nologin
 	fi
 
-	printf "%s" "${VALUE}"
+	printf -- "%s" "${VALUE}"
 }
 
 get_ssh_user_uid ()
@@ -343,7 +341,7 @@ get_ssh_user_id ()
 		VALUE="${DEFAULT_VALUE}"
 	fi
 
-	printf "%s" "${VALUE}"
+	printf -- "%s" "${VALUE}"
 }
 
 get_ssh_user_gid ()
@@ -357,7 +355,7 @@ get_ssh_user_gid ()
 		VALUE="${BASH_REMATCH[2]}"
 	fi
 
-	printf "%d" "${VALUE}"
+	printf -- "%d" "${VALUE}"
 }
 
 generate_ssh_host_key ()
@@ -589,7 +587,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 			'ERROR: Public key validation failed.\nUnable to populate %s/.ssh/authorized_key\n' \
 			"${OPTS_SSH_USER_HOME}"
 	else
-		printf "%s" "${OPTS_SSH_AUTHORIZED_KEYS}" > ${OPTS_SSH_USER_HOME}/.ssh/authorized_keys
+		printf -- "%s" "${OPTS_SSH_AUTHORIZED_KEYS}" > ${OPTS_SSH_USER_HOME}/.ssh/authorized_keys
 		SSH_KEY_FINGERPRINTS="$(get_ssh_authorized_key_fingerprints)"
 	fi
 
