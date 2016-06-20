@@ -149,7 +149,7 @@ ExecStart=/bin/bash -c \
       --env \"SSH_USER_PASSWORD_HASHED=${SSH_USER_PASSWORD_HASHED}\" \
       --env \"SSH_USER_SHELL=${SSH_USER_SHELL}\" \
       --env \"SSH_USER_ID=${SSH_USER_ID}\" \
-      --volumes-from volume-config.%p.%i \
+      --volumes-from ${VOLUME_CONFIG_NAME} \
       ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   else \
     exec /usr/bin/docker run \
