@@ -1,7 +1,8 @@
 export SHELL := /usr/bin/env bash
 export PATH := ${PATH}
 
-include make.conf
+include environment.mk
+include default.mk
 
 # UI constants
 COLOUR_NEGATIVE := \033[1;31m
@@ -26,26 +27,6 @@ xz := $(shell type -p xz)
 
 # Used to test docker host is accessible
 get-docker-info := $(shell $(docker) info)
-
-# Common parameters of create and run targets
-define DOCKER_CONTAINER_PARAMETERS
---name $(DOCKER_NAME) \
---publish $(DOCKER_PORT_MAP_TCP_22):22 \
---restart $(DOCKER_RESTART_POLICY) \
---env "SSH_AUTHORIZED_KEYS=$(SSH_AUTHORIZED_KEYS)" \
---env "SSH_AUTOSTART_SSHD=$(SSH_AUTOSTART_SSHD)" \
---env "SSH_AUTOSTART_SSHD_BOOTSTRAP=$(SSH_AUTOSTART_SSHD_BOOTSTRAP)" \
---env "SSH_CHROOT_DIRECTORY=$(SSH_CHROOT_DIRECTORY)" \
---env "SSH_INHERIT_ENVIRONMENT=$(SSH_INHERIT_ENVIRONMENT)" \
---env "SSH_SUDO=$(SSH_SUDO)" \
---env "SSH_USER=$(SSH_USER)" \
---env "SSH_USER_FORCE_SFTP=$(SSH_USER_FORCE_SFTP)" \
---env "SSH_USER_HOME=$(SSH_USER_HOME)" \
---env "SSH_USER_PASSWORD=$(SSH_USER_PASSWORD)" \
---env "SSH_USER_PASSWORD_HASHED=$(SSH_USER_PASSWORD_HASHED)" \
---env "SSH_USER_SHELL=$(SSH_USER_SHELL)" \
---env "SSH_USER_ID=$(SSH_USER_ID)"
-endef
 
 .PHONY: \
 	all \
