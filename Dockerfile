@@ -1,10 +1,10 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-6 6.7 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
+# CentOS-6 6.8 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
 # 
 # =============================================================================
-FROM centos:centos6.7
+FROM centos:centos6.8
 
 MAINTAINER James Deathe <james.deathe@gmail.com>
 
