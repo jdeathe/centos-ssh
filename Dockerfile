@@ -40,6 +40,8 @@ RUN rpm --rebuilddb \
 	python-setuptools \
 	yum-plugin-versionlock \
 	&& rm -rf /var/cache/yum/* \
+	&& rpm --erase --nodeps redhat-logos \
+	&& rpm --rebuilddb \
 	&& yum clean all
 
 # -----------------------------------------------------------------------------
