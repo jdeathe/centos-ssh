@@ -26,9 +26,9 @@ RUN rpm --rebuilddb \
 	https://centos6.iuscommunity.org/ius-release.rpm \
 	vim-minimal-7.4.629-5.el6 \
 	sudo-1.8.6p3-24.el6 \
-	openssh-5.3p1-117.el6 \
-	openssh-server-5.3p1-117.el6 \
-	openssh-clients-5.3p1-117.el6 \
+	openssh-5.3p1-118.1.el6_8 \
+	openssh-server-5.3p1-118.1.el6_8 \
+	openssh-clients-5.3p1-118.1.el6_8 \
 	python-setuptools-0.6.10-3.el6 \
 	yum-plugin-versionlock-1.1.30-37.el6 \
 	&& yum versionlock add \
