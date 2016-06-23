@@ -1,10 +1,10 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-6 6.8 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
+# CentOS-6 6.7 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
 # 
 # =============================================================================
-FROM centos:centos6.8
+FROM centos:centos6.7
 
 MAINTAINER James Deathe <james.deathe@gmail.com>
 
@@ -26,9 +26,9 @@ RUN rpm --rebuilddb \
 	https://centos6.iuscommunity.org/ius-release.rpm \
 	vim-minimal-7.4.629-5.el6 \
 	sudo-1.8.6p3-24.el6 \
-	openssh-5.3p1-118.1.el6_8 \
-	openssh-server-5.3p1-118.1.el6_8 \
-	openssh-clients-5.3p1-118.1.el6_8 \
+	openssh-5.3p1-117.el6 \
+	openssh-server-5.3p1-117.el6 \
+	openssh-clients-5.3p1-117.el6 \
 	python-setuptools-0.6.10-3.el6 \
 	yum-plugin-versionlock-1.1.30-37.el6 \
 	&& yum versionlock add \
@@ -40,8 +40,6 @@ RUN rpm --rebuilddb \
 	python-setuptools \
 	yum-plugin-versionlock \
 	&& rm -rf /var/cache/yum/* \
-	&& rpm --erase --nodeps redhat-logos \
-	&& rpm --rebuilddb \
 	&& yum clean all
 
 # -----------------------------------------------------------------------------
