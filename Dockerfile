@@ -40,9 +40,12 @@ RUN rpm --rebuilddb \
 	python-setuptools \
 	yum-plugin-versionlock \
 	&& rm -rf /var/cache/yum/* \
-	&& rpm --erase --nodeps redhat-logos \
-	&& rpm --rebuilddb \
-	&& yum clean all
+	&& yum clean all \
+	&& /bin/find /usr/share \
+	-type f \
+	-regextype posix-extended \
+	-regex '.*\.(jpg|png)$' \
+	-delete
 
 # -----------------------------------------------------------------------------
 # Install supervisord (required to run more than a single process in a container)
