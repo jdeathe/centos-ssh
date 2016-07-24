@@ -443,6 +443,13 @@ fi
 
 if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 
+	declare -A ENV_VALIDATION_WITH_DEFAULTS=(
+		[SSH_CHROOT_DIRECTORY]=is_valid_ssh_chroot_directory
+		[SSH_USER]=is_valid_ssh_user
+		[SSH_USER_HOME]=is_valid_ssh_user_home
+		[SSH_USER_ID]=is_valid_ssh_user_id
+		[SSH_USER_SHELL]=is_valid_ssh_user_shell
+	)
 	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
 	PASSWORD_LENGTH=16
 	REDACTED_VALUE="********"
@@ -465,6 +472,16 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 
 	# Initialise
 	echo "Initialising ${SSHD_COMMAND}."
+
+	# Warn operator if any supplied environment variable values failed validation 
+	# and have been set to a safe default.
+	for ENV in "${!ENV_VALIDATION_WITH_DEFAULTS[@]}"; do
+		if ! ${ENV_VALIDATION_WITH_DEFAULTS[${ENV}]} "${!ENV}"; then
+			printf -- \
+				"WARNING: ENV %s failed validation - setting to default.\n" \
+				"${ENV}"
+		fi
+	done
 
 	# Fix symbolic links from services-config
 	if [[ -s /etc/services-config/ssh/sshd_config ]] \
