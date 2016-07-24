@@ -1,30 +1,4 @@
 # -----------------------------------------------------------------------------
-# Setup: 
-#     Use of a configuration "data" volumes is optional and allow configuration 
-#     changes to persist and be re-applied to a new container instance.
-#
-#     1. If configuration volumes are required, choose an appropriate naming 
-#     scheme depending on how the configuration is intended to be applied on 
-#     the docker host:
-#
-#       - volume-config.ssh fo configuration of all "ssh" container instances.
-#       - volume-config.ssh.pool-1 for configuration of all "ssh" container 
-#       instances in the "pool-1" group.
-#       - volume-config.ssh.pool-1.1.1 for configuration of the container named 
-#       ssh.pool-1.1.1 specifically.
-#
-#     2. Edit volume_name/container_name, volume_name/volumes with the  
-#     appropriate volume_name:container_path mapping or leave as container_path  
-#     to let docker handle the volume naming within /var/lib/docker/volumes/ on
-#     the docker host.
-#
-#     3. If using a named volume you need to copy the contents of the 
-#     configuration directory into the volume container. The simplest way to do
-#     this is with docker cp as follows: 
-#         docker cp ./etc/services-config/. volume_name:/etc/services-config
-#
-#     4. Edit ssh.pool-1.1.1/volumes_from to apply the required volume_name.
-#
 # Run in background: 
 #     docker-compose up -d
 #
@@ -34,25 +8,8 @@
 # View logs of service ssh.pool-1.1.1: 
 #     docker-compose logs ssh.pool-1.1.1
 # -----------------------------------------------------------------------------
-# volume-config.ssh.pool-1.1.1:
-# # volume-config.ssh.pool-1:
-# # volume-config.ssh:
-#   image: "jdeathe/centos-ssh:latest"
-#   container_name: "volume-config.ssh.pool-1.1.1"
-#   # container_name: "volume-config.ssh.pool-1"
-#   # container_name: "volume-config.ssh"
-#   volumes:
-#     - "/etc/services-config"
-#     # - "volume-config.ssh.pool-1.1.1:/etc/services-config"
-#     # - "volume-config.ssh.pool-1:/etc/services-config"
-#     # - "volume-config.ssh:/etc/services-config"
-#   command: /bin/true
 ssh.pool-1.1.1:
   image: "jdeathe/centos-ssh:centos-7"
   container_name: "ssh.pool-1.1.1"
   ports:
     - "2020:22"
-  # volumes_from:
-  #   - volume-config.ssh.pool-1.1.1
-  #   # - volume-config.ssh.pool-1
-  #   # - volume-config.ssh
