@@ -48,7 +48,7 @@ RUN rpm --rebuilddb \
 # We require supervisor-stdout to allow output of services started by 
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
-RUN easy_install 'supervisor == 3.2.3' 'supervisor-stdout == 0.1.1' \
+RUN easy_install 'supervisor == 3.3.0' 'supervisor-stdout == 0.1.1' \
 	&& mkdir -p /var/log/supervisor/
 
 # -----------------------------------------------------------------------------
