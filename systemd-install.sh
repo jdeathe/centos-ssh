@@ -5,7 +5,7 @@ cd -- "$(
   dirname "${0}"
 )"
 
-source run.conf
+source install.conf
 
 # Abort if systemd not supported
 if ! type -p systemctl &> /dev/null; then
