@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
 # Change working directory
-DIR_PATH="$( if [[ $( echo "${0%/*}" ) != $( echo "${0}" ) ]] ; then cd "$( echo "${0%/*}" )"; fi; pwd )"
-if [[ ${DIR_PATH} == */* ]] && [[ ${DIR_PATH} != $( pwd ) ]] ; then
-	cd ${DIR_PATH}
-fi
+cd -- "$(
+  dirname "${0}"
+)"
 
-source run.conf
+source install.conf
 
 # Abort if systemd not supported
 if ! type -p systemctl &> /dev/null; then
