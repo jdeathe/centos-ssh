@@ -17,21 +17,6 @@ NO_CACHE ?= false
 # Directory path for release packages
 PACKAGE_PATH ?= ./packages/jdeathe
 
-# VOLUME_CONFIG_NAME := volume-config.${SERVICE_UNIT_NAME}
-# VOLUME_CONFIG_NAME := volume-config.${SERVICE_UNIT_NAME}.${SERVICE_UNIT_SHARED_GROUP}
-VOLUME_CONFIG_NAME := volume-config.ssh.pool-1.1.1
-
-# Use of a configuration volume requires additional maintenance and access to the
-# filesystem of the docker host so is disabled by default.
-VOLUME_CONFIG_ENABLED := false
-
-# Using named volumes allows for easier identification of files located in
-# /var/lib/docker/volumes/ on the docker host. If set to true, the value of
-# VOLUME_CONFIG_NAME is used in place of an automatically generated ID.
-# NOTE: When using named volumes you need to copy the contents of the directory
-# into the configuration "data" volume container.
-VOLUME_CONFIG_NAMED := false
-
 # Application container configuration
 SSH_AUTHORIZED_KEYS ?=
 SSH_AUTOSTART_SSHD ?= true
