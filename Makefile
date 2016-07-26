@@ -89,6 +89,7 @@ create: prerequisites require-docker-container-not
 	@ set -x; \
 		$(docker) create \
 			$(DOCKER_CONTAINER_PARAMETERS) \
+			$(DOCKER_CONTAINER_PARAMETERS_APPEND) \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null;
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=created") ]]; then \
 			echo "$(PREFIX_SUB_STEP) $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=created")"; \
@@ -306,6 +307,7 @@ run: prerequisites require-docker-image-tag
 		$(docker) run \
 			--detach \
 			$(DOCKER_CONTAINER_PARAMETERS) \
+			$(DOCKER_CONTAINER_PARAMETERS_APPEND) \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null;
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running") ]]; then \
 			echo "$(PREFIX_SUB_STEP) $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running")"; \
