@@ -1,15 +1,23 @@
+# -----------------------------------------------------------------------------
+# Constants
+# -----------------------------------------------------------------------------
+DOCKER_USER := jdeathe
+DOCKER_IMAGE_NAME := centos-ssh
 
 # Tag validation patterns
 DOCKER_IMAGE_TAG_PATTERN := ^(latest|(centos-[6-7])|(centos-(6-1|7-2).[0-9]+.[0-9]+))$
 DOCKER_IMAGE_RELEASE_TAG_PATTERN := ^centos-(6-1|7-2).[0-9]+.[0-9]+$
 
+# -----------------------------------------------------------------------------
+# Variables
+# -----------------------------------------------------------------------------
+
 # Docker image/container settings
-DOCKER_USER := jdeathe
-DOCKER_IMAGE_NAME := centos-ssh
+DOCKER_CONTAINER_PARAMETERS_APPEND ?=
 DOCKER_IMAGE_TAG ?= latest
 DOCKER_NAME ?= ssh.pool-1.1.1
 DOCKER_PORT_MAP_TCP_22 ?= 2020
-DOCKER_RESTART_POLICY ?= always # {no,on-failure[:max-retries],always,unless-stopped}
+DOCKER_RESTART_POLICY ?= always
 
 # Docker build --no-cache parameter
 NO_CACHE ?= false
