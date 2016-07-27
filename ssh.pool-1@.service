@@ -118,7 +118,7 @@ ExecStart=/bin/bash -c \
       --env \"SSH_USER_PASSWORD_HASHED=${SSH_USER_PASSWORD_HASHED}\" \
       --env \"SSH_USER_SHELL=${SSH_USER_SHELL}\" \
       --env \"SSH_USER_ID=${SSH_USER_ID}\" \
-      \"${DOCKER_CONTAINER_PARAMETERS_APPEND}\" \
+      ${DOCKER_CONTAINER_PARAMETERS_APPEND} \
       ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   "
 
