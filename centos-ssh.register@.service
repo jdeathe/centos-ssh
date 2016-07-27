@@ -1,6 +1,10 @@
 # -----------------------------------------------------------------------------
 # Naming convention:
 #
+#    centos-ssh@.service = {service-unit-install-template-name}
+#        |
+#        +------------- {image-name}
+#
 #    ssh.pool-1.register@.service = {service-unit-template-name}
 #     |     |      |
 #     |     |      +------------ {service-unit-companion-name}
@@ -24,7 +28,8 @@
 #     +------------------------- {service-unit-name}
 #
 # To install:
-#     sudo cp {service-unit-template-name} /etc/systemd/system/
+#     sudo sed -e "s~{{SERVICE_UNIT_NAME}}.{{SERVICE_UNIT_GROUP}}~{service-unit-name}.{service-unit-group-name}~g" \
+#       {service-unit-install-template-name} > /etc/systemd/system/{service-unit-template-name}
 #     sudo systemctl daemon-reload
 #     sudo systemctl enable -f {service-unit-instance-name}
 #
@@ -42,14 +47,14 @@
 Description=centos-ssh etcd registration // %p@%i
 After=etcd.service
 After=etcd2.service
-After=ssh.pool-1@%i.service
-BindsTo=ssh.pool-1@%i.service
+After={{SERVICE_UNIT_NAME}}.{{SERVICE_UNIT_GROUP}}@%i.service
+BindsTo={{SERVICE_UNIT_NAME}}.{{SERVICE_UNIT_GROUP}}@%i.service
 RefuseManualStart=true
 RefuseManualStop=true
 
 [Service]
 Environment="REGISTER_ETCD_PARAMETERS="
-Environment="REGISTER_KEY_ROOT=/services/ssh.pool-1.%i"
+Environment="REGISTER_KEY_ROOT=/services/{{SERVICE_UNIT_NAME}}.{{SERVICE_UNIT_GROUP}}.%i"
 Environment="REGISTER_TTL=60"
 Environment="REGISTER_UPDATE_INTERVAL=55"
 
@@ -70,7 +75,7 @@ ExecStart=/bin/bash -c \
       ${REGISTER_ETCD_PARAMETERS} \
       mk \
       ${REGISTER_KEY_ROOT}/ports/tcp/22 \
-      $(/usr/bin/sed 's/^[0-9.]*://' <<< $(if ! /usr/bin/docker port ssh.pool-1.%i 22 &> /dev/null; then echo ''; else /usr/bin/docker port ssh.pool-1.%i 22; fi)) \
+      $(/usr/bin/sed 's/^[0-9.]*://' <<< $(if ! /usr/bin/docker port {{SERVICE_UNIT_NAME}}.{{SERVICE_UNIT_GROUP}}.%i 22 &> /dev/null; then echo ''; else /usr/bin/docker port {{SERVICE_UNIT_NAME}}.{{SERVICE_UNIT_GROUP}}.%i 22; fi)) \
       --ttl ${REGISTER_TTL} 2> /dev/null; \
     sleep 0.5; \
   done; \
@@ -86,7 +91,7 @@ ExecStart=/bin/bash -c \
       ${REGISTER_ETCD_PARAMETERS} \
       $(if ! /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} get ${REGISTER_KEY_ROOT}/ports/tcp/22 &> /dev/null; then echo set; else echo update; fi) \
       ${REGISTER_KEY_ROOT}/ports/tcp/22 \
-      $(/usr/bin/sed 's/^[0-9.]*://' <<< $(if ! /usr/bin/docker port ssh.pool-1.%i 22 &> /dev/null; then echo ''; else /usr/bin/docker port ssh.pool-1.%i 22; fi)) \
+      $(/usr/bin/sed 's/^[0-9.]*://' <<< $(if ! /usr/bin/docker port {{SERVICE_UNIT_NAME}}.{{SERVICE_UNIT_GROUP}}.%i 22 &> /dev/null; then echo ''; else /usr/bin/docker port {{SERVICE_UNIT_NAME}}.{{SERVICE_UNIT_GROUP}}.%i 22; fi)) \
       --ttl ${REGISTER_TTL}; \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
@@ -108,7 +113,7 @@ ExecStop=/bin/bash -c \
 
 [Install]
 DefaultInstance=1.1
-RequiredBy=ssh.pool-1@%i.service
+RequiredBy={{SERVICE_UNIT_NAME}}.{{SERVICE_UNIT_GROUP}}@%i.service
 
 [X-Fleet]
-MachineOf=ssh.pool-1@%i.service
+MachineOf={{SERVICE_UNIT_NAME}}.{{SERVICE_UNIT_GROUP}}@%i.service
