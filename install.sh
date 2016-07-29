@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-set -eu
-
 # Change working directory
 cd -- "$(
   dirname "${0}"
 )"
 
 source install.conf
+
+INSTALL_SERVICE_REGISTER_ENABLED=false
 
 function systemd_install ()
 {
@@ -92,7 +92,7 @@ function systemd_install ()
 	# Allow time for the container bootstrap to complete
 	sleep ${SERVICE_UNIT_INSTALL_TIMEOUT}
 	kill -15 ${PIDS[1]}
-	# wait ${PIDS[1]} 2> /dev/null
+	wait ${PIDS[1]} 2> /dev/null
 
 	if ${systemctl} -q is-active ${SERVICE_UNIT_INSTANCE_NAME} \
 		&& ( \
