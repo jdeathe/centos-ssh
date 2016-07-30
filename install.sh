@@ -5,9 +5,10 @@ cd -- "$(
   dirname "${0}"
 )"
 
-source install.conf
 source environment.sh
 source default.sh
+
+source install.conf
 
 # UI constants
 COLOUR_NEGATIVE='\033[1;31m'
