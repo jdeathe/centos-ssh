@@ -357,23 +357,21 @@ function systemd_install ()
 
 			# Allow variable expansion for DOCKER_CONTAINER_PARAMETERS_APPEND
 			if [[ ${KEY} == DOCKER_CONTAINER_PARAMETERS_APPEND ]]; then
-				CONFIG_LINE=$(
-					eval -- \
-					printf \
-						-- 'Environment=\"%s=%b\"' \
-						"${KEY}" \
-						"${VALUE}"
-				)
+				printf \
+					-- 'Environment="%s"\n' \
+					"$(
+						eval -- \
+						echo \
+							"${KEY}=${VALUE}"
+					)" \
+					>> ${SYSTEMD_OVERRIDE_DIRECTORY}/${SYSTEMD_OVERRIDE_FILE}
 			else
 				printf \
-					-v CONFIG_LINE \
-					-- 'Environment="%s=%s"' \
+					-- 'Environment="%s=%s"\n' \
 					"${KEY}" \
-					"${VALUE}"
+					"${VALUE}" \
+					>> ${SYSTEMD_OVERRIDE_DIRECTORY}/${SYSTEMD_OVERRIDE_FILE}
 			fi
-
-			echo "${CONFIG_LINE}" \
-				>> ${SYSTEMD_OVERRIDE_DIRECTORY}/${SYSTEMD_OVERRIDE_FILE}
 		done
 
 	fi
