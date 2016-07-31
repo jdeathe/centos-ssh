@@ -380,8 +380,9 @@ function systemd_install ()
 	${systemctl} enable -f ${SERVICE_UNIT_INSTANCE_NAME}
 	if [[ ${INSTALL_SERVICE_REGISTER_ENABLED} == true ]]; then
 		${systemctl} enable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
-	else
+	elif ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}; then
 		${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
+		${systemctl} stop ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
 	fi
 	${systemctl} restart ${SERVICE_UNIT_INSTANCE_NAME} &
 	PIDS[0]=${!}
