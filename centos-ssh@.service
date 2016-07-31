@@ -52,10 +52,10 @@ After=docker.service
 Restart=on-failure
 RestartSec=30
 TimeoutStartSec=1200
-Environment="DOCKER_CONTAINER_PARAMETERS_APPEND="
-Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/services-packages"
 Environment="DOCKER_USER=jdeathe"
 Environment="DOCKER_IMAGE_NAME=centos-ssh"
+Environment="DOCKER_CONTAINER_PARAMETERS_APPEND="
+Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/services-packages"
 Environment="DOCKER_IMAGE_TAG=centos-7-2.0.3"
 Environment="DOCKER_PORT_MAP_TCP_22=2020"
 Environment="SSH_AUTHORIZED_KEYS="
@@ -67,10 +67,10 @@ Environment="SSH_SUDO=ALL=(ALL) ALL"
 Environment="SSH_USER=app-admin"
 Environment="SSH_USER_FORCE_SFTP=false"
 Environment="SSH_USER_HOME=/home/%%u"
+Environment="SSH_USER_ID=500:500"
 Environment="SSH_USER_PASSWORD="
 Environment="SSH_USER_PASSWORD_HASHED=false"
 Environment="SSH_USER_SHELL=/bin/bash"
-Environment="SSH_USER_ID=500:500"
 
 # Initialisation: Load image from local storage if available, otherwise pull.
 ExecStartPre=/bin/bash -c \
@@ -119,10 +119,10 @@ ExecStart=/bin/bash -c \
     --env \"SSH_USER=${SSH_USER}\" \
     --env \"SSH_USER_FORCE_SFTP=${SSH_USER_FORCE_SFTP}\" \
     --env \"SSH_USER_HOME=${SSH_USER_HOME}\" \
+    --env \"SSH_USER_ID=${SSH_USER_ID}\" \
     --env \"SSH_USER_PASSWORD=${SSH_USER_PASSWORD}\" \
     --env \"SSH_USER_PASSWORD_HASHED=${SSH_USER_PASSWORD_HASHED}\" \
     --env \"SSH_USER_SHELL=${SSH_USER_SHELL}\" \
-    --env \"SSH_USER_ID=${SSH_USER_ID}\" \
     ${DOCKER_CONTAINER_PARAMETERS_APPEND} \
     ${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   "

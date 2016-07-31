@@ -118,9 +118,9 @@ ENV SSH_AUTHORIZED_KEYS="" \
 	SSH_USER="app-admin" \
 	SSH_USER_FORCE_SFTP=false \
 	SSH_USER_HOME="/home/%u" \
+	SSH_USER_ID="500:500" \
 	SSH_USER_PASSWORD="" \
 	SSH_USER_PASSWORD_HASHED=false \
-	SSH_USER_SHELL="/bin/bash" \
-	SSH_USER_ID="500:500"
+	SSH_USER_SHELL="/bin/bash"
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
