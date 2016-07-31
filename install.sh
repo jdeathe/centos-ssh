@@ -337,6 +337,47 @@ function systemd_install ()
 		fi
 	fi
 
+	# Create drop-in to set environment variables defined at install time.
+	if [[ -n ${SERVICE_UNIT_ENVIRONMENT_KEYS} ]]; then
+
+		SYSTEMD_OVERRIDE_DIRECTORY=${CHROOT_DIRECTORY%*/}
+		SYSTEMD_OVERRIDE_DIRECTORY+=/etc/systemd/system
+		SYSTEMD_OVERRIDE_DIRECTORY+=/${SERVICE_UNIT_TEMPLATE_NAME}.d
+		SYSTEMD_OVERRIDE_FILE=10-override.conf
+
+		mkdir -p ${SYSTEMD_OVERRIDE_DIRECTORY}
+
+		cat <<-EOF > ${SYSTEMD_OVERRIDE_DIRECTORY}/${SYSTEMD_OVERRIDE_FILE}
+		[Service]
+		EOF
+
+		# Set each key and value - escaping any % characters.
+		for KEY in ${SERVICE_UNIT_ENVIRONMENT_KEYS}; do
+			VALUE="${!KEY//%/%%}"
+
+			# Allow variable expansion for DOCKER_CONTAINER_PARAMETERS_APPEND
+			if [[ ${KEY} == DOCKER_CONTAINER_PARAMETERS_APPEND ]]; then
+				CONFIG_LINE=$(
+					eval -- \
+					printf \
+						-- 'Environment=\"%s=%b\"' \
+						"${KEY}" \
+						"${VALUE}"
+				)
+			else
+				printf \
+					-v CONFIG_LINE \
+					-- 'Environment="%s=%s"' \
+					"${KEY}" \
+					"${VALUE}"
+			fi
+
+			echo "${CONFIG_LINE}" \
+				>> ${SYSTEMD_OVERRIDE_DIRECTORY}/${SYSTEMD_OVERRIDE_FILE}
+		done
+
+	fi
+
 	${systemctl} daemon-reload
 	${systemctl} enable -f ${SERVICE_UNIT_INSTANCE_NAME}
 	if [[ ${INSTALL_SERVICE_REGISTER_ENABLED} == true ]]; then
