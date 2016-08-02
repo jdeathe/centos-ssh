@@ -70,7 +70,7 @@ function docker_prerequisites ()
 	if [[ ${CHROOT_DIRECTORY} == / ]]; then
 		if ! command -v docker &> /dev/null; then
 			printf -- \
-				"${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" \
+				"${PREFIX_STEP_NEGATIVE} %s\n" \
 				'ERROR: Missing docker binary'
 			exit 1
 		fi
@@ -93,7 +93,7 @@ function docker_prerequisites ()
 
 		if [[ -z ${docker} ]]; then
 			printf -- \
-				"${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" \
+				"${PREFIX_STEP_NEGATIVE} %s\n" \
 				'ERROR: Missing docker binary'
 			exit 1
 		fi
@@ -102,14 +102,14 @@ function docker_prerequisites ()
 	# Test docker connection
 	if [[ -z $(${docker} info) ]]; then
 		printf -- \
-			"${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" \
+			"${PREFIX_STEP_NEGATIVE} %s\n" \
 			'ERROR: Docker failed to connect to host.'
 		exit 1
 	fi
 
 	if [[ -z ${DOCKER_NAME} ]]; then
 		printf -- \
-			"${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" \
+			"${PREFIX_STEP_NEGATIVE} %s\n" \
 			'ERROR: DOCKER_NAME not set.'
 		exit 1
 	fi
@@ -260,7 +260,7 @@ function make_install ()
 		COMMAND=${COMMAND_PATH##*/}
 		if ! command -v ${COMMAND} &> /dev/null; then
 			printf -- \
-				"${COLOUR_NEGATIVE}--->${COLOUR_RESET} ERROR: Missing required command: %s\n" \
+				"${PREFIX_STEP_NEGATIVE} ERROR: Missing required command: %s\n" \
 				${COMMAND_PATH}
 			exit 1
 		fi
@@ -275,7 +275,7 @@ function make_install ()
 		make install start
 	else
 		printf -- \
-			"${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" \
+			"${PREFIX_STEP_NEGATIVE} %s\n" \
 			'ERROR: Missing Makefile.'
 	fi
 
@@ -296,7 +296,7 @@ function systemd_install ()
 			COMMAND=${COMMAND_PATH##*/}
 			if ! command -v ${COMMAND} &> /dev/null; then
 				printf -- \
-					"${COLOUR_NEGATIVE}--->${COLOUR_RESET} ERROR: Missing required command: %s\n" \
+					"${PREFIX_STEP_NEGATIVE} ERROR: Missing required command: %s\n" \
 					${COMMAND_PATH}
 				exit 1
 			fi
@@ -311,7 +311,7 @@ function systemd_install ()
 			COMMAND=${COMMAND_PATH##*/}
 			if [[ ! -f ${CHROOT_DIRECTORY%*/}/${COMMAND_PATH} ]]; then
 				printf -- \
-					"${COLOUR_NEGATIVE}--->${COLOUR_RESET} ERROR: Missing required command: %s\n" \
+					"${PREFIX_STEP_NEGATIVE} ERROR: Missing required command: %s\n" \
 					${COMMAND_PATH}
 				exit 1
 			fi
@@ -325,7 +325,7 @@ function systemd_install ()
 	fi
 
 	printf -- \
-		"---> Installing %s\n" \
+		"${PREFIX_STEP} Installing %s\n" \
 		${SERVICE_UNIT_INSTANCE_NAME}
 
 	# Copy systemd unit-files into place.
@@ -421,7 +421,7 @@ function systemd_install ()
 
 		if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]; then
 			printf -- \
-				"---> Unmounting container id: %s\n" \
+				"${PREFIX_STEP} Unmounting container id: %s\n" \
 				${CONTAINER_ID}
 
 			umount ${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm
@@ -450,7 +450,7 @@ function systemd_install ()
 		); then
 
 		printf -- \
-			"---> Service unit is active: %s\n" \
+			"${PREFIX_STEP} Service unit is active: %s\n" \
 			"$(
 				${systemctl} list-units --type=service \
 				| grep "^[ ]*${SERVICE_UNIT_INSTANCE_NAME}"
@@ -458,25 +458,25 @@ function systemd_install ()
 
 		if [[ ${INSTALL_SERVICE_REGISTER_ENABLED} == true ]]; then
 			printf -- \
-				"---> Service register unit is active: %s\n" \
+				"${PREFIX_STEP} Service register unit is active: %s\n" \
 				"$(
 					${systemctl} list-units --type=service \
 					| grep "^[ ]*${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 				)"
 		else
 			printf -- \
-				"---> Service register unit is disabled (not installed)\n"
+				"${PREFIX_STEP} Service register unit is disabled (not installed)\n"
 		fi
 
 		printf -- \
-			"${COLOUR_POSITIVE} --->${COLOUR_RESET} %s\n" \
+			"${PREFIX_SUB_STEP_POSITIVE} %s\n" \
 			'Install complete'
 	else
 		printf -- \
 			"\nService status:\n"
 		${systemctl} status -ln 50 ${SERVICE_UNIT_INSTANCE_NAME}
 		printf -- \
-			"\n${COLOUR_NEGATIVE} --->${COLOUR_RESET} %s\n" \
+			"\n${PREFIX_SUB_STEP_NEGATIVE} %s\n" \
 			'Install error'
 	fi
 
@@ -499,19 +499,19 @@ function usage ()
 # Abort if not run by root user or with sudo
 if [[ ${EUID} -ne 0 ]]; then
 	printf -- \
-		"${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" \
+		"${PREFIX_STEP_NEGATIVE} %s\n" \
 		'Run as root or use: sudo -E <command>'
 	exit 1
 fi
 
 if [[ -z ${CHROOT_DIRECTORY} ]]; then
 	printf -- \
-		"${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" \
+		"${PREFIX_STEP_NEGATIVE} %s\n" \
 		'ERROR: CHROOT_DIRECTORY not set.'
 	exit 1
 elif [[ ! -d ${CHROOT_DIRECTORY} ]]; then
 	printf -- \
-		"${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s\n" \
+		"${PREFIX_STEP_NEGATIVE} %s\n" \
 		'ERROR: CHROOT_DIRECTORY not a valid directory.'
 	exit 1
 fi
@@ -549,7 +549,7 @@ while [[ ${#} -gt 0 ]]; do
 			;;
 		*)
 			printf -- \
-				"${COLOUR_NEGATIVE}--->${COLOUR_RESET} %s (%s)\n" \
+				"${PREFIX_STEP_NEGATIVE} %s (%s)\n" \
 				'ERROR: Unkown option' \
 				"${1}"
 			usage
