@@ -162,11 +162,29 @@ function docker_terminate ()
 			echo "${PREFIX_SUB_STEP} Stopping container"; \
 			${docker} stop ${DOCKER_NAME} 1> /dev/null; \
 		fi; \
-		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then \
-			echo "${PREFIX_SUB_STEP} Removing container"; \
-			${docker} rm -f ${DOCKER_NAME} 1> /dev/null; \
-		fi; \
-		if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then \
+		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+			echo "${PREFIX_SUB_STEP} Removing container"
+			if [[ ${CHROOT_DIRECTORY} != / ]]; then
+				CONTAINER_ID=$(
+					${docker} inspect --format="{{.Id}}" ${DOCKER_NAME}
+				)
+				CONTAINER_SHM_MOUNT=$(
+					find \
+						${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID} \
+						-type d \
+						-name "shm" \
+						2> /dev/null
+				)
+
+				if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]; then
+					echo "${PREFIX_SUB_STEP} Unmounting container id: ${CONTAINER_ID}"
+					umount ${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm
+				fi
+			fi
+			${docker} rm -f ${DOCKER_NAME} 1> /dev/null
+		fi
+		if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]] \
+			&& [[ -z $(find ${CHROOT_DIRECTORY%*/}/var/lib/docker/containers -type d -name "${CONTAINER_ID}" 2> /dev/null) ]]; then \
 			echo "${PREFIX_SUB_STEP_POSITIVE} Container terminated"; \
 		else \
 			echo "${PREFIX_SUB_STEP_NEGATIVE} Container termination failed"; \
@@ -268,6 +286,7 @@ function systemd_install ()
 
 	local COMMAND
 	declare -a local COMMAND_PATHS=(
+		'/usr/bin/docker'
 		'/usr/bin/systemctl'
 		'/usr/bin/journalctl'
 	)
@@ -384,6 +403,31 @@ function systemd_install ()
 		${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
 		${systemctl} stop ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
 	fi
+
+	# Deleting a container from host from a container that has the docker host's
+	# root directory volume mounted fails for CentOS hosts. To work around this
+	# issue we unmount the shm mount before calling docker rm.
+	if [[ ${CHROOT_DIRECTORY} != / ]]; then
+		CONTAINER_ID=$(
+			${docker} inspect --format="{{.Id}}" ${DOCKER_NAME}
+		)
+		CONTAINER_SHM_MOUNT=$(
+			find \
+				${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID} \
+				-type d \
+				-name "shm" \
+				2> /dev/null
+		)
+
+		if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]; then
+			printf -- \
+				"---> Unmounting container id: %s\n" \
+				${CONTAINER_ID}
+
+			umount ${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm
+		fi
+	fi
+
 	${systemctl} restart ${SERVICE_UNIT_INSTANCE_NAME} &
 	PIDS[0]=${!}
 
