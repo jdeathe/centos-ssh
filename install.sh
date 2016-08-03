@@ -118,9 +118,9 @@ function docker_prerequisites ()
 function docker_require_container ()
 {
 
-	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then \
-		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container."; \
-		exit 1; \
+	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container."
+		exit 1
 	fi
 
 }
@@ -128,10 +128,10 @@ function docker_require_container ()
 function docker_require_container_not ()
 {
 
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then \
-		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container be removed (or renamed)."; \
-		echo "${PREFIX_SUB_STEP} Try removing it with: docker rm -f ${DOCKER_NAME}"; \
-		exit 1; \
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container be removed (or renamed)."
+		echo "${PREFIX_SUB_STEP} Try removing it with: docker rm -f ${DOCKER_NAME}"
+		exit 1
 	fi
 
 }
@@ -139,10 +139,10 @@ function docker_require_container_not ()
 function docker_require_container_not_status_paused ()
 {
 
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=paused") ]]; then \
-		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container to be unpaused."; \
-		echo "${PREFIX_SUB_STEP} Try unpausing it with: docker ${DOCKER_NAME} unpause"; \
-		exit 1; \
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=paused") ]]; then
+		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container to be unpaused."
+		echo "${PREFIX_SUB_STEP} Try unpausing it with: docker ${DOCKER_NAME} unpause"
+		exit 1
 	fi
 
 }
@@ -150,20 +150,23 @@ function docker_require_container_not_status_paused ()
 function docker_terminate ()
 {
 
-	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then \
-		echo "${PREFIX_STEP} Container termination skipped"; \
-	else \
-		echo "${PREFIX_STEP} Terminating container"; \
-		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=paused") ]]; then \
-			echo "${PREFIX_SUB_STEP} Unpausing container"; \
-			${docker} unpause ${DOCKER_NAME} 1> /dev/null; \
-		fi; \
-		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then \
-			echo "${PREFIX_SUB_STEP} Stopping container"; \
-			${docker} stop ${DOCKER_NAME} 1> /dev/null; \
-		fi; \
+	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+		echo "${PREFIX_STEP} Container termination skipped"
+	else
+		echo "${PREFIX_STEP} Terminating container"
+		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=paused") ]]; then
+			echo "${PREFIX_SUB_STEP} Unpausing container"
+			${docker} unpause ${DOCKER_NAME} 1> /dev/null
+		fi
+
+		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
+			echo "${PREFIX_SUB_STEP} Stopping container"
+			${docker} stop ${DOCKER_NAME} 1> /dev/null
+		fi
+
 		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
 			echo "${PREFIX_SUB_STEP} Removing container"
+
 			if [[ ${CHROOT_DIRECTORY} != / ]]; then
 				CONTAINER_ID=$(
 					${docker} inspect --format="{{.Id}}" ${DOCKER_NAME}
@@ -181,15 +184,17 @@ function docker_terminate ()
 					umount ${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm
 				fi
 			fi
+
 			${docker} rm -f ${DOCKER_NAME} 1> /dev/null
 		fi
+
 		if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]] \
-			&& [[ -z $(find ${CHROOT_DIRECTORY%*/}/var/lib/docker/containers -type d -name "${CONTAINER_ID}" 2> /dev/null) ]]; then \
-			echo "${PREFIX_SUB_STEP_POSITIVE} Container terminated"; \
-		else \
-			echo "${PREFIX_SUB_STEP_NEGATIVE} Container termination failed"; \
-			exit 1; \
-		fi; \
+			&& [[ -z $(find ${CHROOT_DIRECTORY%*/}/var/lib/docker/containers -type d -name "${CONTAINER_ID}" 2> /dev/null) ]]; then
+			echo "${PREFIX_SUB_STEP_POSITIVE} Container terminated"
+		else
+			echo "${PREFIX_SUB_STEP_NEGATIVE} Container termination failed"
+			exit 1
+		fi
 	fi
 
 }
@@ -210,12 +215,12 @@ function docker_create ()
 			1> /dev/null;"
 	)
 
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=created") ]]; then \
-		echo "${PREFIX_SUB_STEP} $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=created")"; \
-		echo "${PREFIX_SUB_STEP_POSITIVE} Container created"; \
-	else \
-		echo "${PREFIX_SUB_STEP_NEGATIVE} Container creation failed"; \
-		exit 1; \
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=created") ]]; then
+		echo "${PREFIX_SUB_STEP} $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=created")"
+		echo "${PREFIX_SUB_STEP_POSITIVE} Container created"
+	else
+		echo "${PREFIX_SUB_STEP_NEGATIVE} Container creation failed"
+		exit 1
 	fi
 
 }
@@ -228,15 +233,15 @@ function docker_start ()
 	echo "${PREFIX_STEP} Starting container"
 
 	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]] \
-		&& [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then \
-		${docker} start ${DOCKER_NAME} 1> /dev/null; \
+		&& [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
+		${docker} start ${DOCKER_NAME} 1> /dev/null
 	fi
 
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then \
-		echo "${PREFIX_SUB_STEP_POSITIVE} Container started"; \
-	else \
-		echo "${PREFIX_SUB_STEP_NEGATIVE} Container start failed"; \
-		exit 1; \
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
+		echo "${PREFIX_SUB_STEP_POSITIVE} Container started"
+	else
+		echo "${PREFIX_SUB_STEP_NEGATIVE} Container start failed"
+		exit 1
 	fi
 }
 
