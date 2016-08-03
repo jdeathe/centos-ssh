@@ -248,39 +248,6 @@ function docker_install ()
 	docker_start
 }
 
-function make_install ()
-{
-
-	local COMMAND
-	declare -a local LOCAL_COMMAND_PATHS=(
-		'/usr/bin/make'
-	)
-
-	for COMMAND_PATH in "${LOCAL_COMMAND_PATHS[@]}"; do
-		COMMAND=${COMMAND_PATH##*/}
-		if ! command -v ${COMMAND} &> /dev/null; then
-			printf -- \
-				"${PREFIX_STEP_NEGATIVE} ERROR: Missing required command: %s\n" \
-				${COMMAND_PATH}
-			exit 1
-		fi
-
-		printf -v \
-			${COMMAND} \
-			-- '%s' \
-			${COMMAND_PATH}
-	done
-
-	if [[ -f ./Makefile ]]; then
-		make install start
-	else
-		printf -- \
-			"${PREFIX_STEP_NEGATIVE} %s\n" \
-			'ERROR: Missing Makefile.'
-	fi
-
-}
-
 function systemd_install ()
 {
 
@@ -493,8 +460,9 @@ function usage ()
 
 	Options:
 	  -h --help                  Show this help.
-	  -m --manager=MANAGER       Container manager (docker, make, systemd).
-	  -r --register              Enable the etcd registration service.
+	  -m --manager=MANAGER       Container manager (docker, systemd).
+	  -r --register              Enable the etcd registration service. This option 
+	                             is applicable to systemd manager only.
 	EOF
 
   exit 1
@@ -532,7 +500,7 @@ while [[ ${#} -gt 0 ]]; do
 			usage
 			;;
 		-m)
-			if [[ -z ${2:-} ]]; then
+			if [[ ${2:-} != docker ]] && [[ ${2:-} != systemd ]]; then
 				usage
 			fi
 
@@ -540,7 +508,7 @@ while [[ ${#} -gt 0 ]]; do
 			shift 2
 			;;
 		--manager=*)
-			if [[ ${1#*=} != docker ]] && [[ ${1#*=} != make ]] && [[ ${1#*=} != systemd ]]; then
+			if [[ ${1#*=} != docker ]] && [[ ${1#*=} != systemd ]]; then
 				usage
 			fi
 
@@ -565,9 +533,6 @@ done
 case ${INSTALL_SERVICE_MANAGER_TYPE} in
 	systemd)
 		systemd_install
-		;;
-	make)
-		make_install
 		;;
 	docker|*)
 		docker_install
