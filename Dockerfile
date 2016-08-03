@@ -76,6 +76,13 @@ RUN sed -i 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' /etc/sudoers
 # Copy files into place
 # -----------------------------------------------------------------------------
 ADD usr/sbin/sshd-bootstrap /usr/sbin/sshd-bootstrap
+ADD default.sh \
+	environment.sh \
+	install.conf \
+	install.sh \
+	/opt/centos-ssh/
+ADD etc/systemd/system \
+	/etc/systemd/system/
 ADD etc/services-config/ssh/authorized_keys \
 	etc/services-config/ssh/sshd-bootstrap.conf \
 	etc/services-config/ssh/sshd-bootstrap.env \
