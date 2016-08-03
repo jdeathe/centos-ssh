@@ -75,7 +75,8 @@ RUN sed -i 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' /etc/sudoers
 # -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
-ADD usr/sbin/sshd-bootstrap /usr/sbin/sshd-bootstrap
+ADD usr/sbin/sshd-bootstrap \
+	/usr/sbin/sshd-bootstrap
 ADD default.sh \
 	environment.sh \
 	install.conf \
@@ -87,7 +88,8 @@ ADD etc/services-config/ssh/authorized_keys \
 	etc/services-config/ssh/sshd-bootstrap.conf \
 	etc/services-config/ssh/sshd-bootstrap.env \
 	/etc/services-config/ssh/
-ADD etc/services-config/supervisor/supervisord.conf /etc/services-config/supervisor/
+ADD etc/services-config/supervisor/supervisord.conf \
+	/etc/services-config/supervisor/
 ADD etc/services-config/supervisor/supervisord.d/sshd.conf \
 	etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
 	/etc/services-config/supervisor/supervisord.d/
@@ -105,7 +107,7 @@ RUN mkdir -p /etc/supervisord.d/ \
 # -----------------------------------------------------------------------------
 # Purge
 # -----------------------------------------------------------------------------
-RUN rm -rf /etc/ld.so.cache \ 
+RUN rm -rf /etc/ld.so.cache \
 	; rm -rf /sbin/sln \
 	; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,cracklib,i18n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
 	; rm -rf /{root,tmp,var/cache/{ldconfig,yum}}/* \
