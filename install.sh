@@ -54,6 +54,9 @@ PREFIX_SUB_STEP_POSITIVE=$(
 		"${COLOUR_RESET}"
 )
 
+# Default settings
+INSTALL_SERVICE_COMMAND=install
+INSTALL_SERVICE_MANAGER_TYPE=docker
 INSTALL_SERVICE_REGISTER_ENABLED=false
 
 function docker_prerequisites ()
@@ -85,7 +88,7 @@ function docker_prerequisites ()
 				printf -v \
 					docker \
 					-- 'chroot %s %s' \
-					${CHROOT_DIRECTORY} \
+					"${CHROOT_DIRECTORY}" \
 					${DOCKER_PATH}
 				break
 			fi
@@ -173,7 +176,7 @@ function docker_terminate ()
 				)
 				CONTAINER_SHM_MOUNT=$(
 					find \
-						${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID} \
+						"${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}" \
 						-type d \
 						-name "shm" \
 						2> /dev/null
@@ -181,7 +184,7 @@ function docker_terminate ()
 
 				if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]; then
 					echo "${PREFIX_SUB_STEP} Unmounting container id: ${CONTAINER_ID}"
-					umount ${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm
+					umount "${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm"
 				fi
 			fi
 
@@ -297,7 +300,7 @@ function systemd_prerequisites ()
 			printf -v \
 				${COMMAND} \
 				-- 'chroot %s %s' \
-				${CHROOT_DIRECTORY} \
+				"${CHROOT_DIRECTORY}" \
 				${COMMAND_PATH}
 		done
 	fi
@@ -330,18 +333,18 @@ function systemd_install ()
 
 	cat \
 		${SERVICE_UNIT_INSTALL_TEMPLATE_PATH} \
-		> ${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}
+		> "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}"
 
 	if [[ ${INSTALL_SERVICE_REGISTER_ENABLED} == true ]]; then
 		sed \
 			-e "s~{{SERVICE_UNIT_NAME}}~${SERVICE_UNIT_NAME}~g" \
 			-e "s~{{SERVICE_UNIT_GROUP}}~${SERVICE_UNIT_GROUP}~g" \
-			${SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_PATH} \
-			> ${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}
+			"${SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_PATH}" \
+			> "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
 	else
 		# Remove register service unit template if found on host.
 		if [[ -f ${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} ]]; then
-			rm -f ${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}
+			rm -f "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
 		fi
 	fi
 
@@ -356,7 +359,7 @@ function systemd_install ()
 
 		SYSTEMD_OVERRIDE_FILE=10-override.conf
 
-		mkdir -p ${SYSTEMD_OVERRIDE_DIRECTORY}
+		mkdir -p "${SYSTEMD_OVERRIDE_DIRECTORY}"
 
 		cat <<-EOF > ${SYSTEMD_OVERRIDE_DIRECTORY}/${SYSTEMD_OVERRIDE_FILE}
 		[Service]
@@ -375,13 +378,13 @@ function systemd_install ()
 						echo \
 							"${KEY}=${VALUE}"
 					)" \
-					>> ${SYSTEMD_OVERRIDE_DIRECTORY}/${SYSTEMD_OVERRIDE_FILE}
+					>> "${SYSTEMD_OVERRIDE_DIRECTORY}/${SYSTEMD_OVERRIDE_FILE}"
 			else
 				printf \
 					-- 'Environment="%s=%s"\n' \
 					"${KEY}" \
 					"${VALUE}" \
-					>> ${SYSTEMD_OVERRIDE_DIRECTORY}/${SYSTEMD_OVERRIDE_FILE}
+					>> "${SYSTEMD_OVERRIDE_DIRECTORY}/${SYSTEMD_OVERRIDE_FILE}"
 			fi
 		done
 
@@ -405,7 +408,7 @@ function systemd_install ()
 		)
 		CONTAINER_SHM_MOUNT=$(
 			find \
-				${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID} \
+				"${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}" \
 				-type d \
 				-name "shm" \
 				2> /dev/null
@@ -416,7 +419,7 @@ function systemd_install ()
 				"${PREFIX_STEP} Unmounting container id: %s\n" \
 				${CONTAINER_ID}
 
-			umount ${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm
+			umount "${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm"
 		fi
 	fi
 
@@ -535,7 +538,7 @@ function usage ()
 	  -r --register              Enable the etcd registration service. This option 
 	                             is applicable to systemd manager only.
 	Commands:
-	  install                    Default: Install, create and start the container 
+	  install                    Default - Install, create and start the container 
 	                             and any supporting files.
 	  uninstall                  Stop, remove (terminate) and uninstall the 
 	                             container and any supporting files.
@@ -562,12 +565,6 @@ elif [[ ! -d ${CHROOT_DIRECTORY} ]]; then
 		"${PREFIX_STEP_NEGATIVE} %s\n" \
 		'ERROR: CHROOT_DIRECTORY not a valid directory.'
 	exit 1
-fi
-
-# Display usage and exit if no arguments provided.
-if [[ ${#} -eq 0 ]]; then
-  INSTALL_SERVICE_MANAGER_TYPE=docker
-	INSTALL_SERVICE_COMMAND=install
 fi
 
 # Parse install options
