@@ -253,7 +253,13 @@ function docker_install ()
 	docker_start
 }
 
-function systemd_install ()
+function docker_uninstall ()
+{
+	docker_prerequisites
+	docker_terminate
+}
+
+function systemd_prerequisites ()
 {
 
 	local COMMAND
@@ -296,6 +302,13 @@ function systemd_install ()
 		done
 	fi
 
+}
+
+function systemd_install ()
+{
+
+	systemd_prerequisites
+
 	printf -- \
 		"${PREFIX_STEP} Installing %s\n" \
 		${SERVICE_UNIT_INSTANCE_NAME}
@@ -335,9 +348,12 @@ function systemd_install ()
 	# Create drop-in to set environment variables defined at install time.
 	if [[ -n ${SERVICE_UNIT_ENVIRONMENT_KEYS} ]]; then
 
-		SYSTEMD_OVERRIDE_DIRECTORY=${CHROOT_DIRECTORY%*/}
-		SYSTEMD_OVERRIDE_DIRECTORY+=/etc/systemd/system
-		SYSTEMD_OVERRIDE_DIRECTORY+=/${SERVICE_UNIT_TEMPLATE_NAME}.d
+		printf \
+			-v SYSTEMD_OVERRIDE_DIRECTORY \
+			-- '%s/etc/systemd/system/%s.d' \
+			"${CHROOT_DIRECTORY%*/}" \
+			"${SERVICE_UNIT_TEMPLATE_NAME}"
+
 		SYSTEMD_OVERRIDE_FILE=10-override.conf
 
 		mkdir -p ${SYSTEMD_OVERRIDE_DIRECTORY}
@@ -458,16 +474,71 @@ function systemd_install ()
 
 }
 
+function systemd_uninstall ()
+{
+
+	systemd_prerequisites
+
+	printf -- \
+		"${PREFIX_STEP} Uninstalling %s\n" \
+		${SERVICE_UNIT_INSTANCE_NAME}
+
+	${systemctl} daemon-reload
+	${systemctl} disable -f ${SERVICE_UNIT_INSTANCE_NAME}
+	if ${systemctl} -q is-active ${SERVICE_UNIT_INSTANCE_NAME}; then
+		${systemctl} stop ${SERVICE_UNIT_INSTANCE_NAME}
+	fi
+
+	${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
+	if ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}; then
+		${systemctl} stop ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
+	fi
+
+	# Remove stopped container
+	docker_terminate
+
+	# Remove Drop-In file
+	printf \
+		-v SYSTEMD_OVERRIDE_DIRECTORY \
+		-- '%s/etc/systemd/system/%s.d' \
+		"${CHROOT_DIRECTORY%*/}" \
+		"${SERVICE_UNIT_TEMPLATE_NAME}"
+
+	if [[ -d ${SYSTEMD_OVERRIDE_DIRECTORY} ]]; then
+		rm -rf "${SYSTEMD_OVERRIDE_DIRECTORY}"
+	fi
+
+	# Remove systemd unit-files.
+	if [[ -f ${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME} ]]; then
+		rm -f "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}"
+	fi
+
+	# Remove register service unit template
+	if [[ -f ${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} ]]; then
+		rm -f "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+	fi
+
+	printf -- \
+		"${PREFIX_SUB_STEP_POSITIVE} %s\n" \
+		'Uninstall complete'
+
+}
+
 function usage ()
 {
 	cat <<-EOF
-	Usage: $(basename $0) [OPTIONS]
+	Usage: $(basename $0) [OPTIONS] COMMAND
 
 	Options:
 	  -h --help                  Show this help.
 	  -m --manager=MANAGER       Container manager (docker, systemd).
 	  -r --register              Enable the etcd registration service. This option 
 	                             is applicable to systemd manager only.
+	Commands:
+	  install                    Default: Install, create and start the container 
+	                             and any supporting files.
+	  uninstall                  Stop, remove (terminate) and uninstall the 
+	                             container and any supporting files.
 	EOF
 
   exit 1
@@ -496,6 +567,7 @@ fi
 # Display usage and exit if no arguments provided.
 if [[ ${#} -eq 0 ]]; then
   INSTALL_SERVICE_MANAGER_TYPE=docker
+	INSTALL_SERVICE_COMMAND=install
 fi
 
 # Parse install options
@@ -509,7 +581,7 @@ while [[ ${#} -gt 0 ]]; do
 				usage
 			fi
 
-			INSTALL_SERVICE_MANAGER_TYPE="${2}"
+			INSTALL_SERVICE_MANAGER_TYPE=${2}
 			shift 2
 			;;
 		--manager=*)
@@ -517,12 +589,16 @@ while [[ ${#} -gt 0 ]]; do
 				usage
 			fi
 
-			INSTALL_SERVICE_MANAGER_TYPE="${1#*=}"
+			INSTALL_SERVICE_MANAGER_TYPE=${1#*=}
 			shift 1
 			;;
 		-r|--register)
 			INSTALL_SERVICE_REGISTER_ENABLED=true
 			shift 1
+			;;
+		install|uninstall)
+			INSTALL_SERVICE_COMMAND=${1}
+			break
 			;;
 		*)
 			printf -- \
@@ -537,9 +613,9 @@ done
 # Run install for selected service manager
 case ${INSTALL_SERVICE_MANAGER_TYPE} in
 	systemd)
-		systemd_install
+		systemd_${INSTALL_SERVICE_COMMAND}
 		;;
 	docker|*)
-		docker_install
+		docker_${INSTALL_SERVICE_COMMAND}
 		;;
 esac
