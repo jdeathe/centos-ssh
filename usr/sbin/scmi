@@ -162,6 +162,40 @@ function docker_require_container_not_status_paused ()
 
 }
 
+# Deleting a container from host from a container that has the docker host's
+# root directory volume mounted fails for CentOS hosts. To work around this
+# issue we unmount the shm mount before calling docker rm.
+function docker_release_host_mounted_container ()
+{
+	# Skip if not applicable case.
+	if [[ -z ${CHROOT_DIRECTORY} ]] || [[ ${CHROOT_DIRECTORY} == / ]]; then
+		return 0
+	fi
+
+	docker_prerequisites
+
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+		CONTAINER_ID=$(
+			${docker} inspect --format="{{.Id}}" ${DOCKER_NAME}
+		)
+		CONTAINER_SHM_MOUNT=$(
+			find \
+				"${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}" \
+				-type d \
+				-name "shm" \
+				2> /dev/null
+		)
+
+		if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]; then
+			printf -- \
+				"${PREFIX_SUB_STEP} Unmounting container id: %s\n" \
+				${CONTAINER_ID}
+
+			umount "${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm"
+		fi
+	fi
+}
+
 function docker_terminate ()
 {
 
@@ -182,23 +216,7 @@ function docker_terminate ()
 		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
 			echo "${PREFIX_SUB_STEP} Removing container"
 
-			if [[ ${CHROOT_DIRECTORY} != / ]]; then
-				CONTAINER_ID=$(
-					${docker} inspect --format="{{.Id}}" ${DOCKER_NAME}
-				)
-				CONTAINER_SHM_MOUNT=$(
-					find \
-						"${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}" \
-						-type d \
-						-name "shm" \
-						2> /dev/null
-				)
-
-				if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]; then
-					echo "${PREFIX_SUB_STEP} Unmounting container id: ${CONTAINER_ID}"
-					umount "${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm"
-				fi
-			fi
+			docker_release_host_mounted_container
 
 			${docker} rm -f ${DOCKER_NAME} 1> /dev/null
 		fi
@@ -319,6 +337,45 @@ function systemd_prerequisites ()
 
 }
 
+function systemd_get_unit_file_path ()
+{
+	set -e
+
+	local UNIT_FILE="${1:-}"
+	local UNIT_FILE_PATH=""
+	local TEMPLATE_PATHS="
+	 .
+	 ./etc/systemd/system
+	 /etc/systemd/system
+	"
+
+	if [[ -z ${UNIT_FILE} ]]; then
+		printf -- \
+			"${PREFIX_STEP_NEGATIVE} ERROR: Missing unit file name.\n"
+		exit 1
+	fi
+
+	for TEMPLATE_PATH in ${TEMPLATE_PATHS}; do
+		if [[ -f ${TEMPLATE_PATH}/${UNIT_FILE} ]]; then
+			UNIT_FILE_PATH=${TEMPLATE_PATH}/${UNIT_FILE}
+			break
+		fi
+	done
+
+	if [[ -z ${UNIT_FILE_PATH} ]]; then
+		printf -- \
+			"${PREFIX_STEP_NEGATIVE} ERROR: Cannot locate unit file: %s\n" \
+			"${UNIT_FILE}"
+		exit 1
+	fi
+
+	printf -- \
+		'%s' \
+		"${UNIT_FILE_PATH}"
+
+	set +e
+}
+
 function systemd_install ()
 {
 
@@ -329,29 +386,15 @@ function systemd_install ()
 		${SERVICE_UNIT_INSTANCE_NAME}
 
 	# Copy systemd unit-files into place.
-	SERVICE_UNIT_INSTALL_TEMPLATE_PATH=${SERVICE_UNIT_INSTALL_TEMPLATE_NAME}
-	if [[ -f etc/systemd/system/${SERVICE_UNIT_INSTALL_TEMPLATE_NAME} ]]; then
-		SERVICE_UNIT_INSTALL_TEMPLATE_PATH=etc/systemd/system/${SERVICE_UNIT_INSTALL_TEMPLATE_NAME}
-	elif [[ -f /etc/systemd/system/${SERVICE_UNIT_INSTALL_TEMPLATE_NAME} ]]; then
-		SERVICE_UNIT_INSTALL_TEMPLATE_PATH=/etc/systemd/system/${SERVICE_UNIT_INSTALL_TEMPLATE_NAME}
-	fi
-
-	SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_PATH=${SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_NAME}
-	if [[ -f etc/systemd/system/${SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_NAME} ]]; then
-		SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_PATH=etc/systemd/system/${SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_NAME}
-	elif [[ -f /etc/systemd/system/${SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_NAME} ]]; then
-		SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_PATH=/etc/systemd/system/${SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_NAME}
-	fi
-
 	cat \
-		${SERVICE_UNIT_INSTALL_TEMPLATE_PATH} \
+		"$(systemd_get_unit_file_path "${SERVICE_UNIT_INSTALL_TEMPLATE_NAME}")" \
 		> "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}"
 
 	if [[ ${INSTALL_SERVICE_REGISTER_ENABLED} == true ]]; then
 		sed \
 			-e "s~{{SERVICE_UNIT_NAME}}~${SERVICE_UNIT_NAME}~g" \
 			-e "s~{{SERVICE_UNIT_GROUP}}~${SERVICE_UNIT_GROUP}~g" \
-			"${SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_PATH}" \
+			"$(systemd_get_unit_file_path "${SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_NAME}")" \
 			> "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
 	else
 		# Remove register service unit template if found on host.
@@ -373,7 +416,7 @@ function systemd_install ()
 
 		mkdir -p "${SYSTEMD_OVERRIDE_DIRECTORY}"
 
-		cat <<-EOF > ${SYSTEMD_OVERRIDE_DIRECTORY}/${SYSTEMD_OVERRIDE_FILE}
+		cat <<-EOF > "${SYSTEMD_OVERRIDE_DIRECTORY}/${SYSTEMD_OVERRIDE_FILE}"
 		[Service]
 		EOF
 
@@ -411,29 +454,7 @@ function systemd_install ()
 		${systemctl} stop ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
 	fi
 
-	# Deleting a container from host from a container that has the docker host's
-	# root directory volume mounted fails for CentOS hosts. To work around this
-	# issue we unmount the shm mount before calling docker rm.
-	if [[ ${CHROOT_DIRECTORY} != / ]]; then
-		CONTAINER_ID=$(
-			${docker} inspect --format="{{.Id}}" ${DOCKER_NAME}
-		)
-		CONTAINER_SHM_MOUNT=$(
-			find \
-				"${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}" \
-				-type d \
-				-name "shm" \
-				2> /dev/null
-		)
-
-		if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]; then
-			printf -- \
-				"${PREFIX_STEP} Unmounting container id: %s\n" \
-				${CONTAINER_ID}
-
-			umount "${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm"
-		fi
-	fi
+	docker_release_host_mounted_container
 
 	${systemctl} restart ${SERVICE_UNIT_INSTANCE_NAME} &
 	PIDS[0]=${!}
@@ -521,14 +542,11 @@ function systemd_uninstall ()
 	fi
 
 	# Remove systemd unit-files.
-	if [[ -f ${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME} ]]; then
-		rm -f "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}"
-	fi
-
-	# Remove register service unit template
-	if [[ -f ${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} ]]; then
-		rm -f "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
-	fi
+	for UNIT_FILE in ${SERVICE_UNIT_TEMPLATE_NAME} ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}; do
+		if [[ -f ${CHROOT_DIRECTORY%*/}/etc/systemd/system/${UNIT_FILE} ]]; then
+			rm -f "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${UNIT_FILE}"
+		fi
+	done
 
 	${systemctl} daemon-reload
 
