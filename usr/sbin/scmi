@@ -281,9 +281,26 @@ function docker_start ()
 function docker_install ()
 {
 	docker_prerequisites
+
+	# Cleanup if interrupted, killed or on exit
+	trap docker_install_cleanup \
+		INT TERM EXIT
+
 	docker_terminate
 	docker_create
 	docker_start
+
+	trap - \
+		INT TERM EXIT
+
+	exit 0
+}
+
+function docker_install_cleanup ()
+{
+	docker_uninstall
+	set -e
+	exit 1
 }
 
 function docker_uninstall ()
@@ -380,6 +397,10 @@ function systemd_install ()
 {
 
 	systemd_prerequisites
+
+	# Cleanup if interrupted, killed or on exit
+	trap systemd_install_cleanup \
+		INT TERM EXIT
 
 	printf -- \
 		"${PREFIX_STEP} Installing %s\n" \
@@ -508,6 +529,18 @@ function systemd_install ()
 			'Install error'
 	fi
 
+	trap - \
+		INT TERM EXIT
+
+	exit 0
+
+}
+
+function systemd_install_cleanup ()
+{
+	systemd_uninstall
+	set -e
+	exit 1
 }
 
 function systemd_uninstall ()
