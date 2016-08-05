@@ -499,18 +499,15 @@ function systemd_uninstall ()
 		${SERVICE_UNIT_INSTANCE_NAME}
 
 	${systemctl} daemon-reload
-	${systemctl} disable -f ${SERVICE_UNIT_INSTANCE_NAME}
+	${systemctl} disable -f ${SERVICE_UNIT_INSTANCE_NAME} 2> /dev/null
 	if ${systemctl} -q is-active ${SERVICE_UNIT_INSTANCE_NAME}; then
 		${systemctl} stop ${SERVICE_UNIT_INSTANCE_NAME}
 	fi
 
-	${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
+	${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME} 2> /dev/null
 	if ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}; then
 		${systemctl} stop ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
 	fi
-
-	# Remove stopped container
-	docker_terminate
 
 	# Remove Drop-In file
 	printf \
@@ -532,6 +529,11 @@ function systemd_uninstall ()
 	if [[ -f ${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} ]]; then
 		rm -f "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
 	fi
+
+	${systemctl} daemon-reload
+
+	# Remove stopped container
+	docker_terminate
 
 	printf -- \
 		"${PREFIX_SUB_STEP_POSITIVE} %s\n" \
