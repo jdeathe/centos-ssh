@@ -5,11 +5,6 @@ cd -- "$(
   dirname "${0}"
 )"
 
-source environment.sh
-source default.sh
-
-source install.conf
-
 # UI constants
 COLOUR_NEGATIVE='\033[1;31m'
 COLOUR_POSITIVE='\033[1;32m'
@@ -56,8 +51,25 @@ PREFIX_SUB_STEP_POSITIVE=$(
 
 # Default settings
 INSTALL_SERVICE_COMMAND=install
+INSTALL_SERVICE_PACKAGE_NAME=scmi
+INSTALL_SERVICE_INCLUDE_FILES="
+ environment.sh
+ default.sh
+ service-unit.sh
+"
 INSTALL_SERVICE_MANAGER_TYPE=docker
 INSTALL_SERVICE_REGISTER_ENABLED=false
+
+# Source include files
+for INCLUDE_FILE in ${INSTALL_SERVICE_INCLUDE_FILES}; do
+	if [[ -f ${INCLUDE_FILE} ]]; then
+		source ${INCLUDE_FILE}
+	elif [[ -f ./opt/${INSTALL_SERVICE_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
+		source ./opt/${INSTALL_SERVICE_PACKAGE_NAME}/${INCLUDE_FILE}
+	elif [[ -f /opt/${INSTALL_SERVICE_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
+		source /opt/${INSTALL_SERVICE_PACKAGE_NAME}/${INCLUDE_FILE}
+	fi
+done
 
 function docker_prerequisites ()
 {
