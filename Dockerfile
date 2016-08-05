@@ -99,7 +99,7 @@ RUN mkdir -p /etc/supervisord.d/ \
 	&& ln -sf /etc/services-config/supervisor/supervisord.conf /etc/supervisord.conf \
 	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd.conf /etc/supervisord.d/sshd.conf \
 	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf /etc/supervisord.d/sshd-bootstrap.conf \
-	&& chmod +x /usr/sbin/sshd-bootstrap
+	&& chmod +x /usr/sbin/{scmi,sshd-bootstrap}
 
 # -----------------------------------------------------------------------------
 # Purge
