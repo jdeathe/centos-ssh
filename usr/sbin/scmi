@@ -71,6 +71,55 @@ for INCLUDE_FILE in ${INSTALL_SERVICE_INCLUDE_FILES}; do
 	fi
 done
 
+function docker_create ()
+{
+	docker_require_container_not
+
+	echo "${PREFIX_STEP} Creating container"
+
+	(
+		eval "set -x; \
+			${docker} create \
+			${DOCKER_CONTAINER_PARAMETERS} \
+			${DOCKER_CONTAINER_PARAMETERS_APPEND} \
+			${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
+			1> /dev/null;"
+	)
+
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=created") ]]; then
+		echo "${PREFIX_SUB_STEP} $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=created")"
+		echo "${PREFIX_SUB_STEP_POSITIVE} Container created"
+	else
+		echo "${PREFIX_SUB_STEP_NEGATIVE} Container creation failed"
+		exit 1
+	fi
+}
+
+function docker_install ()
+{
+	docker_prerequisites
+
+	# Cleanup if interrupted, killed or on exit
+	trap docker_install_cleanup \
+		INT TERM EXIT
+
+	docker_terminate
+	docker_create
+	docker_start
+
+	trap - \
+		INT TERM EXIT
+
+	exit 0
+}
+
+function docker_install_cleanup ()
+{
+	docker_uninstall
+	set -e
+	exit 1
+}
+
 function docker_prerequisites ()
 {
 	docker=''
@@ -129,32 +178,6 @@ function docker_prerequisites ()
 	fi
 }
 
-function docker_require_container ()
-{
-	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
-		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container."
-		exit 1
-	fi
-}
-
-function docker_require_container_not ()
-{
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
-		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container be removed (or renamed)."
-		echo "${PREFIX_SUB_STEP} Try removing it with: docker rm -f ${DOCKER_NAME}"
-		exit 1
-	fi
-}
-
-function docker_require_container_not_status_paused ()
-{
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=paused") ]]; then
-		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container to be unpaused."
-		echo "${PREFIX_SUB_STEP} Try unpausing it with: docker ${DOCKER_NAME} unpause"
-		exit 1
-	fi
-}
-
 # Deleting a container from host from a container that has the docker host's
 # root directory volume mounted fails for CentOS hosts. To work around this
 # issue we unmount the shm mount before calling docker rm.
@@ -186,6 +209,52 @@ function docker_release_host_mounted_container ()
 
 			umount "${CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm"
 		fi
+	fi
+}
+
+function docker_require_container ()
+{
+	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container."
+		exit 1
+	fi
+}
+
+function docker_require_container_not ()
+{
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container be removed (or renamed)."
+		echo "${PREFIX_SUB_STEP} Try removing it with: docker rm -f ${DOCKER_NAME}"
+		exit 1
+	fi
+}
+
+function docker_require_container_not_status_paused ()
+{
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=paused") ]]; then
+		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container to be unpaused."
+		echo "${PREFIX_SUB_STEP} Try unpausing it with: docker ${DOCKER_NAME} unpause"
+		exit 1
+	fi
+}
+
+function docker_start ()
+{
+	docker_require_container
+	docker_require_container_not_status_paused
+
+	echo "${PREFIX_STEP} Starting container"
+
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]] \
+		&& [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
+		${docker} start ${DOCKER_NAME} 1> /dev/null
+	fi
+
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
+		echo "${PREFIX_SUB_STEP_POSITIVE} Container started"
+	else
+		echo "${PREFIX_SUB_STEP_NEGATIVE} Container start failed"
+		exit 1
 	fi
 }
 
@@ -223,122 +292,10 @@ function docker_terminate ()
 	fi
 }
 
-function docker_create ()
-{
-	docker_require_container_not
-
-	echo "${PREFIX_STEP} Creating container"
-
-	(
-		eval "set -x; \
-			${docker} create \
-			${DOCKER_CONTAINER_PARAMETERS} \
-			${DOCKER_CONTAINER_PARAMETERS_APPEND} \
-			${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
-			1> /dev/null;"
-	)
-
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=created") ]]; then
-		echo "${PREFIX_SUB_STEP} $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=created")"
-		echo "${PREFIX_SUB_STEP_POSITIVE} Container created"
-	else
-		echo "${PREFIX_SUB_STEP_NEGATIVE} Container creation failed"
-		exit 1
-	fi
-}
-
-function docker_start ()
-{
-	docker_require_container
-	docker_require_container_not_status_paused
-
-	echo "${PREFIX_STEP} Starting container"
-
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]] \
-		&& [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
-		${docker} start ${DOCKER_NAME} 1> /dev/null
-	fi
-
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
-		echo "${PREFIX_SUB_STEP_POSITIVE} Container started"
-	else
-		echo "${PREFIX_SUB_STEP_NEGATIVE} Container start failed"
-		exit 1
-	fi
-}
-
-function docker_install ()
-{
-	docker_prerequisites
-
-	# Cleanup if interrupted, killed or on exit
-	trap docker_install_cleanup \
-		INT TERM EXIT
-
-	docker_terminate
-	docker_create
-	docker_start
-
-	trap - \
-		INT TERM EXIT
-
-	exit 0
-}
-
-function docker_install_cleanup ()
-{
-	docker_uninstall
-	set -e
-	exit 1
-}
-
 function docker_uninstall ()
 {
 	docker_prerequisites
 	docker_terminate
-}
-
-function systemd_prerequisites ()
-{
-	local COMMAND
-	declare -a local COMMAND_PATHS=(
-		'/usr/bin/docker'
-		'/usr/bin/systemctl'
-		'/usr/bin/journalctl'
-	)
-
-	if [[ ${CHROOT_DIRECTORY} == / ]]; then
-		for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
-			COMMAND=${COMMAND_PATH##*/}
-			if ! command -v ${COMMAND} &> /dev/null; then
-				printf -- \
-					"${PREFIX_STEP_NEGATIVE} ERROR: Missing required command: %s\n" \
-					${COMMAND_PATH}
-				exit 1
-			fi
-
-			printf -v \
-				${COMMAND} \
-				-- '%s' \
-				${COMMAND_PATH}
-		done
-	else
-		for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
-			COMMAND=${COMMAND_PATH##*/}
-			if [[ ! -f ${CHROOT_DIRECTORY%*/}/${COMMAND_PATH} ]]; then
-				printf -- \
-					"${PREFIX_STEP_NEGATIVE} ERROR: Missing required command: %s\n" \
-					${COMMAND_PATH}
-				exit 1
-			fi
-
-			printf -v \
-				${COMMAND} \
-				-- 'chroot %s %s' \
-				"${CHROOT_DIRECTORY}" \
-				${COMMAND_PATH}
-		done
-	fi
 }
 
 function systemd_get_unit_file_path ()
@@ -528,6 +485,49 @@ function systemd_install_cleanup ()
 	exit 1
 }
 
+function systemd_prerequisites ()
+{
+	local COMMAND
+	declare -a local COMMAND_PATHS=(
+		'/usr/bin/docker'
+		'/usr/bin/systemctl'
+		'/usr/bin/journalctl'
+	)
+
+	if [[ ${CHROOT_DIRECTORY} == / ]]; then
+		for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
+			COMMAND=${COMMAND_PATH##*/}
+			if ! command -v ${COMMAND} &> /dev/null; then
+				printf -- \
+					"${PREFIX_STEP_NEGATIVE} ERROR: Missing required command: %s\n" \
+					${COMMAND_PATH}
+				exit 1
+			fi
+
+			printf -v \
+				${COMMAND} \
+				-- '%s' \
+				${COMMAND_PATH}
+		done
+	else
+		for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
+			COMMAND=${COMMAND_PATH##*/}
+			if [[ ! -f ${CHROOT_DIRECTORY%*/}/${COMMAND_PATH} ]]; then
+				printf -- \
+					"${PREFIX_STEP_NEGATIVE} ERROR: Missing required command: %s\n" \
+					${COMMAND_PATH}
+				exit 1
+			fi
+
+			printf -v \
+				${COMMAND} \
+				-- 'chroot %s %s' \
+				"${CHROOT_DIRECTORY}" \
+				${COMMAND_PATH}
+		done
+	fi
+}
+
 function systemd_uninstall ()
 {
 	systemd_prerequisites
@@ -655,7 +655,7 @@ while [[ ${#} -gt 0 ]]; do
 	esac
 done
 
-# Run install for selected service manager
+# Run command for selected service manager
 case ${INSTALL_SERVICE_MANAGER_TYPE} in
 	systemd)
 		systemd_${INSTALL_SERVICE_COMMAND}
