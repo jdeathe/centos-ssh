@@ -154,7 +154,7 @@ The default `scmi` create command can be modified using environment variables.
 
 ###### DOCKER_NAME
 
-`DOCKER_NAME` can be used to set the name of the docker container. If using `scmi` for installation it expects the name to be of the form: [name](.group).[local-instance].[node-instance]. The group is optional but helps to find related containers. The local-instance is used to define instances that run on the same docker host and node-instance is used to define containers that should be run on different docker host nodes.
+`DOCKER_NAME` can be used to set the name of the docker container. If using `scmi` for installation it expects the name to be of the form: ```[name](.group).[local-instance].[node-instance]```. The group is optional but helps to find related containers. The local-instance is used to define instances that run on the same docker host and node-instance is used to define containers that should be run on different docker host nodes.
 
 For local-instances `scmi` will increment the port so given the `DOCKER_NAME` of `ssh.pool-1.2.1` the container will have a published port 2021 mapping to the container's port 22.
 
