@@ -185,7 +185,7 @@ function docker_prerequisites ()
 function docker_release_host_mounted_container ()
 {
 	# Skip if not applicable case.
-	if [[ -z ${DOCKER_CHROOT_DIRECTORY} ]] 
+	if [[ -z ${DOCKER_CHROOT_DIRECTORY} ]] \
 		|| [[ ${DOCKER_CHROOT_DIRECTORY} == / ]]; then
 		return 0
 	fi
