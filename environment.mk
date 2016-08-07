@@ -11,6 +11,7 @@ DOCKER_IMAGE_RELEASE_TAG_PATTERN := ^centos-(6-1|7-2).[0-9]+.[0-9]+$
 # -----------------------------------------------------------------------------
 # Variables
 # -----------------------------------------------------------------------------
+DOCKER_CHROOT_DIRECTORY ?= /
 
 # Docker image/container settings
 DOCKER_CONTAINER_PARAMETERS_APPEND ?=
@@ -18,6 +19,9 @@ DOCKER_IMAGE_TAG ?= latest
 DOCKER_NAME ?= ssh.pool-1.1.1
 DOCKER_PORT_MAP_TCP_22 ?= 2020
 DOCKER_RESTART_POLICY ?= always
+
+# Docker host settings
+DOCKER_IMAGE_PACKAGE_PATH ?= /var/services-packages
 
 # Docker build --no-cache parameter
 NO_CACHE ?= false
@@ -35,7 +39,7 @@ SSH_SUDO ?= ALL=(ALL) ALL
 SSH_USER ?= app-admin
 SSH_USER_FORCE_SFTP ?= false
 SSH_USER_HOME ?= /home/%u
+SSH_USER_ID ?= 500:500
 SSH_USER_PASSWORD ?=
 SSH_USER_PASSWORD_HASHED ?= false
 SSH_USER_SHELL ?= /bin/bash
-SSH_USER_ID ?= 500:500
