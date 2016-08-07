@@ -75,12 +75,18 @@ RUN sed -i 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' /etc/sudoers
 # -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
-ADD usr/sbin/sshd-bootstrap /usr/sbin/sshd-bootstrap
+ADD usr/sbin \
+	/usr/sbin/
+ADD opt/scmi \
+	/opt/scmi/
+ADD etc/systemd/system \
+	/etc/systemd/system/
 ADD etc/services-config/ssh/authorized_keys \
 	etc/services-config/ssh/sshd-bootstrap.conf \
 	etc/services-config/ssh/sshd-bootstrap.env \
 	/etc/services-config/ssh/
-ADD etc/services-config/supervisor/supervisord.conf /etc/services-config/supervisor/
+ADD etc/services-config/supervisor/supervisord.conf \
+	/etc/services-config/supervisor/
 ADD etc/services-config/supervisor/supervisord.d/sshd.conf \
 	etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
 	/etc/services-config/supervisor/supervisord.d/
@@ -93,12 +99,12 @@ RUN mkdir -p /etc/supervisord.d/ \
 	&& ln -sf /etc/services-config/supervisor/supervisord.conf /etc/supervisord.conf \
 	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd.conf /etc/supervisord.d/sshd.conf \
 	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf /etc/supervisord.d/sshd-bootstrap.conf \
-	&& chmod +x /usr/sbin/sshd-bootstrap
+	&& chmod +x /usr/sbin/{scmi,sshd-bootstrap}
 
 # -----------------------------------------------------------------------------
 # Purge
 # -----------------------------------------------------------------------------
-RUN rm -rf /etc/ld.so.cache \ 
+RUN rm -rf /etc/ld.so.cache \
 	; rm -rf /sbin/sln \
 	; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,cracklib,i18n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
 	; rm -rf /{root,tmp,var/cache/{ldconfig,yum}}/* \
@@ -118,9 +124,9 @@ ENV SSH_AUTHORIZED_KEYS="" \
 	SSH_USER="app-admin" \
 	SSH_USER_FORCE_SFTP=false \
 	SSH_USER_HOME="/home/%u" \
+	SSH_USER_ID="500:500" \
 	SSH_USER_PASSWORD="" \
 	SSH_USER_PASSWORD_HASHED=false \
-	SSH_USER_SHELL="/bin/bash" \
-	SSH_USER_ID="500:500"
+	SSH_USER_SHELL="/bin/bash"
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]

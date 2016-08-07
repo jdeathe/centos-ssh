@@ -485,8 +485,10 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 
 	# Fix symbolic links from services-config
 	if [[ -s /etc/services-config/ssh/sshd_config ]] \
-		&& [[ -f /etc/ssh/sshd_config ]] && ! [[ -L /etc/ssh/sshd_config ]]; then
-		ln -sf /etc/services-config/ssh/sshd_config /etc/ssh/sshd_config
+		&& [[ ! -L /etc/ssh/sshd_config ]]; then
+		ln -sf \
+			/etc/services-config/ssh/sshd_config \
+			/etc/ssh/sshd_config
 	fi
 
 	$(
@@ -579,7 +581,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		fi
 
 		# Add group specific sshd configuration
-		tee -a /etc/ssh/sshd_config > /dev/null <<-EOT
+		tee -a /etc/services-config/ssh/sshd_config > /dev/null <<-EOT
 			# Force SFTP
 			Match group ${SSH_USER_GROUPS}
 			AllowTcpForwarding no
@@ -590,7 +592,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	else
 		sed -i \
 			-e '/# Force SFTP/,/ForceCommand internal-sftp/ { d; }' \
-			/etc/ssh/sshd_config
+			/etc/services-config/ssh/sshd_config
 	fi
 
 	# SSH require files
