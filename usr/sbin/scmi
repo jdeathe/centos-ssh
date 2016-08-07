@@ -596,25 +596,28 @@ function systemd_uninstall ()
 		${systemctl} stop ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
 	fi
 
-	# Remove Drop-In file
-	printf \
-		-v SYSTEMD_OVERRIDE_DIRECTORY \
-		-- '%s/etc/systemd/system/%s.d' \
-		"${DOCKER_CHROOT_DIRECTORY%*/}" \
-		"${SERVICE_UNIT_TEMPLATE_NAME}"
+	# Before removing the template unit-files all units must first be disabled
+	if [[ -n $(${systemctl} list-units --all type=service ${SERVICE_UNIT_NAME}@* | grep '0 loaded units listed.') ]]; then
+		# Remove Drop-In file
+		printf \
+			-v SYSTEMD_OVERRIDE_DIRECTORY \
+			-- '%s/etc/systemd/system/%s.d' \
+			"${DOCKER_CHROOT_DIRECTORY%*/}" \
+			"${SERVICE_UNIT_TEMPLATE_NAME}"
 
-	if [[ -d ${SYSTEMD_OVERRIDE_DIRECTORY} ]]; then
-		rm -rf "${SYSTEMD_OVERRIDE_DIRECTORY}"
-	fi
-
-	# Remove systemd unit-files.
-	for UNIT_FILE in ${SERVICE_UNIT_TEMPLATE_NAME} ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}; do
-		if [[ -f ${DOCKER_CHROOT_DIRECTORY%*/}/etc/systemd/system/${UNIT_FILE} ]]; then
-			rm -f "${DOCKER_CHROOT_DIRECTORY%*/}/etc/systemd/system/${UNIT_FILE}"
+		if [[ -d ${SYSTEMD_OVERRIDE_DIRECTORY} ]]; then
+			rm -rf "${SYSTEMD_OVERRIDE_DIRECTORY}"
 		fi
-	done
 
-	${systemctl} daemon-reload
+		# Remove systemd unit-files.
+		for UNIT_FILE in ${SERVICE_UNIT_TEMPLATE_NAME} ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}; do
+			if [[ -f ${DOCKER_CHROOT_DIRECTORY%*/}/etc/systemd/system/${UNIT_FILE} ]]; then
+				rm -f "${DOCKER_CHROOT_DIRECTORY%*/}/etc/systemd/system/${UNIT_FILE}"
+			fi
+		done
+
+		${systemctl} daemon-reload
+	fi
 
 	# Remove stopped container
 	docker_terminate
