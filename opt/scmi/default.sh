@@ -1,7 +1,16 @@
 
 # Common parameters of create and run targets
 DOCKER_CONTAINER_PARAMETERS="--name ${DOCKER_NAME} \
---publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+--publish $(\
+	if [[ -n $(/usr/bin/gawk 'match($0, /^([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[2]; }' <<< "${DOCKER_PORT_MAP_TCP_22}") ]]; then \
+		printf -- '%s%s' \
+			\"$(/usr/bin/gawk 'match($0, /^([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[1]; }' <<< "${DOCKER_PORT_MAP_TCP_22}")\" \
+			\"$(( $(/usr/bin/gawk 'match($0, /^([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[2]; }' <<< "${DOCKER_PORT_MAP_TCP_22}") + $(/usr/bin/awk -F. '$0=$1' <<< "$( expr match "${DOCKER_NAME}" '.*\.\([0-9][0-9]*\.[0-9][0-9]*\)' )") - 1 ))\"; \
+	else \
+		printf -- '%s' \
+			\"${DOCKER_PORT_MAP_TCP_22}\"; \
+	fi; \
+):22 \
 --restart ${DOCKER_RESTART_POLICY} \
 --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
 --env \"SSH_AUTOSTART_SSHD=${SSH_AUTOSTART_SSHD}\" \
