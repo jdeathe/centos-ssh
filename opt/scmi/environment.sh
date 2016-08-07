@@ -11,7 +11,7 @@ DOCKER_IMAGE_RELEASE_TAG_PATTERN='^centos-(6-1|7-2).[0-9]+.[0-9]+$'
 # -----------------------------------------------------------------------------
 # Variables
 # -----------------------------------------------------------------------------
-CHROOT_DIRECTORY="${CHROOT_DIRECTORY:-/}"
+DOCKER_CHROOT_DIRECTORY="${DOCKER_CHROOT_DIRECTORY:-/}"
 
 # Docker image/container settings
 DOCKER_CONTAINER_PARAMETERS_APPEND="${DOCKER_CONTAINER_PARAMETERS_APPEND:-}"
