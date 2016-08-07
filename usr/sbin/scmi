@@ -109,14 +109,11 @@ function docker_install ()
 
 	trap - \
 		INT TERM EXIT
-
-	exit 0
 }
 
 function docker_install_cleanup ()
 {
 	docker_uninstall
-	set -e
 	exit 1
 }
 
@@ -170,10 +167,14 @@ function docker_prerequisites ()
 		exit 1
 	fi
 
-	if [[ -z ${DOCKER_NAME} ]]; then
+	if ! is_valid_managed_docker_name "${DOCKER_NAME}"; then
 		printf -- \
-			"${PREFIX_STEP_NEGATIVE} %s\n" \
-			'ERROR: DOCKER_NAME not set.'
+			"${PREFIX_STEP_NEGATIVE} ERROR: Invalid DOCKER_NAME %s\n" \
+			"${DOCKER_NAME}"
+		printf -- \
+			"${PREFIX_SUB_STEP_NEGATIVE} Please use the form: %s\n" \
+			'[name](.group).[local-instance].[node-instance]'
+
 		exit 1
 	fi
 }
@@ -298,10 +299,26 @@ function docker_uninstall ()
 	docker_terminate
 }
 
+# Require a docker name of the form:
+# [name](.group).[local-instance].[node-instance]
+is_valid_managed_docker_name ()
+{
+	local NAME="${1:-}"
+	local NAME_PATTERN='^[a-zA-Z0-9][a-zA-Z0-9_.-]*\.[0-9][0-9]*\.[0-9][0-9]*$'
+
+	if [[ -z ${NAME} ]]; then
+		return 1
+	fi
+
+	if [[ ${NAME} =~ ${NAME_PATTERN} ]]; then
+		return 0
+	fi
+
+	return 1
+}
+
 function systemd_get_unit_file_path ()
 {
-	set -e
-
 	local UNIT_FILE="${1:-}"
 	local UNIT_FILE_PATH=""
 	local TEMPLATE_PATHS="
@@ -333,8 +350,6 @@ function systemd_get_unit_file_path ()
 	printf -- \
 		'%s' \
 		"${UNIT_FILE_PATH}"
-
-	set +e
 }
 
 function systemd_install ()
@@ -350,16 +365,19 @@ function systemd_install ()
 		${SERVICE_UNIT_INSTANCE_NAME}
 
 	# Copy systemd unit-files into place.
+	set -e
 	cat \
-		"$(systemd_get_unit_file_path "${SERVICE_UNIT_INSTALL_TEMPLATE_NAME}")" \
+		"$(systemd_get_unit_file_path "${DOCKER_IMAGE_NAME}@.service")" \
 		> "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}"
+	set +e
 
 	if [[ ${INSTALL_SERVICE_REGISTER_ENABLED} == true ]]; then
+		set -e
 		sed \
 			-e "s~{{SERVICE_UNIT_NAME}}~${SERVICE_UNIT_NAME}~g" \
-			-e "s~{{SERVICE_UNIT_GROUP}}~${SERVICE_UNIT_GROUP}~g" \
-			"$(systemd_get_unit_file_path "${SERVICE_UNIT_REGISTER_INSTALL_TEMPLATE_NAME}")" \
+			"$(systemd_get_unit_file_path "${DOCKER_IMAGE_NAME}.register@.service")" \
 			> "${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+		set +e
 	else
 		# Remove register service unit template if found on host.
 		if [[ -f ${CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} ]]; then
@@ -474,14 +492,11 @@ function systemd_install ()
 
 	trap - \
 		INT TERM EXIT
-
-	exit 0
 }
 
 function systemd_install_cleanup ()
 {
 	systemd_uninstall
-	set -e
 	exit 1
 }
 
@@ -526,6 +541,39 @@ function systemd_prerequisites ()
 				${COMMAND_PATH}
 		done
 	fi
+
+	systemd_set_service_unit_names
+}
+
+function systemd_set_service_unit_names ()
+{
+	if is_valid_managed_docker_name "${DOCKER_NAME}"; then
+		SERVICE_UNIT_NAME=$(
+			expr match \
+				"${DOCKER_NAME}" \
+				'\([^\.]*\.*[^\.]*\)\.[0-9][0-9]*\.[0-9][0-9]*'
+		)
+		SERVICE_UNIT_INSTANCE=$(
+			expr match \
+				"${DOCKER_NAME}" \
+				'.*\.\([0-9][0-9]*\.[0-9][0-9]*\)'
+		)
+	else
+		printf -- \
+			"${PREFIX_STEP_NEGATIVE} ERROR: Invalid DOCKER_NAME %s\n" \
+			"${DOCKER_NAME}"
+		printf -- \
+			"${PREFIX_SUB_STEP_NEGATIVE} Please use the form: %s\n" \
+			'[name](.group).[local-instance].[node-instance]'
+
+		exit 1
+	fi
+
+	SERVICE_UNIT_TEMPLATE_NAME=${SERVICE_UNIT_NAME}@.service
+	SERVICE_UNIT_INSTANCE_NAME=${SERVICE_UNIT_NAME}@${SERVICE_UNIT_INSTANCE}.service
+
+	SERVICE_UNIT_REGISTER_TEMPLATE_NAME=${SERVICE_UNIT_NAME}.register@.service
+	SERVICE_UNIT_REGISTER_INSTANCE_NAME=${SERVICE_UNIT_NAME}.register@${SERVICE_UNIT_INSTANCE}.service
 }
 
 function systemd_uninstall ()

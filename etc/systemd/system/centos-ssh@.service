@@ -3,26 +3,21 @@
 #
 #    centos-ssh@.service = {service-unit-install-template-name}
 #        |
-#        +------------- {image-name}
+#        +------------ {image-name}
 #
 #    ssh.pool-1@.service = {service-unit-template-name}
-#     |    |
-#     |    +----------- {service-unit-group-name}
-#     +---------------- {service-unit-name}
+#       Y
+#       +------------- {service-unit-name}
 #
 #    ssh.pool-1@1.1.service = {service-unit-instance-name}
-#     |    |    | |
-#     |    |    | +---- {service-unit-instance}
-#     |    |    +------ {service-unit-local-id}
-#     |    +----------- {service-unit-group-name}
-#     +---------------- {service-unit-name}
+#       Y        Y
+#       |        +---- {service-unit-instance}
+#       +------------- {service-unit-name}
 #
 #    ssh.pool-1.1.1 = {service-unit-long-name}
-#     |    |    | |
-#     |    |    | +---- {service-unit-instance}
-#     |    |    +------ {service-unit-local-id}
-#     |    +----------- {service-unit-group-name}
-#     +---------------- {service-unit-name}
+#       Y        Y
+#       |        +---- {service-unit-instance}
+#       +------------- {service-unit-name}
 #
 # To install:
 #     sudo cat {service-unit-install-template-name} > /etc/systemd/system/{service-unit-template-name}
