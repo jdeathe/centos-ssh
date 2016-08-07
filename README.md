@@ -88,7 +88,83 @@ $ sftp -p 2021 -i id_rsa_insecure \
 
 ### Running
 
-To run the a docker container from this image you can use the included [run.sh](https://github.com/jdeathe/centos-ssh/blob/centos-7/run.sh) and [run.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/run.conf) scripts. The helper script will stop any running container of the same name, remove it and run a new daemonised container on an unspecified host port. Alternatively you can use the following methods.
+To run the a docker container from this image you can use the standard docker commands. Alternatively you can use the embedded (Service Container Manager Interface) [scmi](https://github.com/jdeathe/centos-ssh/blob/centos-7/usr/sbin/scmi) that is included in the image since centos-7-2.1.0 or, if you have a checkout of the [source repository](https://github.com/jdeathe/centos-ssh), and have make installed the Makefile provides targets to build, install, start, stop etc. The helper scripts will terminate any running container of the same name and run a new daemonised container. You can use environment variables to configure the container options and set custom docker run parameters.
+
+#### SCMI Installation Example
+
+Here we use docker to run the SCMI install command to create and start a container named `ssh.pool-1.1.1` by setting the `DOCKER_NAME` environment variable. To use SCMI it requires the use of the `--privileged` docker run parameter and the docker host's root directory mounted as a volume - we tell it the mount directory using `DOCKER_CHROOT_DIRECTORY`. The `DOCKER_CONTAINER_PARAMETERS_APPEND` environment variable is used to add extra parameters to the default docker run command template; here we are adding a named configuration volume which allows the SSH host keys to persist after the first container initialisation.
+
+```
+$ docker run \
+  --rm \
+  --privileged \
+  --volume /:/media/root \
+  --env DOCKER_NAME=ssh.pool-1.1.1 \
+  --env DOCKER_CHROOT_DIRECTORY=/media/root \
+  --env DOCKER_CONTAINER_PARAMETERS_APPEND="--volume \${DOCKER_NAME}.config-ssh:/etc/ssh" \
+  jdeathe/centos-ssh:centos-7 \
+  /sbin/scmi install
+```
+
+#### SCMI Uninstall Example
+
+To uninstall the previous example simply run the same docker run command with the scmi `uninstall` command.
+
+```
+$ docker run \
+  --rm \
+  --privileged \
+  --volume /:/media/root \
+  --env DOCKER_NAME=ssh.pool-1.1.1 \
+  --env DOCKER_CHROOT_DIRECTORY=/media/root \
+  --env DOCKER_CONTAINER_PARAMETERS_APPEND="--volume \${DOCKER_NAME}.config-ssh:/etc/ssh" \
+  jdeathe/centos-ssh:centos-7 \
+  /sbin/scmi uninstall
+```
+
+#### SCMI Installation Systemd Example
+
+If your docker host has systemd (and optionally etcd) installed then `scmi` provides a method to install the container as a systemd service unit. This provides some additional features for managing a group of instances on a single docker host and has the option to use an etcd backed service registry. Using a systemd unit file allows the System Administrator to use a Drop-In to override the settings of a unit-file template used to create service instances. To use the systemd method of installation use the `-m` or `--manager` option of `scmi` and to include the optional etcd register companion unit use the `-r` or `--register` option.
+
+```
+$ docker run \
+  --rm \
+  --privileged \
+  --volume /:/media/root \
+  --env DOCKER_NAME=ssh.pool-1.1.1 \
+  --env DOCKER_CHROOT_DIRECTORY=/media/root \
+  --env DOCKER_CONTAINER_PARAMETERS_APPEND="--volume \${DOCKER_NAME}.config-ssh:/etc/ssh" \
+  --env DOCKER_IMAGE_TAG=centos-7-2.1.0 \
+  --env SSH_SUDO="ALL=(ALL) NOPASSWD:ALL" \
+  jdeathe/centos-ssh:centos-7 \
+  /sbin/scmi -m systemd -r install
+```
+
+##### SCMI Environment Variables
+
+The default `scmi` create command can be modified using environment variables.
+
+###### DOCKER_CONTAINER_PARAMETERS_APPEND
+
+`DOCKER_CONTAINER_PARAMETERS_APPEND` can be used to add extra parameters to the default docker run command template
+
+###### DOCKER_IMAGE_TAG
+
+`DOCKER_IMAGE_TAG` can be used to install a specific docker image tag.
+
+###### DOCKER_NAME
+
+`DOCKER_NAME` can be used to set the name of the docker container. If using `scmi` for installation it expects the name to be of the form: [name](.group).[local-instance].[node-instance]. The group is optional but helps to find related containers. The local-instance is used to define instances that run on the same docker host and node-instance is used to define containers that should be run on different docker host nodes.
+
+For local-instances `scmi` will increment the port so given the `DOCKER_NAME` of `ssh.pool-1.2.1` the container will have a published port 2021 mapping to the container's port 22.
+
+###### DOCKER_PORT_MAP_TCP_22
+
+`DOCKER_PORT_MAP_TCP_22` by default this is set to 2020 and defines the initial docker host port that should be published against the container port 22 for the container with local-instance 1. 
+
+###### DOCKER_RESTART_POLICY
+
+`DOCKER_RESTART_POLICY` can be used to set the `--restart` value used in the docker create template. This defaults to `always`.
 
 #### Using environment variables
 
