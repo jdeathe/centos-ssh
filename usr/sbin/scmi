@@ -49,31 +49,102 @@ PREFIX_SUB_STEP_POSITIVE=$(
 		"${COLOUR_RESET}"
 )
 
-# Default settings
-INSTALL_SERVICE_COMMAND=install
-INSTALL_SERVICE_PACKAGE_NAME=scmi
-INSTALL_SERVICE_INCLUDE_FILES="
- environment.sh
- default.sh
- service-unit.sh
-"
-INSTALL_SERVICE_MANAGER_TYPE=docker
-INSTALL_SERVICE_REGISTER_ENABLED=false
-
-# Source include files
-for INCLUDE_FILE in ${INSTALL_SERVICE_INCLUDE_FILES}; do
-	if [[ -f ${INCLUDE_FILE} ]]; then
-		source ${INCLUDE_FILE}
-	elif [[ -f ../../opt/${INSTALL_SERVICE_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
-		source ../../opt/${INSTALL_SERVICE_PACKAGE_NAME}/${INCLUDE_FILE}
-	elif [[ -f /opt/${INSTALL_SERVICE_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
-		source /opt/${INSTALL_SERVICE_PACKAGE_NAME}/${INCLUDE_FILE}
-	fi
-done
-
-function docker_create ()
+function scmi ()
 {
-	docker_require_container_not
+	# Default settings
+	local SCMI_COMMAND=install
+	local SCMI_PACKAGE_NAME=scmi
+	local SCMI_INCLUDE_FILES="
+	 environment.sh
+	 default.sh
+	 service-unit.sh
+	"
+	local SCMI_MANAGER_TYPE=docker
+	local SCMI_REGISTER_ENABLED=false
+
+	# Source include files
+	for INCLUDE_FILE in ${SCMI_INCLUDE_FILES}; do
+		if [[ -f ${INCLUDE_FILE} ]]; then
+			source ${INCLUDE_FILE}
+		elif [[ -f ../../opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
+			source ../../opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE}
+		elif [[ -f /opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
+			source /opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE}
+		fi
+	done
+
+	# Abort if not run by root user or with sudo
+	if [[ ${EUID} -ne 0 ]]; then
+		printf -- \
+			"${PREFIX_STEP_NEGATIVE} %s\n" \
+			'Run as root or use: sudo -E <command>'
+		exit 1
+	fi
+
+	if [[ -z ${DOCKER_CHROOT_DIRECTORY} ]]; then
+		printf -- \
+			"${PREFIX_STEP_NEGATIVE} %s\n" \
+			'ERROR: CHROOT_DIRECTORY not set.'
+		exit 1
+	elif [[ ! -d ${DOCKER_CHROOT_DIRECTORY} ]]; then
+		printf -- \
+			"${PREFIX_STEP_NEGATIVE} %s\n" \
+			'ERROR: CHROOT_DIRECTORY not a valid directory.'
+		exit 1
+	fi
+
+	# Parse install options
+	while [[ ${#} -gt 0 ]]; do
+		case "${1}" in
+			-h|--help)
+				scmi_usage
+				;;
+			-m)
+				if [[ ${2:-} != docker ]] && [[ ${2:-} != systemd ]]; then
+					scmi_usage
+				fi
+				SCMI_MANAGER_TYPE=${2}
+				shift 2
+				;;
+			--manager=*)
+				if [[ ${1#*=} != docker ]] && [[ ${1#*=} != systemd ]]; then
+					scmi_usage
+				fi
+				SCMI_MANAGER_TYPE=${1#*=}
+				shift 1
+				;;
+			-r|--register)
+				SCMI_REGISTER_ENABLED=true
+				shift 1
+				;;
+			install|uninstall)
+				SCMI_COMMAND=${1}
+				shift 1
+				;;
+			*)
+				printf -- \
+					"${PREFIX_STEP_NEGATIVE} %s (%s)\n" \
+					'ERROR: Unkown option' \
+					"${1}"
+				scmi_usage
+				;;
+		esac
+	done
+
+	# Run command for selected service manager
+	case ${SCMI_MANAGER_TYPE} in
+		systemd)
+			scmi_systemd_${SCMI_COMMAND}
+			;;
+		docker|*)
+			scmi_docker_${SCMI_COMMAND}
+			;;
+	esac
+}
+
+function scmi_docker_create ()
+{
+	scmi_docker_require_container_not
 
 	echo "${PREFIX_STEP} Creating container"
 
@@ -95,29 +166,29 @@ function docker_create ()
 	fi
 }
 
-function docker_install ()
+function scmi_docker_install ()
 {
-	docker_prerequisites
+	scmi_docker_prerequisites
 
 	# Cleanup if interrupted, killed or on exit
-	trap docker_install_cleanup \
+	trap scmi_docker_install_cleanup \
 		INT TERM EXIT
 
-	docker_terminate
-	docker_create
-	docker_start
+	scmi_docker_terminate
+	scmi_docker_create
+	scmi_docker_start
 
 	trap - \
 		INT TERM EXIT
 }
 
-function docker_install_cleanup ()
+function scmi_docker_install_cleanup ()
 {
-	docker_uninstall
+	scmi_docker_uninstall
 	exit 1
 }
 
-function docker_prerequisites ()
+function scmi_docker_prerequisites ()
 {
 	docker=''
 
@@ -167,7 +238,7 @@ function docker_prerequisites ()
 		exit 1
 	fi
 
-	if ! is_valid_managed_docker_name "${DOCKER_NAME}"; then
+	if ! scmi_is_valid_managed_docker_name "${DOCKER_NAME}"; then
 		printf -- \
 			"${PREFIX_STEP_NEGATIVE} ERROR: Invalid DOCKER_NAME %s\n" \
 			"${DOCKER_NAME}"
@@ -182,7 +253,7 @@ function docker_prerequisites ()
 # Deleting a container from host from a container that has the docker host's
 # root directory volume mounted fails for CentOS hosts. To work around this
 # issue we unmount the shm mount before calling docker rm.
-function docker_release_host_mounted_container ()
+function scmi_docker_release_host_mounted_container ()
 {
 	# Skip if not applicable case.
 	if [[ -z ${DOCKER_CHROOT_DIRECTORY} ]] \
@@ -190,7 +261,7 @@ function docker_release_host_mounted_container ()
 		return 0
 	fi
 
-	docker_prerequisites
+	scmi_docker_prerequisites
 
 	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
 		CONTAINER_ID=$(
@@ -214,7 +285,7 @@ function docker_release_host_mounted_container ()
 	fi
 }
 
-function docker_require_container ()
+function scmi_docker_require_container ()
 {
 	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
 		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container."
@@ -222,7 +293,7 @@ function docker_require_container ()
 	fi
 }
 
-function docker_require_container_not ()
+function scmi_docker_require_container_not ()
 {
 	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
 		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container be removed (or renamed)."
@@ -231,7 +302,7 @@ function docker_require_container_not ()
 	fi
 }
 
-function docker_require_container_not_status_paused ()
+function scmi_docker_require_container_not_status_paused ()
 {
 	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=paused") ]]; then
 		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container to be unpaused."
@@ -240,10 +311,10 @@ function docker_require_container_not_status_paused ()
 	fi
 }
 
-function docker_start ()
+function scmi_docker_start ()
 {
-	docker_require_container
-	docker_require_container_not_status_paused
+	scmi_docker_require_container
+	scmi_docker_require_container_not_status_paused
 
 	echo "${PREFIX_STEP} Starting container"
 
@@ -260,7 +331,7 @@ function docker_start ()
 	fi
 }
 
-function docker_terminate ()
+function scmi_docker_terminate ()
 {
 	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
 		echo "${PREFIX_STEP} Container termination skipped"
@@ -279,7 +350,7 @@ function docker_terminate ()
 		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
 			echo "${PREFIX_SUB_STEP} Removing container"
 
-			docker_release_host_mounted_container
+			scmi_docker_release_host_mounted_container
 
 			${docker} rm -f ${DOCKER_NAME} 1> /dev/null
 		fi
@@ -294,15 +365,15 @@ function docker_terminate ()
 	fi
 }
 
-function docker_uninstall ()
+function scmi_docker_uninstall ()
 {
-	docker_prerequisites
-	docker_terminate
+	scmi_docker_prerequisites
+	scmi_docker_terminate
 }
 
 # Require a docker name of the form:
 # [name](.group).[local-instance].[node-instance]
-is_valid_managed_docker_name ()
+scmi_is_valid_managed_docker_name ()
 {
 	local NAME="${1:-}"
 	local NAME_PATTERN='^[a-zA-Z0-9][a-zA-Z0-9_.-]*\.[0-9][0-9]*\.[0-9][0-9]*$'
@@ -318,7 +389,7 @@ is_valid_managed_docker_name ()
 	return 1
 }
 
-function systemd_get_unit_file_path ()
+function scmi_systemd_get_unit_file_path ()
 {
 	local UNIT_FILE="${1:-}"
 	local UNIT_FILE_PATH=""
@@ -353,12 +424,12 @@ function systemd_get_unit_file_path ()
 		"${UNIT_FILE_PATH}"
 }
 
-function systemd_install ()
+function scmi_systemd_install ()
 {
-	systemd_prerequisites
+	scmi_systemd_prerequisites
 
 	# Cleanup if interrupted, killed or on exit
-	trap systemd_install_cleanup \
+	trap scmi_systemd_install_cleanup \
 		INT TERM EXIT
 
 	printf -- \
@@ -368,15 +439,15 @@ function systemd_install ()
 	# Copy systemd unit-files into place.
 	set -e
 	cat \
-		"$(systemd_get_unit_file_path "${DOCKER_IMAGE_NAME}@.service")" \
+		"$(scmi_systemd_get_unit_file_path "${DOCKER_IMAGE_NAME}@.service")" \
 		> "${DOCKER_CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}"
 	set +e
 
-	if [[ ${INSTALL_SERVICE_REGISTER_ENABLED} == true ]]; then
+	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
 		set -e
 		sed \
 			-e "s~{{SERVICE_UNIT_NAME}}~${SERVICE_UNIT_NAME}~g" \
-			"$(systemd_get_unit_file_path "${DOCKER_IMAGE_NAME}.register@.service")" \
+			"$(scmi_systemd_get_unit_file_path "${DOCKER_IMAGE_NAME}.register@.service")" \
 			> "${DOCKER_CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
 		set +e
 	else
@@ -430,14 +501,14 @@ function systemd_install ()
 
 	${systemctl} daemon-reload
 	${systemctl} enable -f ${SERVICE_UNIT_INSTANCE_NAME}
-	if [[ ${INSTALL_SERVICE_REGISTER_ENABLED} == true ]]; then
+	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
 		${systemctl} enable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
 	elif ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}; then
 		${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
 		${systemctl} stop ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
 	fi
 
-	docker_release_host_mounted_container
+	scmi_docker_release_host_mounted_container
 
 	${systemctl} restart ${SERVICE_UNIT_INSTANCE_NAME} &
 	PIDS[0]=${!}
@@ -456,7 +527,7 @@ function systemd_install ()
 
 	if ${systemctl} -q is-active ${SERVICE_UNIT_INSTANCE_NAME} \
 		&& ( \
-			[[ ${INSTALL_SERVICE_REGISTER_ENABLED} != true ]] \
+			[[ ${SCMI_REGISTER_ENABLED} != true ]] \
 			|| ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME} \
 		); then
 
@@ -467,7 +538,7 @@ function systemd_install ()
 				| grep "^[ ]*${SERVICE_UNIT_INSTANCE_NAME}"
 			)"
 
-		if [[ ${INSTALL_SERVICE_REGISTER_ENABLED} == true ]]; then
+		if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
 			printf -- \
 				"${PREFIX_STEP} Service register unit is active: %s\n" \
 				"$(
@@ -495,13 +566,13 @@ function systemd_install ()
 		INT TERM EXIT
 }
 
-function systemd_install_cleanup ()
+function scmi_systemd_install_cleanup ()
 {
-	systemd_uninstall
+	scmi_systemd_uninstall
 	exit 1
 }
 
-function systemd_prerequisites ()
+function scmi_systemd_prerequisites ()
 {
 	local COMMAND
 	declare -a local COMMAND_PATHS=(
@@ -543,12 +614,12 @@ function systemd_prerequisites ()
 		done
 	fi
 
-	systemd_set_service_unit_names
+	scmi_systemd_set_service_unit_names
 }
 
-function systemd_set_service_unit_names ()
+function scmi_systemd_set_service_unit_names ()
 {
-	if is_valid_managed_docker_name "${DOCKER_NAME}"; then
+	if scmi_is_valid_managed_docker_name "${DOCKER_NAME}"; then
 		SERVICE_UNIT_NAME=$(
 			expr match \
 				"${DOCKER_NAME}" \
@@ -577,9 +648,9 @@ function systemd_set_service_unit_names ()
 	SERVICE_UNIT_REGISTER_INSTANCE_NAME=${SERVICE_UNIT_NAME}.register@${SERVICE_UNIT_INSTANCE}.service
 }
 
-function systemd_uninstall ()
+function scmi_systemd_uninstall ()
 {
-	systemd_prerequisites
+	scmi_systemd_prerequisites
 
 	printf -- \
 		"${PREFIX_STEP} Uninstalling %s\n" \
@@ -620,14 +691,14 @@ function systemd_uninstall ()
 	fi
 
 	# Remove stopped container
-	docker_terminate
+	scmi_docker_terminate
 
 	printf -- \
 		"${PREFIX_SUB_STEP_POSITIVE} %s\n" \
 		'Uninstall complete'
 }
 
-function usage ()
+function scmi_usage ()
 {
 	cat <<-EOF
 	Usage: $(basename $0) [OPTIONS] COMMAND
@@ -647,72 +718,4 @@ function usage ()
 	exit 1
 }
 
-# Abort if not run by root user or with sudo
-if [[ ${EUID} -ne 0 ]]; then
-	printf -- \
-		"${PREFIX_STEP_NEGATIVE} %s\n" \
-		'Run as root or use: sudo -E <command>'
-	exit 1
-fi
-
-if [[ -z ${DOCKER_CHROOT_DIRECTORY} ]]; then
-	printf -- \
-		"${PREFIX_STEP_NEGATIVE} %s\n" \
-		'ERROR: CHROOT_DIRECTORY not set.'
-	exit 1
-elif [[ ! -d ${DOCKER_CHROOT_DIRECTORY} ]]; then
-	printf -- \
-		"${PREFIX_STEP_NEGATIVE} %s\n" \
-		'ERROR: CHROOT_DIRECTORY not a valid directory.'
-	exit 1
-fi
-
-# Parse install options
-while [[ ${#} -gt 0 ]]; do
-	case "${1}" in
-		-h|--help)
-			usage
-			;;
-		-m)
-			if [[ ${2:-} != docker ]] && [[ ${2:-} != systemd ]]; then
-				usage
-			fi
-
-			INSTALL_SERVICE_MANAGER_TYPE=${2}
-			shift 2
-			;;
-		--manager=*)
-			if [[ ${1#*=} != docker ]] && [[ ${1#*=} != systemd ]]; then
-				usage
-			fi
-
-			INSTALL_SERVICE_MANAGER_TYPE=${1#*=}
-			shift 1
-			;;
-		-r|--register)
-			INSTALL_SERVICE_REGISTER_ENABLED=true
-			shift 1
-			;;
-		install|uninstall)
-			INSTALL_SERVICE_COMMAND=${1}
-			break
-			;;
-		*)
-			printf -- \
-				"${PREFIX_STEP_NEGATIVE} %s (%s)\n" \
-				'ERROR: Unkown option' \
-				"${1}"
-			usage
-			;;
-	esac
-done
-
-# Run command for selected service manager
-case ${INSTALL_SERVICE_MANAGER_TYPE} in
-	systemd)
-		systemd_${INSTALL_SERVICE_COMMAND}
-		;;
-	docker|*)
-		docker_${INSTALL_SERVICE_COMMAND}
-		;;
-esac
+scmi
