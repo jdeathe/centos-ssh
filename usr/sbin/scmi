@@ -53,6 +53,7 @@ function scmi ()
 {
 	# Default settings
 	local SCMI_COMMAND=install
+	local SCMI_CHROOT_PATH=/
 	local SCMI_PACKAGE_NAME=scmi
 	local SCMI_INCLUDE_FILES="
 	 environment.sh
@@ -76,20 +77,9 @@ function scmi ()
 	# Abort if not run by root user or with sudo
 	if [[ ${EUID} -ne 0 ]]; then
 		printf -- \
-			"${PREFIX_STEP_NEGATIVE} %s\n" \
-			'Run as root or use: sudo -E <command>'
-		exit 1
-	fi
-
-	if [[ -z ${DOCKER_CHROOT_DIRECTORY} ]]; then
-		printf -- \
-			"${PREFIX_STEP_NEGATIVE} %s\n" \
-			'ERROR: CHROOT_DIRECTORY not set.'
-		exit 1
-	elif [[ ! -d ${DOCKER_CHROOT_DIRECTORY} ]]; then
-		printf -- \
-			"${PREFIX_STEP_NEGATIVE} %s\n" \
-			'ERROR: CHROOT_DIRECTORY not a valid directory.'
+			"${PREFIX_STEP_NEGATIVE} %s %s\n" \
+			'Run as root or use: sudo -E' \
+			"$(basename $0)"
 		exit 1
 	fi
 
@@ -98,6 +88,21 @@ function scmi ()
 		case "${1}" in
 			-h|--help)
 				scmi_usage
+				break
+				;;
+			-c)
+				if [[ -z ${2:-} ]]; then
+					scmi_usage
+				fi
+				SCMI_CHROOT_PATH="${2}"
+				shift 2
+				;;
+			--chroot=*)
+				if [[ -z ${1#*=} ]]; then
+					scmi_usage
+				fi
+				SCMI_CHROOT_PATH="${1#*=}"
+				shift 1
 				;;
 			-m)
 				if [[ ${2:-} != docker ]] && [[ ${2:-} != systemd ]]; then
@@ -130,6 +135,15 @@ function scmi ()
 				;;
 		esac
 	done
+
+	if [[ -d ${SCMI_CHROOT_PATH} ]]; then
+		export SCMI_CHROOT_PATH="${SCMI_CHROOT_PATH}"
+	else
+		printf -- \
+			"${PREFIX_STEP_NEGATIVE} %s\n" \
+			'ERROR: Invalid chroot path.'
+		exit 1
+	fi
 
 	# Run command for selected service manager
 	case ${SCMI_MANAGER_TYPE} in
@@ -198,7 +212,7 @@ function scmi_docker_prerequisites ()
 	)
 
 	# Set the docker binary command
-	if [[ ${DOCKER_CHROOT_DIRECTORY} == / ]]; then
+	if [[ ${SCMI_CHROOT_PATH} == / ]]; then
 		if ! command -v docker &> /dev/null; then
 			printf -- \
 				"${PREFIX_STEP_NEGATIVE} %s\n" \
@@ -212,11 +226,11 @@ function scmi_docker_prerequisites ()
 			$(command -v docker)
 	else
 		for DOCKER_PATH in "${DOCKER_PATHS[@]}"; do
-			if [[ -f ${DOCKER_CHROOT_DIRECTORY%*/}/${DOCKER_PATH} ]]; then
+			if [[ -f ${SCMI_CHROOT_PATH%*/}${DOCKER_PATH} ]]; then
 				printf -v \
 					docker \
 					-- 'chroot %s %s' \
-					"${DOCKER_CHROOT_DIRECTORY}" \
+					"${SCMI_CHROOT_PATH}" \
 					${DOCKER_PATH}
 				break
 			fi
@@ -234,7 +248,7 @@ function scmi_docker_prerequisites ()
 	if [[ -z $(${docker} info) ]]; then
 		printf -- \
 			"${PREFIX_STEP_NEGATIVE} %s\n" \
-			'ERROR: Docker failed to connect to host.'
+			'ERROR: docker failed to connect to host.'
 		exit 1
 	fi
 
@@ -256,31 +270,31 @@ function scmi_docker_prerequisites ()
 function scmi_docker_release_host_mounted_container ()
 {
 	# Skip if not applicable case.
-	if [[ -z ${DOCKER_CHROOT_DIRECTORY} ]] \
-		|| [[ ${DOCKER_CHROOT_DIRECTORY} == / ]]; then
+	if [[ -z ${SCMI_CHROOT_PATH} ]] \
+		|| [[ ${SCMI_CHROOT_PATH} == / ]]; then
 		return 0
-	fi
+	else
+		scmi_docker_prerequisites
 
-	scmi_docker_prerequisites
+		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+			CONTAINER_ID=$(
+				${docker} inspect --format="{{.Id}}" ${DOCKER_NAME}
+			)
+			CONTAINER_SHM_MOUNT=$(
+				find \
+					"${SCMI_CHROOT_PATH%*/}/var/lib/docker/containers/${CONTAINER_ID}" \
+					-type d \
+					-name "shm" \
+					2> /dev/null
+			)
 
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
-		CONTAINER_ID=$(
-			${docker} inspect --format="{{.Id}}" ${DOCKER_NAME}
-		)
-		CONTAINER_SHM_MOUNT=$(
-			find \
-				"${DOCKER_CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}" \
-				-type d \
-				-name "shm" \
-				2> /dev/null
-		)
+			if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]; then
+				printf -- \
+					"${PREFIX_SUB_STEP} Unmounting container id: %s\n" \
+					${CONTAINER_ID}
 
-		if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]; then
-			printf -- \
-				"${PREFIX_SUB_STEP} Unmounting container id: %s\n" \
-				${CONTAINER_ID}
-
-			umount "${DOCKER_CHROOT_DIRECTORY%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm"
+				umount "${SCMI_CHROOT_PATH%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm"
+			fi
 		fi
 	fi
 }
@@ -356,7 +370,7 @@ function scmi_docker_terminate ()
 		fi
 
 		if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]] \
-			&& [[ -z $(find ${DOCKER_CHROOT_DIRECTORY%*/}/var/lib/docker/containers -type d -name "${CONTAINER_ID}" 2> /dev/null) ]]; then
+			&& [[ -z $(find ${SCMI_CHROOT_PATH%*/}/var/lib/docker/containers -type d -name "${CONTAINER_ID}" 2> /dev/null) ]]; then
 			echo "${PREFIX_SUB_STEP_POSITIVE} Container terminated"
 		else
 			echo "${PREFIX_SUB_STEP_NEGATIVE} Container termination failed"
@@ -440,7 +454,7 @@ function scmi_systemd_install ()
 	set -e
 	cat \
 		"$(scmi_systemd_get_unit_file_path "${DOCKER_IMAGE_NAME}@.service")" \
-		> "${DOCKER_CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}"
+		> "${SCMI_CHROOT_PATH%*/}/etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}"
 	set +e
 
 	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
@@ -448,12 +462,12 @@ function scmi_systemd_install ()
 		sed \
 			-e "s~{{SERVICE_UNIT_NAME}}~${SERVICE_UNIT_NAME}~g" \
 			"$(scmi_systemd_get_unit_file_path "${DOCKER_IMAGE_NAME}.register@.service")" \
-			> "${DOCKER_CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+			> "${SCMI_CHROOT_PATH%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
 		set +e
 	else
 		# Remove register service unit template if found on host.
-		if [[ -f ${DOCKER_CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} ]]; then
-			rm -f "${DOCKER_CHROOT_DIRECTORY%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+		if [[ -f ${SCMI_CHROOT_PATH%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME} ]]; then
+			rm -f "${SCMI_CHROOT_PATH%*/}/etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
 		fi
 	fi
 
@@ -463,7 +477,7 @@ function scmi_systemd_install ()
 		printf \
 			-v SYSTEMD_OVERRIDE_DIRECTORY \
 			-- '%s/etc/systemd/system/%s.d' \
-			"${DOCKER_CHROOT_DIRECTORY%*/}" \
+			"${SCMI_CHROOT_PATH%*/}" \
 			"${SERVICE_UNIT_TEMPLATE_NAME}"
 
 		SYSTEMD_OVERRIDE_FILE=10-override.conf
@@ -581,7 +595,7 @@ function scmi_systemd_prerequisites ()
 		'/usr/bin/journalctl'
 	)
 
-	if [[ ${DOCKER_CHROOT_DIRECTORY} == / ]]; then
+	if [[ ${SCMI_CHROOT_PATH} == / ]]; then
 		for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
 			COMMAND=${COMMAND_PATH##*/}
 			if ! command -v ${COMMAND} &> /dev/null; then
@@ -599,7 +613,7 @@ function scmi_systemd_prerequisites ()
 	else
 		for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
 			COMMAND=${COMMAND_PATH##*/}
-			if [[ ! -f ${DOCKER_CHROOT_DIRECTORY%*/}/${COMMAND_PATH} ]]; then
+			if [[ ! -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH} ]]; then
 				printf -- \
 					"${PREFIX_STEP_NEGATIVE} ERROR: Missing required command: %s\n" \
 					${COMMAND_PATH}
@@ -609,7 +623,7 @@ function scmi_systemd_prerequisites ()
 			printf -v \
 				${COMMAND} \
 				-- 'chroot %s %s' \
-				"${DOCKER_CHROOT_DIRECTORY}" \
+				"${SCMI_CHROOT_PATH}" \
 				${COMMAND_PATH}
 		done
 	fi
@@ -658,14 +672,11 @@ function scmi_systemd_uninstall ()
 
 	${systemctl} daemon-reload
 	${systemctl} disable -f ${SERVICE_UNIT_INSTANCE_NAME} 2> /dev/null
-	if ${systemctl} -q is-active ${SERVICE_UNIT_INSTANCE_NAME}; then
+	if [[ ! -n $(${systemctl} list-units --all type=service ${SERVICE_UNIT_INSTANCE_NAME} | grep '0 loaded units listed.') ]]; then
 		${systemctl} stop ${SERVICE_UNIT_INSTANCE_NAME}
 	fi
 
 	${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME} 2> /dev/null
-	if ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}; then
-		${systemctl} stop ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
-	fi
 
 	# Before removing the template unit-files all units must first be disabled
 	if [[ -n $(${systemctl} list-units --all type=service ${SERVICE_UNIT_NAME}@* | grep '0 loaded units listed.') ]]; then
@@ -673,7 +684,7 @@ function scmi_systemd_uninstall ()
 		printf \
 			-v SYSTEMD_OVERRIDE_DIRECTORY \
 			-- '%s/etc/systemd/system/%s.d' \
-			"${DOCKER_CHROOT_DIRECTORY%*/}" \
+			"${SCMI_CHROOT_PATH%*/}" \
 			"${SERVICE_UNIT_TEMPLATE_NAME}"
 
 		if [[ -d ${SYSTEMD_OVERRIDE_DIRECTORY} ]]; then
@@ -682,8 +693,8 @@ function scmi_systemd_uninstall ()
 
 		# Remove systemd unit-files.
 		for UNIT_FILE in ${SERVICE_UNIT_TEMPLATE_NAME} ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}; do
-			if [[ -f ${DOCKER_CHROOT_DIRECTORY%*/}/etc/systemd/system/${UNIT_FILE} ]]; then
-				rm -f "${DOCKER_CHROOT_DIRECTORY%*/}/etc/systemd/system/${UNIT_FILE}"
+			if [[ -f ${SCMI_CHROOT_PATH%*/}/etc/systemd/system/${UNIT_FILE} ]]; then
+				rm -f "${SCMI_CHROOT_PATH%*/}/etc/systemd/system/${UNIT_FILE}"
 			fi
 		done
 
@@ -701,21 +712,28 @@ function scmi_systemd_uninstall ()
 function scmi_usage ()
 {
 	cat <<-EOF
-	Usage: $(basename $0) [OPTIONS] COMMAND
+	Usage: $(basename $0) COMMAND [OPTIONS]
+	       $(basename $0) [ (-h|--help) ]
 
-	Options:
-	  -h --help                  Show this help.
-	  -m --manager=MANAGER       Container manager (docker, systemd).
-	  -r --register              Enable the etcd registration service. This option 
-	                             is applicable to systemd manager only.
+	SCMI simplifes the creation and removal of docker container instances.
+
 	Commands:
-	  install                    Default - Install, create and start the container 
-	                             and any supporting files.
+	  install                    The Default command. Install, create and start 
+	                             the container and any supporting files.
 	  uninstall                  Stop, remove (terminate) and uninstall the 
 	                             container and any supporting files.
+	Options:
+	  -h --help                  Show this help and exit.
+	  -c --chroot=CHROOT_PATH    Set the chroot path to run commands. Use when 
+	                             running from a container where the docker host's 
+	                             root directory is set as a volume mount.
+	  -m --manager=MANAGER       Container manager (docker, systemd) defaults to 
+	                             docker.
+	  -r --register              If manager is set to systemd use this to enable 
+	                             the optional etcd registration service.
 	EOF
 
 	exit 1
 }
 
-scmi
+scmi "${@}"
