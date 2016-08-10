@@ -52,7 +52,7 @@ PREFIX_SUB_STEP_POSITIVE=$(
 function scmi ()
 {
 	# Default settings
-	local SCMI_COMMAND=install
+	local SCMI_COMMAND=""
 	local SCMI_CHROOT_PATH=/
 	local SCMI_PACKAGE_NAME=scmi
 	local SCMI_INCLUDE_FILES="
@@ -122,8 +122,12 @@ function scmi ()
 				SCMI_REGISTER_ENABLED=true
 				shift 1
 				;;
-			install|uninstall)
-				SCMI_COMMAND=${1}
+			-i|install)
+					SCMI_COMMAND=install
+				shift 1
+				;;
+			-u|uninstall)
+					SCMI_COMMAND=uninstall
 				shift 1
 				;;
 			*)
@@ -135,6 +139,10 @@ function scmi ()
 				;;
 		esac
 	done
+
+	if [[ -z ${SCMI_COMMAND} ]]; then
+		scmi_usage
+	fi
 
 	if [[ -d ${SCMI_CHROOT_PATH} ]]; then
 		export SCMI_CHROOT_PATH="${SCMI_CHROOT_PATH}"
@@ -716,24 +724,25 @@ function scmi_systemd_uninstall ()
 function scmi_usage ()
 {
 	cat <<-EOF
-	Usage: $(basename $0) COMMAND [OPTIONS]
-	       $(basename $0) [ (-h|--help) ]
+	Usage: $(basename $0) <COMMAND> [OPTIONS]
+	       $(basename $0) [{-h|--help}]
 
 	SCMI simplifes the creation and removal of docker container instances.
 
 	Commands:
-	  install                    The Default command. Install, create and start 
-	                             the container and any supporting files.
-	  uninstall                  Stop, remove (terminate) and uninstall the 
-	                             container and any supporting files.
+	  -i, install                Install, create and start the container and any 
+	                             supporting files. If the named container exists 
+	                             it will be stopped and removed (terminated).
+	  -u, uninstall              Terminate and uninstall the container and any 
+	                             supporting files.
 	Options:
-	  -h --help                  Show this help and exit.
-	  -c --chroot=CHROOT_PATH    Set the chroot path to run commands. Use when 
+	  -h, --help                 Show this help and exit.
+	  -c, --chroot=CHROOT_PATH   Set the chroot path to run commands. Use when 
 	                             running from a container where the docker host's 
 	                             root directory is set as a volume mount.
-	  -m --manager=MANAGER       Container manager (docker, systemd) defaults to 
+	  -m, --manager=MANAGER      Container manager (docker, systemd) defaults to 
 	                             docker.
-	  -r --register              If manager is set to systemd use this to enable 
+	  -r, --register             If manager is set to systemd use this to enable 
 	                             the optional etcd registration service.
 	EOF
 
