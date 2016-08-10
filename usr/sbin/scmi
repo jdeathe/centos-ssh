@@ -53,17 +53,18 @@ function scmi ()
 {
 	# Default settings
 	local SCMI_COMMAND=""
-	local SCMI_CHROOT_PATH=/
-	local SCMI_PACKAGE_NAME=scmi
+	local SCMI_CHROOT_PATH="/"
+	local SCMI_PACKAGE_NAME="scmi"
 	local SCMI_INCLUDE_FILES="
 	 environment.sh
 	 default.sh
 	 service-unit.sh
 	"
-	local SCMI_MANAGER_TYPE=docker
+	local SCMI_MANAGER_TYPE="docker"
 	local SCMI_NAME=""
 	local SCMI_NAME_FORMAT='{<name>|<name>.[group]}.<instance>.<node>'
 	local SCMI_REGISTER_ENABLED=false
+	local SCMI_TAG="latest"
 
 	# Abort if not run by root user or with sudo
 	if [[ ${EUID} -ne 0 ]]; then
@@ -127,12 +128,23 @@ function scmi ()
 				SCMI_REGISTER_ENABLED=true
 				shift 1
 				;;
+			-t)
+				if [[ -z ${2:-} ]]; then
+					scmi_usage
+				fi
+				SCMI_TAG="${2}"
+				shift 2
+				;;
+			--tag=*)
+				SCMI_TAG="${1#*=}"
+				shift 1
+				;;
 			-i|install)
-					SCMI_COMMAND=install
+					SCMI_COMMAND="install"
 				shift 1
 				;;
 			-u|uninstall)
-					SCMI_COMMAND=uninstall
+					SCMI_COMMAND="uninstall"
 				shift 1
 				;;
 			*)
@@ -158,10 +170,13 @@ function scmi ()
 		exit 1
 	fi
 
-	# Let the SCMI operator set a container name or default to what's defined
-	# in the environment.sh include for the container image.
+	# Let SCMI override values set in the environment.
 	if [[ -n ${SCMI_NAME} ]]; then
 		export DOCKER_NAME="${SCMI_NAME}"
+	fi
+
+	if [[ -n ${SCMI_TAG} ]]; then
+		export DOCKER_IMAGE_TAG="${SCMI_TAG}"
 	fi
 
 	# Source include files
@@ -175,6 +190,7 @@ function scmi ()
 		fi
 	done
 
+	# Validate variable values
 	if ! scmi_is_valid_managed_docker_name "${DOCKER_NAME}"; then
 		printf -- \
 			"${PREFIX_STEP_NEGATIVE} ERROR: Invalid container name (%s)\n" \
@@ -182,6 +198,14 @@ function scmi ()
 		printf -- \
 			"${PREFIX_SUB_STEP} Please use the form: %s\n" \
 			${SCMI_NAME_FORMAT}
+
+		exit 1
+	fi
+
+	if [[ ! ${DOCKER_IMAGE_TAG} =~ ${DOCKER_IMAGE_TAG_PATTERN} ]]; then 
+		printf -- \
+			"${PREFIX_STEP_NEGATIVE} ERROR: Invalid image tag (%s)\n" \
+			"${DOCKER_IMAGE_TAG}"
 
 		exit 1
 	fi
@@ -758,6 +782,7 @@ function scmi_usage ()
 	                             {<name>|<name>.[group]}.<instance>.<node>
 	  -r, --register             If manager is set to systemd use this to enable 
 	                             the optional etcd registration service.
+	  -t, --tag=TAG              The docker image tag to use. Defaults to latest.
 	EOF
 
 	exit 1
