@@ -383,6 +383,10 @@ function scmi_docker_uninstall ()
 {
 	scmi_docker_prerequisites
 	scmi_docker_terminate
+
+	printf -- \
+		"${PREFIX_SUB_STEP_POSITIVE} %s\n" \
+		'Uninstall complete'
 }
 
 # Require a docker name of the form:
