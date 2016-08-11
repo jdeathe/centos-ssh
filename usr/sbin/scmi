@@ -66,6 +66,8 @@ function scmi ()
 	local SCMI_REGISTER_ENABLED=false
 	local SCMI_TAG="latest"
 
+	declare -a local SCMI_SETOPT
+
 	# Abort if not run by root user or with sudo
 	if [[ ${EUID} -ne 0 ]]; then
 		printf -- \
@@ -128,6 +130,13 @@ function scmi ()
 				SCMI_REGISTER_ENABLED=true
 				shift 1
 				;;
+			--setopt=*)
+				if [[ -z ${1#*=} ]]; then
+					scmi_usage
+				fi
+				SCMI_SETOPT+=("${1#*=}")
+				shift 1
+				;;
 			-t)
 				if [[ -z ${2:-} ]]; then
 					scmi_usage
@@ -140,11 +149,11 @@ function scmi ()
 				shift 1
 				;;
 			-i|install)
-					SCMI_COMMAND="install"
+				SCMI_COMMAND="install"
 				shift 1
 				;;
 			-u|uninstall)
-					SCMI_COMMAND="uninstall"
+				SCMI_COMMAND="uninstall"
 				shift 1
 				;;
 			*)
@@ -179,6 +188,25 @@ function scmi ()
 		export DOCKER_IMAGE_TAG="${SCMI_TAG}"
 	fi
 
+	if [[ ${#SCMI_SETOPT[@]} -gt 0 ]]; then
+		for OPT in "${SCMI_SETOPT[@]}"; do
+			# Abort if operator attempts to set a --name option. 
+			if [[ ${OPT} =~ ^--name.+$ ]]; then
+				printf -- \
+					"${PREFIX_STEP_NEGATIVE} %s (--setopt=\"%s\")\n" \
+					'ERROR: Option conflict' \
+					"${OPT}"
+				exit 1
+			fi
+
+			printf -v \
+				DOCKER_CONTAINER_PARAMETERS_APPEND \
+				-- '%s %s' \
+				"${DOCKER_CONTAINER_PARAMETERS_APPEND}" \
+				"${OPT}"
+		done
+	fi
+
 	# Source include files
 	for INCLUDE_FILE in ${SCMI_INCLUDE_FILES}; do
 		if [[ -f ${INCLUDE_FILE} ]]; then
@@ -198,7 +226,6 @@ function scmi ()
 		printf -- \
 			"${PREFIX_SUB_STEP} Please use the form: %s\n" \
 			${SCMI_NAME_FORMAT}
-
 		exit 1
 	fi
 
@@ -206,7 +233,6 @@ function scmi ()
 		printf -- \
 			"${PREFIX_STEP_NEGATIVE} ERROR: Invalid image tag (%s)\n" \
 			"${DOCKER_IMAGE_TAG}"
-
 		exit 1
 	fi
 
@@ -782,6 +808,8 @@ function scmi_usage ()
 	                             {<name>|<name>.[group]}.<instance>.<node>
 	  -r, --register             If manager is set to systemd use this to enable 
 	                             the optional etcd registration service.
+	  --setopt="OPTION VALUE"    Append options to the default docker create 
+	                             template. This option can be repeated.
 	  -t, --tag=TAG              The docker image tag to use. Defaults to latest.
 	EOF
 
