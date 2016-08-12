@@ -212,7 +212,11 @@ function scmi ()
 				DOCKER_CONTAINER_PARAMETERS_APPEND \
 				-- '%s %s' \
 				"${DOCKER_CONTAINER_PARAMETERS_APPEND}" \
-				"${OPT}"
+				"$(
+					sed \
+						-e "s~{{NAME}}~${SCMI_NAME}~g" \
+					<<< "${OPT}"
+				)"
 		done
 	fi
 
