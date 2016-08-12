@@ -5,50 +5,6 @@ cd -- "$(
   dirname "${0}"
 )"
 
-# UI constants
-COLOUR_NEGATIVE='\033[1;31m'
-COLOUR_POSITIVE='\033[1;32m'
-COLOUR_RESET='\033[0m'
-CHARACTER_STEP='--->'
-PREFIX_STEP=$(
-	printf -- \
-		'%s ' \
-		"${CHARACTER_STEP}"
-)
-PREFIX_SUB_STEP=$(
-	printf -- \
-		' %s ' \
-		"${CHARACTER_STEP}"
-)
-PREFIX_STEP_NEGATIVE=$(
-	printf -- \
-		'%b%s%b' \
-		"${COLOUR_NEGATIVE}" \
-		"${PREFIX_STEP}" \
-		"${COLOUR_RESET}"
-)
-PREFIX_STEP_POSITIVE=$(
-	printf -- \
-		'%b%s%b' \
-		"${COLOUR_POSITIVE}" \
-		"${PREFIX_STEP}" \
-		"${COLOUR_RESET}"
-)
-PREFIX_SUB_STEP_NEGATIVE=$(
-	printf -- \
-		'%b%s%b' \
-		"${COLOUR_NEGATIVE}" \
-		"${PREFIX_SUB_STEP}" \
-		"${COLOUR_RESET}"
-)
-PREFIX_SUB_STEP_POSITIVE=$(
-	printf -- \
-		'%b%s%b' \
-		"${COLOUR_POSITIVE}" \
-		"${PREFIX_SUB_STEP}" \
-		"${COLOUR_RESET}"
-)
-
 function scmi ()
 {
 	# Default settings
@@ -70,7 +26,7 @@ function scmi ()
 
 	# Abort if not run by root user or with sudo
 	if [[ ${EUID} -ne 0 ]]; then
-		scmi_error_message \
+		scmi_print_message "error" \
 			"Run as root or use: sudo -E $(basename $0)"
 		exit 1
 	fi
@@ -84,7 +40,7 @@ function scmi ()
 				;;
 			-c)
 				if [[ -z ${2:-} ]]; then
-					scmi_error_message \
+					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
 				fi
@@ -93,7 +49,7 @@ function scmi ()
 				;;
 			--chroot=*)
 				if [[ -z ${1#*=} ]]; then
-					scmi_error_message \
+					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
 				fi
@@ -102,7 +58,7 @@ function scmi ()
 				;;
 			-m)
 				if [[ ${2:-} != docker ]] && [[ ${2:-} != systemd ]]; then
-					scmi_error_message \
+					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
 				fi
@@ -111,7 +67,7 @@ function scmi ()
 				;;
 			--manager=*)
 				if [[ ${1#*=} != docker ]] && [[ ${1#*=} != systemd ]]; then
-					scmi_error_message \
+					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
 				fi
@@ -120,7 +76,7 @@ function scmi ()
 				;;
 			-n)
 				if [[ -z ${2:-} ]]; then
-					scmi_error_message \
+					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
 				fi
@@ -129,7 +85,7 @@ function scmi ()
 				;;
 			--name=*)
 				if [[ -z ${1#*=} ]]; then
-					scmi_error_message \
+					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
 				fi
@@ -142,7 +98,7 @@ function scmi ()
 				;;
 			--setopt=*)
 				if [[ -z ${1#*=} ]]; then
-					scmi_error_message \
+					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
 				fi
@@ -151,7 +107,7 @@ function scmi ()
 				;;
 			-t)
 				if [[ -z ${2:-} ]]; then
-					scmi_error_message \
+					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
 				fi
@@ -171,7 +127,7 @@ function scmi ()
 				shift 1
 				;;
 			*)
-				scmi_error_message \
+				scmi_print_message "error" \
 					"Unkown option or option expects a value (${1})"
 				scmi_usage
 				;;
@@ -185,7 +141,7 @@ function scmi ()
 	if [[ -d ${SCMI_CHROOT_PATH} ]]; then
 		export SCMI_CHROOT_PATH="${SCMI_CHROOT_PATH}"
 	else
-		scmi_error_message \
+		scmi_print_message "error" \
 			"Invalid chroot path."
 		exit 1
 	fi
@@ -203,7 +159,7 @@ function scmi ()
 		for OPT in "${SCMI_SETOPT[@]}"; do
 			# Abort if operator attempts to set a --name option. 
 			if [[ ${OPT} =~ ^--name.+$ ]]; then
-				scmi_error_message \
+				scmi_print_message "error" \
 					"Option conflict (--setopt=\"${OPT}\")"
 				exit 1
 			fi
@@ -233,16 +189,15 @@ function scmi ()
 
 	# Validate variable values
 	if ! scmi_is_valid_managed_docker_name "${DOCKER_NAME}"; then
-		scmi_error_message \
+		scmi_print_message "error" \
 			"Invalid container name (${DOCKER_NAME})"
-		printf -- \
-			"${PREFIX_SUB_STEP} Please use the form: %s\n" \
-			${SCMI_NAME_FORMAT}
+		scmi_print_message "sub_error" \
+			"Please use the form: ${SCMI_NAME_FORMAT}"
 		exit 1
 	fi
 
 	if [[ ! ${DOCKER_IMAGE_TAG} =~ ${DOCKER_IMAGE_TAG_PATTERN} ]]; then 
-		scmi_error_message \
+		scmi_print_message "error" \
 			"Invalid image tag (${DOCKER_IMAGE_TAG})"
 		exit 1
 	fi
@@ -260,9 +215,11 @@ function scmi ()
 
 function scmi_docker_create ()
 {
-	scmi_docker_require_container_not
+	local RESPONSE_CREATED
 
-	echo "${PREFIX_STEP} Creating container"
+	scmi_docker_require_container_not
+	scmi_print_message "step_info" \
+		"Creating container"
 
 	(
 		eval "set -x; \
@@ -273,11 +230,20 @@ function scmi_docker_create ()
 			1> /dev/null;"
 	)
 
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=created") ]]; then
-		echo "${PREFIX_SUB_STEP} $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=created")"
-		echo "${PREFIX_SUB_STEP_POSITIVE} Container created"
+	RESPONSE_CREATED=$(
+		${docker} ps -aq \
+			--filter "name=${DOCKER_NAME}" \
+			--filter "status=created"
+	)
+
+	if [[ -n ${RESPONSE_CREATED} ]]; then
+		scmi_print_message "sub_step_info" \
+			"${RESPONSE_CREATED}"
+		scmi_print_message "sub_step_complete" \
+			"Container created"
 	else
-		echo "${PREFIX_SUB_STEP_NEGATIVE} Container creation failed"
+		scmi_print_message "sub_step_error" \
+			"Container creation failed"
 		exit 1
 	fi
 }
@@ -316,7 +282,7 @@ function scmi_docker_prerequisites ()
 	# Set the docker binary command
 	if [[ ${SCMI_CHROOT_PATH} == / ]]; then
 		if ! command -v docker &> /dev/null; then
-			scmi_error_message \
+			scmi_print_message "error" \
 				"Missing docker binary."
 			exit 1
 		fi
@@ -338,7 +304,7 @@ function scmi_docker_prerequisites ()
 		done
 
 		if [[ -z ${docker} ]]; then
-			scmi_error_message \
+			scmi_print_message "error" \
 				"Missing docker binary."
 			exit 1
 		fi
@@ -346,7 +312,7 @@ function scmi_docker_prerequisites ()
 
 	# Test docker connection
 	if [[ -z $(${docker} info) ]]; then
-		scmi_error_message \
+		scmi_print_message "error" \
 			"docker failed to connect to host."
 		exit 1
 	fi
@@ -377,11 +343,10 @@ function scmi_docker_release_host_mounted_container ()
 			)
 
 			if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]; then
-				printf -- \
-					"${PREFIX_SUB_STEP} Unmounting container id: %s\n" \
-					${CONTAINER_ID}
-
-				umount "${SCMI_CHROOT_PATH%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm"
+				scmi_print_message "sub_step_info" \
+					"Unmounting container id: ${CONTAINER_ID}"
+				umount \
+					"${SCMI_CHROOT_PATH%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm"
 			fi
 		fi
 	fi
@@ -390,7 +355,8 @@ function scmi_docker_release_host_mounted_container ()
 function scmi_docker_require_container ()
 {
 	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
-		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container."
+		scmi_print_message "step_error" \
+			"This operation requires the ${DOCKER_NAME} docker container."
 		exit 1
 	fi
 }
@@ -398,8 +364,10 @@ function scmi_docker_require_container ()
 function scmi_docker_require_container_not ()
 {
 	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
-		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container be removed (or renamed)."
-		echo "${PREFIX_SUB_STEP} Try removing it with: docker rm -f ${DOCKER_NAME}"
+		scmi_print_message "step_error" \
+			"This operation requires the ${DOCKER_NAME} docker container be removed (or renamed)."
+		scmi_print_message "sub_step_info" \
+			"Try removing it with: docker rm -f ${DOCKER_NAME}"
 		exit 1
 	fi
 }
@@ -407,8 +375,10 @@ function scmi_docker_require_container_not ()
 function scmi_docker_require_container_not_status_paused ()
 {
 	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=paused") ]]; then
-		echo "${PREFIX_STEP_NEGATIVE} This operation requires the ${DOCKER_NAME} docker container to be unpaused."
-		echo "${PREFIX_SUB_STEP} Try unpausing it with: docker ${DOCKER_NAME} unpause"
+		scmi_print_message "step_error" \
+			"This operation requires the ${DOCKER_NAME} docker container to be unpaused."
+		scmi_print_message "sub_step_info" \
+			"Try unpausing it with: docker ${DOCKER_NAME} unpause"
 		exit 1
 	fi
 }
@@ -417,8 +387,8 @@ function scmi_docker_start ()
 {
 	scmi_docker_require_container
 	scmi_docker_require_container_not_status_paused
-
-	echo "${PREFIX_STEP} Starting container"
+	scmi_print_message "step_info" \
+		"Starting container"
 
 	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]] \
 		&& [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
@@ -426,9 +396,11 @@ function scmi_docker_start ()
 	fi
 
 	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
-		echo "${PREFIX_SUB_STEP_POSITIVE} Container started"
+		scmi_print_message "sub_step_complete" \
+			"Container started"
 	else
-		echo "${PREFIX_SUB_STEP_NEGATIVE} Container start failed"
+		scmi_print_message "sub_step_error" \
+			"Container start failed"
 		exit 1
 	fi
 }
@@ -436,32 +408,37 @@ function scmi_docker_start ()
 function scmi_docker_terminate ()
 {
 	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
-		echo "${PREFIX_STEP} Container termination skipped"
+		scmi_print_message "step_info" \
+			"Container termination skipped"
 	else
-		echo "${PREFIX_STEP} Terminating container"
+		scmi_print_message "step_info" \
+			"Terminating container"
 		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=paused") ]]; then
-			echo "${PREFIX_SUB_STEP} Unpausing container"
+			scmi_print_message "sub_step_info" \
+				"Unpausing container"
 			${docker} unpause ${DOCKER_NAME} 1> /dev/null
 		fi
 
 		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
-			echo "${PREFIX_SUB_STEP} Stopping container"
+			scmi_print_message "sub_step_info" \
+				"Stopping container"
 			${docker} stop ${DOCKER_NAME} 1> /dev/null
 		fi
 
 		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
-			echo "${PREFIX_SUB_STEP} Removing container"
-
+			scmi_print_message "sub_step_info" \
+				"Removing container"
 			scmi_docker_release_host_mounted_container
-
 			${docker} rm -f ${DOCKER_NAME} 1> /dev/null
 		fi
 
 		if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]] \
 			&& [[ -z $(find ${SCMI_CHROOT_PATH%*/}/var/lib/docker/containers -type d -name "${CONTAINER_ID}" 2> /dev/null) ]]; then
-			echo "${PREFIX_SUB_STEP_POSITIVE} Container terminated"
+			scmi_print_message "sub_step_complete" \
+				"Container terminated"
 		else
-			echo "${PREFIX_SUB_STEP_NEGATIVE} Container termination failed"
+			scmi_print_message "sub_step_error" \
+				"Container termination failed"
 			exit 1
 		fi
 	fi
@@ -471,18 +448,102 @@ function scmi_docker_uninstall ()
 {
 	scmi_docker_prerequisites
 	scmi_docker_terminate
-
-	printf -- \
-		"${PREFIX_SUB_STEP_POSITIVE} %s\n" \
-		'Uninstall complete'
+	scmi_print_message "sub_step_complete" \
+		"Uninstall complete"
 }
 
-function scmi_error_message ()
+function scmi_print_message ()
 {
-	local MESSAGE="${1:-}"
+	local COLOUR_NEGATIVE='\033[1;31m'
+	local COLOUR_POSITIVE='\033[1;32m'
+	local COLOUR_RESET='\033[0m'
+	local CHARACTER_STEP='--->'
+	local FORMAT='%s\n'
+	local MESSAGE="${2:-}"
+	local PREFIX=""
+	local TYPE="${1:-}"
+
+	# Allow for uncolourised output
+	if [[ -n ${SCMI_MONOCHROME} ]]; then
+		COLOUR_NEGATIVE=""
+		COLOUR_POSITIVE=""
+		COLOUR_RESET=""
+	fi
+
+	case "${TYPE}" in
+		error)
+			PREFIX=$(
+				printf -- \
+					'%b%s%b ' \
+					"${COLOUR_NEGATIVE}" \
+					"[ERROR]" \
+					"${COLOUR_RESET}"
+			)
+			;;
+		error_info)
+			PREFIX=$(
+				printf -- \
+					'%s ' \
+					"       "
+			)
+			;;
+		step_info)
+			PREFIX=$(
+				printf -- \
+					'%s ' \
+					"${CHARACTER_STEP}"
+			)
+			;;
+		step_compete)
+			PREFIX=$(
+				printf -- \
+					'%b%s%b ' \
+					"${COLOUR_POSITIVE}" \
+					"${CHARACTER_STEP}" \
+					"${COLOUR_RESET}"
+			)
+			;;
+		step_error)
+			PREFIX=$(
+				printf -- \
+					'%b%s%b ' \
+					"${COLOUR_NEGATIVE}" \
+					"${CHARACTER_STEP}" \
+					"${COLOUR_RESET}"
+			)
+			;;
+		sub_step_info)
+			PREFIX=$(
+				printf -- \
+					' %s ' \
+					"${CHARACTER_STEP}"
+			)
+			;;
+		sub_step_complete)
+			PREFIX=$(
+				printf -- \
+					' %b%s%b ' \
+					"${COLOUR_POSITIVE}" \
+					"${CHARACTER_STEP}" \
+					"${COLOUR_RESET}"
+			)
+			;;
+		sub_step_error)
+			PREFIX=$(
+				printf -- \
+					' %b%s%b ' \
+					"${COLOUR_NEGATIVE}" \
+					"${CHARACTER_STEP}" \
+					"${COLOUR_RESET}"
+			)
+			;;
+		*)
+			MESSAGE="${TYPE}"
+			;;
+	esac
 
 	printf -- \
-		"${PREFIX_STEP_NEGATIVE} ERROR: %s\n" \
+		"${PREFIX}${FORMAT}" \
 		"${MESSAGE}"
 }
 
@@ -514,7 +575,7 @@ function scmi_systemd_get_unit_file_path ()
 	"
 
 	if [[ -z ${UNIT_FILE} ]]; then
-		scmi_error_message \
+		scmi_print_message "error" \
 			"Missing unit file name."
 		exit 1
 	fi
@@ -527,7 +588,7 @@ function scmi_systemd_get_unit_file_path ()
 	done
 
 	if [[ -z ${UNIT_FILE_PATH} ]]; then
-		scmi_error_message \
+		scmi_print_message "error" \
 			"Cannot locate unit file: ${UNIT_FILE}"
 		exit 1
 	fi
@@ -545,9 +606,8 @@ function scmi_systemd_install ()
 	trap scmi_systemd_install_cleanup \
 		INT TERM EXIT
 
-	printf -- \
-		"${PREFIX_STEP} Installing %s\n" \
-		${SERVICE_UNIT_INSTANCE_NAME}
+	scmi_print_message "step_info" \
+		"Installing ${SERVICE_UNIT_INSTANCE_NAME}"
 
 	# Copy systemd unit-files into place.
 	set -e
@@ -644,35 +704,32 @@ function scmi_systemd_install ()
 			|| ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME} \
 		); then
 
-		printf -- \
-			"${PREFIX_STEP} Service unit is active: %s\n" \
-			"$(
+		scmi_print_message "step_info" \
+			"Service unit is active: $(
 				${systemctl} list-units --type=service \
 				| grep "^[ ]*${SERVICE_UNIT_INSTANCE_NAME}"
 			)"
 
 		if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
-			printf -- \
-				"${PREFIX_STEP} Service register unit is active: %s\n" \
-				"$(
+			scmi_print_message "step_info" \
+				"Service register unit is active: $(
 					${systemctl} list-units --type=service \
 					| grep "^[ ]*${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 				)"
 		else
-			printf -- \
-				"${PREFIX_STEP} Service register unit is disabled (not installed)\n"
+			scmi_print_message "step_info" \
+				"Service register unit is disabled (not installed)"
 		fi
 
-		printf -- \
-			"${PREFIX_SUB_STEP_POSITIVE} %s\n" \
-			'Install complete'
+		scmi_print_message "sub_step_complete" \
+			"Install complete"
 	else
-		printf -- \
-			"\nService status:\n"
+		scmi_print_message ""
+		scmi_print_message "Service status:"
 		${systemctl} status -ln 50 ${SERVICE_UNIT_INSTANCE_NAME}
-		printf -- \
-			"\n${PREFIX_SUB_STEP_NEGATIVE} %s\n" \
-			'Install error'
+		scmi_print_message ""
+		scmi_print_message "sub_step_error" \
+			"Install error"
 	fi
 
 	trap - \
@@ -698,7 +755,7 @@ function scmi_systemd_prerequisites ()
 		for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
 			COMMAND=${COMMAND_PATH##*/}
 			if ! command -v ${COMMAND} &> /dev/null; then
-				scmi_error_message \
+				scmi_print_message "error" \
 					"Missing required command: ${COMMAND_PATH}"
 				exit 1
 			fi
@@ -712,7 +769,7 @@ function scmi_systemd_prerequisites ()
 		for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
 			COMMAND=${COMMAND_PATH##*/}
 			if [[ ! -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH} ]]; then
-				scmi_error_message \
+				scmi_print_message "error" \
 					"Missing required command: ${COMMAND_PATH}"
 				exit 1
 			fi
@@ -741,20 +798,34 @@ function scmi_systemd_set_service_unit_names ()
 			'.*\.\([0-9][0-9]*\.[0-9][0-9]*\)'
 	)
 
-	SERVICE_UNIT_TEMPLATE_NAME=${SERVICE_UNIT_NAME}@.service
-	SERVICE_UNIT_INSTANCE_NAME=${SERVICE_UNIT_NAME}@${SERVICE_UNIT_INSTANCE}.service
+	printf -v \
+		SERVICE_UNIT_TEMPLATE_NAME \
+		-- '%s@.service' \
+		"${SERVICE_UNIT_NAME}"
 
-	SERVICE_UNIT_REGISTER_TEMPLATE_NAME=${SERVICE_UNIT_NAME}.register@.service
-	SERVICE_UNIT_REGISTER_INSTANCE_NAME=${SERVICE_UNIT_NAME}.register@${SERVICE_UNIT_INSTANCE}.service
+	printf -v \
+		SERVICE_UNIT_INSTANCE_NAME \
+		-- '%s@%s.service' \
+		"${SERVICE_UNIT_NAME}" \
+		"${SERVICE_UNIT_INSTANCE}"
+
+	printf -v \
+		SERVICE_UNIT_REGISTER_TEMPLATE_NAME \
+		-- '%s.register@.service' \
+		"${SERVICE_UNIT_NAME}"
+
+	printf -v \
+		SERVICE_UNIT_REGISTER_INSTANCE_NAME \
+		-- '%s.register@%s.service' \
+		"${SERVICE_UNIT_NAME}" \
+		"${SERVICE_UNIT_INSTANCE}"
 }
 
 function scmi_systemd_uninstall ()
 {
 	scmi_systemd_prerequisites
-
-	printf -- \
-		"${PREFIX_STEP} Uninstalling %s\n" \
-		${SERVICE_UNIT_INSTANCE_NAME}
+	scmi_print_message "step_info" \
+		"Uninstalling ${SERVICE_UNIT_INSTANCE_NAME}"
 
 	${systemctl} daemon-reload
 	${systemctl} disable -f ${SERVICE_UNIT_INSTANCE_NAME} 2> /dev/null
@@ -790,9 +861,8 @@ function scmi_systemd_uninstall ()
 	# Remove stopped container
 	scmi_docker_terminate
 
-	printf -- \
-		"${PREFIX_SUB_STEP_POSITIVE} %s\n" \
-		'Uninstall complete'
+	scmi_print_message "sub_step_complete" \
+		"Uninstall complete"
 }
 
 function scmi_usage ()
