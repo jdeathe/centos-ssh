@@ -10,7 +10,6 @@ function scmi ()
 	# Default settings
 	local SCMI_COMMAND=""
 	local SCMI_CHROOT_PATH="/"
-	local SCMI_PACKAGE_NAME="scmi"
 	local SCMI_INCLUDE_FILES="
 	 environment.sh
 	 default.sh
@@ -19,6 +18,8 @@ function scmi ()
 	local SCMI_MANAGER_TYPE="docker"
 	local SCMI_NAME=""
 	local SCMI_NAME_FORMAT='{<name>|<name>.[group]}.<instance>.<node>'
+	local SCMI_PACKAGE_NAME="scmi"
+	local SCMI_QUIET=false
 	local SCMI_REGISTER_ENABLED=false
 	local SCMI_TAG="latest"
 
@@ -90,6 +91,10 @@ function scmi ()
 					scmi_usage
 				fi
 				SCMI_NAME="${1#*=}"
+				shift 1
+				;;
+			-q|--quiet)
+				SCMI_QUIET=true
 				shift 1
 				;;
 			-r|--register)
@@ -191,8 +196,8 @@ function scmi ()
 	if ! scmi_is_valid_managed_docker_name "${DOCKER_NAME}"; then
 		scmi_print_message "error" \
 			"Invalid container name (${DOCKER_NAME})"
-		scmi_print_message "sub_error" \
-			"Please use the form: ${SCMI_NAME_FORMAT}"
+		scmi_print_message "error_info" \
+			"Required format: ${SCMI_NAME_FORMAT}"
 		exit 1
 	fi
 
@@ -216,18 +221,22 @@ function scmi ()
 function scmi_docker_create ()
 {
 	local RESPONSE_CREATED
+	local SHELL_OPTIONS=""
 
 	scmi_docker_require_container_not
 	scmi_print_message "step_info" \
 		"Creating container"
 
+	if [[ ${SCMI_QUIET} != true ]]; then
+		SHELL_OPTIONS='set -x;'
+	fi
+
 	(
-		eval "set -x; \
-			${docker} create \
+		eval "${SHELL_OPTIONS}${docker} create \
 			${DOCKER_CONTAINER_PARAMETERS} \
 			${DOCKER_CONTAINER_PARAMETERS_APPEND} \
 			${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
-			1> /dev/null;"
+		1> /dev/null;"
 	)
 
 	RESPONSE_CREATED=$(
@@ -462,6 +471,7 @@ function scmi_print_message ()
 	local MESSAGE="${2:-}"
 	local PREFIX=""
 	local TYPE="${1:-}"
+	local TYPE_PATTERN_ERROR='^(error|error_info|step_error|sub_step_error)$'
 
 	# Allow for uncolourised output
 	if [[ -n ${SCMI_MONOCHROME} ]]; then
@@ -542,9 +552,12 @@ function scmi_print_message ()
 			;;
 	esac
 
-	printf -- \
-		"${PREFIX}${FORMAT}" \
-		"${MESSAGE}"
+	if [[ ${SCMI_QUIET} != true ]] \
+		|| [[ ${TYPE} =~ ${TYPE_PATTERN_ERROR} ]]; then
+		printf -- \
+			"${PREFIX}${FORMAT}" \
+			"${MESSAGE}"
+	fi
 }
 
 # Require a docker name of the form described with SCMI_NAME_FORMAT
@@ -890,6 +903,7 @@ function scmi_usage ()
 	                             where <instance> and <node> are required numeric
 	                             values. 
 	                             {<name>|<name>.[group]}.<instance>.<node>
+	  -q, --quiet                Display less message output except for errors.
 	  -r, --register             If manager is set to systemd use this to enable 
 	                             the optional etcd registration service.
 	  --setopt="OPTION VALUE"    Append options to the default docker create 
