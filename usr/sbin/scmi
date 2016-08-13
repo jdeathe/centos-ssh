@@ -700,16 +700,22 @@ function scmi_systemd_install ()
 	PIDS[0]=${!}
 
 	# Tail the systemd unit logs unitl installation completes
-	${journalctl} -fn 0 -u ${SERVICE_UNIT_INSTANCE_NAME} &
-	PIDS[1]=${!}
+	if [[ ${SCMI_QUIET} != true ]]; then
+		${journalctl} -fn 0 -u ${SERVICE_UNIT_INSTANCE_NAME} &
+		PIDS[1]=${!}
+	fi
 
 	# Wait for installtion to complete
 	[[ -n ${PIDS[0]} ]] && wait ${PIDS[0]}
 
 	# Allow time for the container bootstrap to complete
 	sleep ${SERVICE_UNIT_INSTALL_TIMEOUT}
-	kill -15 ${PIDS[1]}
-	wait ${PIDS[1]} 2> /dev/null
+
+	# Stop tailing the logs after the expected install time
+	if [[ -n ${PIDS[1]} ]]; then
+		kill -15 ${PIDS[1]}
+		wait ${PIDS[1]} 2> /dev/null
+	fi
 
 	if ${systemctl} -q is-active ${SERVICE_UNIT_INSTANCE_NAME} \
 		&& ( \
