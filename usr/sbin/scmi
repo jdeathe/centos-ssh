@@ -2,7 +2,7 @@
 
 # Change working directory
 cd -- "$(
-  dirname "${0}"
+	dirname "${0}"
 )"
 
 function scmi ()
@@ -10,6 +10,7 @@ function scmi ()
 	# Default settings
 	local SCMI_COMMAND=""
 	local SCMI_CHROOT_PATH="/"
+	local SCMI_IMAGE_PACKAGE_PATH="/var/opt/scmi/packages"
 	local SCMI_INCLUDE_FILES="
 	 environment.sh
 	 default.sh
@@ -93,6 +94,15 @@ function scmi ()
 				SCMI_NAME="${1#*=}"
 				shift 1
 				;;
+			--image-package-path=*)
+				if [[ -z ${1#*=} ]]; then
+					scmi_print_message "error" \
+						"Empty option value (${1})"
+					scmi_usage
+				fi
+				SCMI_IMAGE_PACKAGE_PATH="${1#*=}"
+				shift 1
+				;;
 			-q|--quiet)
 				SCMI_QUIET=true
 				shift 1
@@ -158,6 +168,10 @@ function scmi ()
 
 	if [[ -n ${SCMI_TAG} ]]; then
 		export DOCKER_IMAGE_TAG="${SCMI_TAG}"
+	fi
+
+	if [[ -n ${SCMI_IMAGE_PACKAGE_PATH} ]]; then
+		export DOCKER_IMAGE_PACKAGE_PATH="${SCMI_IMAGE_PACKAGE_PATH}"
 	fi
 
 	if [[ ${#SCMI_SETOPT[@]} -gt 0 ]]; then
@@ -257,9 +271,86 @@ function scmi_docker_create ()
 	fi
 }
 
+function scmi_docker_get_image ()
+{
+	local IMAGE_ID
+	local IMAGE_PATH
+	local GET_TYPE="load"
+	local xz
+
+	# Get the path to the xz binary if available on the local host.
+	if command -v xz &> /dev/null; then
+		printf -v \
+			xz \
+			-- '%s' \
+			"$(
+				command -v \
+					xz
+			)"
+	fi
+
+	# Release images don't get updated so only need loading/pulling once. 
+	# Check if release image is available.
+	if [[ -n ${DOCKER_IMAGE_RELEASE_TAG_PATTERN} ]] \
+		&& [[ ${DOCKER_IMAGE_TAG} =~ ${DOCKER_IMAGE_RELEASE_TAG_PATTERN} ]]; then
+
+		# Query docker for image using default user/name:tag
+		IMAGE_ID="$(
+			${docker} images -q \
+			${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+		)"
+
+		# On CentOS-7 hosts images might get saved under the docker.io namespace.
+		if [[ -z ${IMAGE_ID} ]]; then
+			IMAGE_ID="$(
+				${docker} images -q \
+				docker.io/${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+			)"
+		fi
+	fi
+
+	# If image is not available (or is not a release tag) load from disk or pull 
+	# from the registry.
+	if [[ -z ${IMAGE_ID} ]]; then
+		printf -v \
+			IMAGE_PATH \
+			-- "%s/%s/%s.%s.tar.xz" \
+			"${SCMI_CHROOT_PATH%*/}${SCMI_IMAGE_PACKAGE_PATH}" \
+			"${DOCKER_USER}" \
+			"${DOCKER_IMAGE_NAME}" \
+			"${DOCKER_IMAGE_TAG}"
+
+		if [[ -n ${xz} ]] \
+			&& [[ -f ${IMAGE_PATH} ]]; then
+			GET_TYPE="load"
+
+			scmi_print_message "step_info" \
+				"Pre-loading image from package"
+
+			${xz} -dc "${IMAGE_PATH}" \
+				| ${docker} load
+		else
+			GET_TYPE="pull"
+
+			scmi_print_message "step_info" \
+				"Pre-pulling image from registry"
+
+			${docker} pull \
+				${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+		fi
+
+		if [[ ${?} -ne 0 ]]; then
+			scmi_print_message "sub_step_error" \
+				"Image ${GET_TYPE} failed."
+			exit 1
+		fi
+	fi
+}
+
 function scmi_docker_install ()
 {
 	scmi_docker_prerequisites
+	scmi_docker_get_image
 
 	# Cleanup if interrupted, killed or on exit
 	trap scmi_docker_install_cleanup \
@@ -281,42 +372,50 @@ function scmi_docker_install_cleanup ()
 
 function scmi_docker_prerequisites ()
 {
-	docker=''
-
-	declare -a local DOCKER_PATHS=(
-		'/usr/bin/docker'
-		'/usr/local/bin/docker'
+	local COMMAND
+	declare -a local COMMANDS=(
+		'docker'
+	)
+	declare -a local COMMAND_PATHS=(
+		'/usr/local/bin'
+		'/usr/bin'
 	)
 
-	# Set the docker binary command
 	if [[ ${SCMI_CHROOT_PATH} == / ]]; then
-		if ! command -v docker &> /dev/null; then
-			scmi_print_message "error" \
-				"Missing docker binary."
-			exit 1
-		fi
+		for COMMAND in "${COMMANDS[@]}"; do
+			if ! command -v ${COMMAND} &> /dev/null; then
+				scmi_print_message "error" \
+					"Missing required command: ${COMMAND}"
+				exit 1
+			fi
 
-		printf -v \
-			docker \
-			-- '%s' \
-			$(command -v docker)
+			printf -v \
+				${COMMAND} \
+				-- '%s' \
+				"$(
+					command -v \
+						${COMMAND}
+				)"
+		done
 	else
-		for DOCKER_PATH in "${DOCKER_PATHS[@]}"; do
-			if [[ -f ${SCMI_CHROOT_PATH%*/}${DOCKER_PATH} ]]; then
-				printf -v \
-					docker \
-					-- 'chroot %s %s' \
-					"${SCMI_CHROOT_PATH}" \
-					${DOCKER_PATH}
-				break
+		for COMMAND in "${COMMANDS[@]}"; do
+			for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
+				if [[ -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
+					printf -v \
+						${COMMAND} \
+						-- 'chroot %s %s' \
+						"${SCMI_CHROOT_PATH}" \
+						"${COMMAND_PATH}"
+					break
+				fi
+			done
+
+			if [[ ! -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
+				scmi_print_message "error" \
+					"Missing required chroot command: ${COMMAND}"
+				exit 1
 			fi
 		done
-
-		if [[ -z ${docker} ]]; then
-			scmi_print_message "error" \
-				"Missing docker binary."
-			exit 1
-		fi
 	fi
 
 	# Test docker connection
@@ -764,40 +863,50 @@ function scmi_systemd_install_cleanup ()
 function scmi_systemd_prerequisites ()
 {
 	local COMMAND
+	declare -a local COMMANDS=(
+		'docker'
+		'systemctl'
+		'journalctl'
+	)
 	declare -a local COMMAND_PATHS=(
-		'/usr/bin/docker'
-		'/usr/bin/systemctl'
-		'/usr/bin/journalctl'
+		'/usr/local/bin'
+		'/usr/bin'
 	)
 
 	if [[ ${SCMI_CHROOT_PATH} == / ]]; then
-		for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
-			COMMAND=${COMMAND_PATH##*/}
+		for COMMAND in "${COMMANDS[@]}"; do
 			if ! command -v ${COMMAND} &> /dev/null; then
 				scmi_print_message "error" \
-					"Missing required command: ${COMMAND_PATH}"
+					"Missing required command: ${COMMAND}"
 				exit 1
 			fi
 
 			printf -v \
 				${COMMAND} \
 				-- '%s' \
-				${COMMAND_PATH}
+				"$(
+					command -v \
+						${COMMAND}
+				)"
 		done
 	else
-		for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
-			COMMAND=${COMMAND_PATH##*/}
-			if [[ ! -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH} ]]; then
+		for COMMAND in "${COMMANDS[@]}"; do
+			for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
+				if [[ -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
+					printf -v \
+						${COMMAND} \
+						-- 'chroot %s %s' \
+						"${SCMI_CHROOT_PATH}" \
+						"${COMMAND_PATH}"
+					break
+				fi
+			done
+
+			if [[ ! -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
 				scmi_print_message "error" \
-					"Missing required command: ${COMMAND_PATH}"
+					"Missing required chroot command: ${COMMAND}"
 				exit 1
 			fi
-
-			printf -v \
-				${COMMAND} \
-				-- 'chroot %s %s' \
-				"${SCMI_CHROOT_PATH}" \
-				${COMMAND_PATH}
 		done
 	fi
 
@@ -909,6 +1018,13 @@ function scmi_usage ()
 	                             where <instance> and <node> are required numeric
 	                             values. 
 	                             {<name>|<name>.[group]}.<instance>.<node>
+	  --image-package-path=PATH  Path to container image package directory. This 
+	                             path should contain vendor, (docker user), 
+	                             sub-directories containing saved, xz compressed, 
+	                             images. This is useful if you don't have access 
+	                             to a registry or want to reduce the time to load 
+	                             released container images. The default path is:
+	                             ${SCMI_IMAGE_PACKAGE_PATH}
 	  -q, --quiet                Display less message output except for errors.
 	  -r, --register             If manager is set to systemd use this to enable 
 	                             the optional etcd registration service.

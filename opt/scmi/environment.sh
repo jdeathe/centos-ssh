@@ -19,9 +19,6 @@ DOCKER_NAME="${DOCKER_NAME:-ssh.pool-1.1.1}"
 DOCKER_PORT_MAP_TCP_22="${DOCKER_PORT_MAP_TCP_22:-2020}"
 DOCKER_RESTART_POLICY="${DOCKER_RESTART_POLICY:-always}"
 
-# Docker host settings
-DOCKER_IMAGE_PACKAGE_PATH="${DOCKER_IMAGE_PACKAGE_PATH:-/var/services-packages}"
-
 # Docker build --no-cache parameter
 NO_CACHE="${NO_CACHE:-false}"
 
