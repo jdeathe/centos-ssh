@@ -91,20 +91,10 @@ function scmi ()
 				shift 1
 				;;
 			-n)
-				if [[ -z ${2:-} ]]; then
-					scmi_print_message "error" \
-						"Empty option value (${1})"
-					scmi_usage
-				fi
 				SCMI_NAME="${2}"
 				shift 2
 				;;
 			--name=*)
-				if [[ -z ${1#*=} ]]; then
-					scmi_print_message "error" \
-						"Empty option value (${1})"
-					scmi_usage
-				fi
 				SCMI_NAME="${1#*=}"
 				shift 1
 				;;
@@ -179,6 +169,22 @@ function scmi ()
 		export DOCKER_IMAGE_PACKAGE_PATH="${SCMI_IMAGE_PACKAGE_PATH}"
 	fi
 
+	# Source include files
+	for INCLUDE_FILE in ${SCMI_INCLUDE_FILES}; do
+		if [[ -f ${INCLUDE_FILE} ]]; then
+			source ${INCLUDE_FILE}
+		elif [[ -f ../../opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
+			source ../../opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE}
+		elif [[ -f /opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
+			source /opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE}
+		fi
+	done
+
+	# Use the default docker name if SCMI name is unset
+	if [[ -z ${SCMI_NAME} ]]; then
+		SCMI_NAME="${DOCKER_NAME}"
+	fi
+
 	if [[ ${#SCMI_SETOPT[@]} -gt 0 ]]; then
 		for OPT in "${SCMI_SETOPT[@]}"; do
 			# Abort if operator attempts to set a --name option. 
@@ -194,22 +200,11 @@ function scmi ()
 				"${DOCKER_CONTAINER_PARAMETERS_APPEND}" \
 				"$(
 					sed \
-						-e "s~{{NAME}}~${SCMI_NAME}~g" \
+						-e "s~{{NAME}}~${DOCKER_NAME}~g" \
 					<<< "${OPT}"
 				)"
 		done
 	fi
-
-	# Source include files
-	for INCLUDE_FILE in ${SCMI_INCLUDE_FILES}; do
-		if [[ -f ${INCLUDE_FILE} ]]; then
-			source ${INCLUDE_FILE}
-		elif [[ -f ../../opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
-			source ../../opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE}
-		elif [[ -f /opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
-			source /opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE}
-		fi
-	done
 
 	# Validate variable values
 	if ! scmi_is_valid_managed_docker_name "${DOCKER_NAME}"; then
