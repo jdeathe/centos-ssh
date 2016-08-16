@@ -425,9 +425,10 @@ function scmi_docker_prerequisites ()
 				if [[ -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
 					printf -v \
 						${COMMAND} \
-						-- 'chroot %s %s' \
+						-- 'chroot %s %s/%s' \
 						"${SCMI_CHROOT_PATH}" \
-						"${COMMAND_PATH}"
+						"${COMMAND_PATH}" \
+						"${COMMAND}"
 					break
 				fi
 			done
@@ -1118,9 +1119,10 @@ function scmi_systemd_prerequisites ()
 				if [[ -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
 					printf -v \
 						${COMMAND} \
-						-- 'chroot %s %s' \
+						-- 'chroot %s %s/%s' \
 						"${SCMI_CHROOT_PATH}" \
-						"${COMMAND_PATH}"
+						"${COMMAND_PATH}" \
+						"${COMMAND}"
 					break
 				fi
 			done
