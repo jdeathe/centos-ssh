@@ -190,8 +190,11 @@ function scmi ()
 			fi
 			;;
 		*)
-			# Unknown setting
-			scmi_restart_option_error
+			# Allow unset restart policy as include defaults can vary.
+			if [[ -n ${SCMI_RESTART} ]]; then
+				# Unknown setting
+				scmi_restart_option_error
+			fi
 			;;
 	esac
 
