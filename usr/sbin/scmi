@@ -23,6 +23,7 @@ function scmi ()
 	local SCMI_PACKAGE_NAME="scmi"
 	local SCMI_QUIET=false
 	local SCMI_REGISTER_ENABLED=false
+	local SCMI_RESTART=""
 	local SCMI_TAG="latest"
 
 	declare -a local SCMI_SETOPT
@@ -106,6 +107,15 @@ function scmi ()
 				SCMI_REGISTER_ENABLED=true
 				shift 1
 				;;
+			--restart=*)
+				if [[ -z ${1#*=} ]]; then
+					scmi_print_message "error" \
+						"Empty option value (${1})"
+					scmi_usage
+				fi
+				SCMI_RESTART="${1#*=}"
+				shift 1
+				;;
 			--setopt=*)
 				if [[ -z ${1#*=} ]]; then
 					scmi_print_message "error" \
@@ -160,6 +170,30 @@ function scmi ()
 	if [[ -n ${SCMI_NAME} ]]; then
 		export DOCKER_NAME="${SCMI_NAME}"
 	fi
+
+	case "${SCMI_RESTART}" in
+		no|always|on-failure)
+			# common
+			export DOCKER_RESTART_POLICY="${SCMI_RESTART}"
+			;;
+		on-failure:*|unless-stopped)
+			# docker specific
+			if [[ ${SCMI_MANAGER_TYPE} != docker ]]; then
+				scmi_restart_option_error
+			fi
+			export DOCKER_RESTART_POLICY="${SCMI_RESTART}"
+			;;
+		on-success|on-abnormal|on-abort|on-watchdog)
+			# systemd specific
+			if [[ ${SCMI_MANAGER_TYPE} != systemd ]]; then
+				scmi_restart_option_error
+			fi
+			;;
+		*)
+			# Unknown setting
+			scmi_restart_option_error
+			;;
+	esac
 
 	if [[ -n ${SCMI_TAG} ]]; then
 		export DOCKER_IMAGE_TAG="${SCMI_TAG}"
@@ -235,6 +269,22 @@ function scmi ()
 			scmi_docker_${SCMI_COMMAND}
 			;;
 	esac
+}
+
+function scmi_restart_option_error ()
+{
+	scmi_print_message "error" \
+		"Invalid restart policy (${SCMI_RESTART})"
+
+	if [[ ${SCMI_MANAGER_TYPE} == systemd ]]; then
+		scmi_print_message "error_info" \
+			"Valid systemd settings: on|always|on-success|on-failure|on-abort|on-watchdog"
+	elif [[ ${SCMI_MANAGER_TYPE} == docker ]]; then
+		scmi_print_message "error_info" \
+			"Valid docker settings: on|always|on-failure[:max-retries]|unless-stopped"
+	fi
+
+	exit 1
 }
 
 function scmi_docker_create ()
@@ -904,6 +954,7 @@ function scmi_systemd_get_unit_file_path ()
 function scmi_systemd_get_unit_file_drop_in_content ()
 {
 	local UNIT_DROP_IN=""
+	local UNIT_RESTART
 	local VALUE
 
 	# Create drop-in to set environment variables defined at install time.
@@ -927,9 +978,17 @@ function scmi_systemd_get_unit_file_drop_in_content ()
 				"${VALUE}"
 		done
 
+		if [[ -n ${SCMI_RESTART} ]]; then
+			printf -v \
+				UNIT_RESTART \
+				-- 'Restart=%s' \
+				"${SCMI_RESTART}"
+		fi
+
 		cat <<-EOF
-		[Service]
-		${UNIT_DROP_IN}
+			[Service]
+			${UNIT_RESTART}
+			${UNIT_DROP_IN}
 		EOF
 	fi
 }
@@ -1246,6 +1305,12 @@ function scmi_usage ()
 	  -q, --quiet                Display less message output except for errors.
 	  -r, --register             If manager is set to systemd use this to enable 
 	                             the optional etcd registration service.
+	  --restart=POLICY           Set the container manager's restart policy. Valid
+	                             settings are dependant on the container manager.
+	                             Common settings are no, always and on-failure.
+	                             specific to docker is unless-stopped and the 
+	                             optional :max-retries suffix to on-failure. 
+	                             Systemd adds on-success, on-abort & on-watchdog.
 	  --setopt="OPTION VALUE"    Append options to the default docker create 
 	                             template. This option can be repeated.
 	  -t, --tag=TAG              The docker image tag to use. Defaults to latest.
