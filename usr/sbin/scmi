@@ -904,33 +904,27 @@ function scmi_systemd_get_unit_file_path ()
 function scmi_systemd_get_unit_file_drop_in_content ()
 {
 	local UNIT_DROP_IN=""
+	local VALUE
 
 	# Create drop-in to set environment variables defined at install time.
 	if [[ -n ${SERVICE_UNIT_ENVIRONMENT_KEYS} ]]; then
 
 		# Set each key and value - escaping any % characters.
 		for KEY in ${SERVICE_UNIT_ENVIRONMENT_KEYS}; do
-			VALUE="${!KEY//%/%%}"
+			# Escape % and leading and trailing " characters.
+			VALUE="$(
+				sed \
+					-e 's~%~%%~g' \
+					-e 's~\([^\\]\)"~\1\\"~g' \
+					<<< "${!KEY}"
+			)"
 
-			# Allow variable expansion for DOCKER_CONTAINER_PARAMETERS_APPEND
-			if [[ ${KEY} == DOCKER_CONTAINER_PARAMETERS_APPEND ]]; then
-				printf -v \
-					UNIT_DROP_IN \
-					-- '%sEnvironment="%s"\n' \
-					"${UNIT_DROP_IN}" \
-					"$(
-						eval -- \
-						echo \
-							"${KEY}=${VALUE}"
-					)"
-			else
-				printf -v \
-					UNIT_DROP_IN \
-					-- '%sEnvironment="%s=%s"\n' \
-					"${UNIT_DROP_IN}" \
-					"${KEY}" \
-					"${VALUE}"
-			fi
+			printf -v \
+				UNIT_DROP_IN \
+				-- '%sEnvironment="%s=%s"\n' \
+				"${UNIT_DROP_IN}" \
+				"${KEY}" \
+				"${VALUE}"
 		done
 
 		cat <<-EOF
