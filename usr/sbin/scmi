@@ -103,7 +103,7 @@ function scmi ()
 				SCMI_QUIET=true
 				shift 1
 				;;
-			-r|--register)
+			--register)
 				SCMI_REGISTER_ENABLED=true
 				shift 1
 				;;
@@ -1303,7 +1303,7 @@ function scmi_usage ()
 	                             values. 
 	                             {<name>|<name>.[group]}.<instance>.<node>
 	  -q, --quiet                Display less message output except for errors.
-	  -r, --register             If manager is set to systemd use this to enable 
+	  --register                 If manager is set to systemd use this to enable 
 	                             the optional etcd registration service.
 	  --restart=POLICY           Set the container manager's restart policy. Valid
 	                             settings are dependant on the container manager.
