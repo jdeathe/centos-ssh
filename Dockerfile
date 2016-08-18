@@ -25,6 +25,7 @@ RUN rpm --rebuilddb \
 	epel-release \
 	https://centos6.iuscommunity.org/ius-release.rpm \
 	vim-minimal-7.4.629-5.el6 \
+	xz-4.999.9-0.5.beta.20091007git.el6.x86_64 \
 	sudo-1.8.6p3-24.el6 \
 	openssh-5.3p1-118.1.el6_8 \
 	openssh-server-5.3p1-118.1.el6_8 \
@@ -33,6 +34,7 @@ RUN rpm --rebuilddb \
 	yum-plugin-versionlock-1.1.30-37.el6 \
 	&& yum versionlock add \
 	vim-minimal \
+	xz \
 	sudo \
 	openssh \
 	openssh-server \
@@ -133,5 +135,38 @@ ENV SSH_AUTHORIZED_KEYS="" \
 	SSH_USER_PASSWORD="" \
 	SSH_USER_PASSWORD_HASHED=false \
 	SSH_USER_SHELL="/bin/bash"
+
+# -----------------------------------------------------------------------------
+# Set image metadata
+# -----------------------------------------------------------------------------
+ARG RELEASE_VERSION="1.6.0"
+LABEL \
+	install="docker run \
+--rm \
+--privileged \
+--volume /:/media/root \
+jdeathe/centos-ssh:centos-6-${RELEASE_VERSION} \
+/sbin/scmi install \
+--chroot=/media/root \
+--name=\${NAME} \
+--tag=centos-6-${RELEASE_VERSION} \
+--setopt='--volume {{NAME}}.config-ssh:/etc/ssh'" \
+	uninstall="docker run \
+--rm \
+--privileged \
+--volume /:/media/root \
+jdeathe/centos-ssh:centos-6-${RELEASE_VERSION} \
+/sbin/scmi uninstall \
+--chroot=/media/root \
+--name=\${NAME} \
+--tag=centos-6-${RELEASE_VERSION} \
+--setopt='--volume {{NAME}}.config-ssh:/etc/ssh'" \
+	org.deathe.name="centos-ssh" \
+	org.deathe.version="${RELEASE_VERSION}" \
+	org.deathe.release="jdeathe/centos-ssh:centos-6-${RELEASE_VERSION}" \
+	org.deathe.license="MIT" \
+	org.deathe.vendor="jdeathe" \
+	org.deathe.url="https://github.com/jdeathe/centos-ssh" \
+	org.deathe.description="CentOS-6 6.8 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
