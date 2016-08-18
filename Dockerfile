@@ -136,8 +136,28 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 ARG RELEASE_VERSION="2.1.0"
 LABEL \
-	install="docker run --rm --privileged --volume /:/media/root jdeathe/centos-ssh:centos-7-${RELEASE_VERSION} /sbin/scmi install --chroot=/media/root --name=\${NAME} --tag=centos-7-${RELEASE_VERSION} --setopt='--volume {{NAME}}.config-ssh:/etc/ssh'" \
-	uninstall="docker run --rm --privileged --volume /:/media/root jdeathe/centos-ssh:centos-7-${RELEASE_VERSION} /sbin/scmi uninstall --chroot=/media/root --name=\${NAME} --tag=centos-7-${RELEASE_VERSION} --setopt='--volume {{NAME}}.config-ssh:/etc/ssh'" \
+	install="docker run \
+--rm \
+--privileged \
+--volume /:/media/root \
+--env DOCKER_PORT_MAP_TCP_22=\${DOCKER_PORT_MAP_TCP_22} \
+jdeathe/centos-ssh:centos-7-${RELEASE_VERSION} \
+/sbin/scmi install \
+--chroot=/media/root \
+--name=\${NAME} \
+--tag=centos-7-${RELEASE_VERSION} \
+--setopt='--volume {{NAME}}.config-ssh:/etc/ssh'" \
+	uninstall="docker run \
+--rm \
+--privileged \
+--volume /:/media/root \
+--env DOCKER_PORT_MAP_TCP_22=\${DOCKER_PORT_MAP_TCP_22} \
+jdeathe/centos-ssh:centos-7-${RELEASE_VERSION} \
+/sbin/scmi uninstall \
+--chroot=/media/root \
+--name=\${NAME} \
+--tag=centos-7-${RELEASE_VERSION} \
+--setopt='--volume {{NAME}}.config-ssh:/etc/ssh'" \
 	org.deathe.name="centos-ssh" \
 	org.deathe.version="${RELEASE_VERSION}" \
 	org.deathe.release="jdeathe/centos-ssh:centos-7-${RELEASE_VERSION}" \
