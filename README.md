@@ -101,7 +101,7 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-	--env DOCKER_PORT_MAP_TCP_22=${DOCKER_PORT_MAP_TCP_22} \
+  --env DOCKER_PORT_MAP_TCP_22=${DOCKER_PORT_MAP_TCP_22} \
   jdeathe/centos-ssh:centos-7-2.1.0 \
   /sbin/scmi install \
     --chroot=/media/root \
@@ -119,7 +119,7 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-	--env DOCKER_PORT_MAP_TCP_22=${DOCKER_PORT_MAP_TCP_22} \
+  --env DOCKER_PORT_MAP_TCP_22=${DOCKER_PORT_MAP_TCP_22} \
   jdeathe/centos-ssh:centos-7-2.1.0 \
   /sbin/scmi uninstall \
     --chroot=/media/root \
@@ -136,7 +136,7 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-	--env DOCKER_PORT_MAP_TCP_22=${DOCKER_PORT_MAP_TCP_22} \
+  --env DOCKER_PORT_MAP_TCP_22=${DOCKER_PORT_MAP_TCP_22} \
   --env SSH_SUDO="ALL=(ALL) NOPASSWD:ALL" \
   jdeathe/centos-ssh:centos-7-2.1.0 \
   /sbin/scmi install \
