@@ -101,7 +101,6 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  --env DOCKER_PORT_MAP_TCP_22=${DOCKER_PORT_MAP_TCP_22} \
   jdeathe/centos-ssh:centos-7-2.1.0 \
   /sbin/scmi install \
     --chroot=/media/root \
@@ -119,12 +118,12 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  --env DOCKER_PORT_MAP_TCP_22=${DOCKER_PORT_MAP_TCP_22} \
   jdeathe/centos-ssh:centos-7-2.1.0 \
   /sbin/scmi uninstall \
     --chroot=/media/root \
     --tag=centos-7-2.1.0 \
     --name=ssh.pool-1.1.1 \
+    --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
 
 #### SCMI Installation Systemd Example
@@ -136,8 +135,6 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  --env DOCKER_PORT_MAP_TCP_22=${DOCKER_PORT_MAP_TCP_22} \
-  --env SSH_SUDO="ALL=(ALL) NOPASSWD:ALL" \
   jdeathe/centos-ssh:centos-7-2.1.0 \
   /sbin/scmi install \
     --chroot=/media/root \
@@ -145,7 +142,9 @@ $ docker run \
     --name=ssh.pool-1.1.1 \
     --manager=systemd \
     --register \
-    --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
+    --env='SSH_SUDO="ALL=(ALL) NOPASSWD:ALL"' \
+    --env='SSH_USER="centos"' \
+    --setopt='--volume {{NAME}}.config-ssh:/etc/ssh'
 ```
 
 ##### SCMI Image Information
@@ -211,14 +210,6 @@ $ sudo -E atomic uninstall \
   -n ssh.pool-1.3.1 \
   jdeathe/centos-ssh:centos-7-2.1.0
 ```
-
-##### SCMI Environment Options
-
-The default `scmi` create command can be modified using a combination of environment variables and it's own options. It is recommended to use the `scmi` options when possible.
-
-###### DOCKER_PORT_MAP_TCP_22
-
-`DOCKER_PORT_MAP_TCP_22` by default this is set to 2020 and defines the initial docker host port that should be published against the container port 22 for the container with instance 1.
 
 #### Using environment variables
 

@@ -140,7 +140,6 @@ LABEL \
 --rm \
 --privileged \
 --volume /:/media/root \
---env DOCKER_PORT_MAP_TCP_22=\${DOCKER_PORT_MAP_TCP_22} \
 jdeathe/centos-ssh:centos-7-${RELEASE_VERSION} \
 /sbin/scmi install \
 --chroot=/media/root \
@@ -151,7 +150,6 @@ jdeathe/centos-ssh:centos-7-${RELEASE_VERSION} \
 --rm \
 --privileged \
 --volume /:/media/root \
---env DOCKER_PORT_MAP_TCP_22=\${DOCKER_PORT_MAP_TCP_22} \
 jdeathe/centos-ssh:centos-7-${RELEASE_VERSION} \
 /sbin/scmi uninstall \
 --chroot=/media/root \

@@ -10,6 +10,7 @@ function scmi ()
 	# Default settings
 	local SCMI_COMMAND=""
 	local SCMI_CHROOT_PATH="/"
+	declare -a local SCMI_ENV
 	local SCMI_IMAGE_PACKAGE_PATH="/var/opt/scmi/packages"
 	local SCMI_INCLUDE_FILES="
 	 environment.sh
@@ -24,9 +25,8 @@ function scmi ()
 	local SCMI_QUIET=false
 	local SCMI_REGISTER_ENABLED=false
 	local SCMI_RESTART=""
-	local SCMI_TAG="latest"
-
 	declare -a local SCMI_SETOPT
+	local SCMI_TAG="latest"
 
 	# Abort if not run by root user or with sudo
 	if [[ ${EUID} -ne 0 ]]; then
@@ -58,6 +58,15 @@ function scmi ()
 					scmi_usage
 				fi
 				SCMI_CHROOT_PATH="${1#*=}"
+				shift 1
+				;;
+			--env=*)
+				if [[ -z ${1#*=} ]]; then
+					scmi_print_message "error" \
+						"Empty option value (${1})"
+					scmi_usage
+				fi
+				SCMI_ENV+=("${1#*=}")
 				shift 1
 				;;
 			--image-package-path=*)
@@ -156,6 +165,17 @@ function scmi ()
 
 	if [[ -z ${SCMI_COMMAND} ]]; then
 		scmi_usage
+	fi
+
+	# Export environment options
+	if [[ ${#SCMI_ENV[@]} -gt 0 ]]; then
+		for ENV in "${SCMI_ENV[@]}"; do
+			eval "$(
+				printf -- \
+					'export %s' \
+					"${ENV}"
+			)"
+		done
 	fi
 
 	if [[ -d ${SCMI_CHROOT_PATH} ]]; then
@@ -1353,6 +1373,8 @@ function scmi_usage ()
 	  -c, --chroot=CHROOT_PATH   Set the chroot path to run commands. Use when 
 	                             running from a container where the docker host's 
 	                             root directory is set as a volume mount.
+	  --env='KEY="VALUE"'        A key/value pair that will be placed in the scmi 
+	                             environment. This option can be repeated.
 	  --image-package-path=PATH  Path to container image package directory. This 
 	                             path should contain vendor, (docker user), 
 	                             sub-directories containing saved, xz compressed, 
@@ -1376,7 +1398,7 @@ function scmi_usage ()
 	                             specific to docker is unless-stopped and the 
 	                             optional :max-retries suffix to on-failure. 
 	                             Systemd adds on-success, on-abort & on-watchdog.
-	  --setopt="OPTION VALUE"    Append options to the default docker create 
+	  --setopt='OPTION VALUE'    Append options to the default docker create 
 	                             template. This option can be repeated.
 	  -t, --tag=TAG              The docker image tag to use. Defaults to latest.
 	EOF
