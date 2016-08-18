@@ -984,14 +984,13 @@ function scmi_systemd_get_unit_file_drop_in_content ()
 		if [[ -n ${SCMI_RESTART} ]]; then
 			printf -v \
 				UNIT_RESTART \
-				-- 'Restart=%s' \
+				-- 'Restart=%s\n' \
 				"${SCMI_RESTART}"
 		fi
 
 		cat <<-EOF
 			[Service]
-			${UNIT_RESTART}
-			${UNIT_DROP_IN}
+			${UNIT_RESTART}${UNIT_DROP_IN}
 		EOF
 	fi
 }
