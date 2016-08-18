@@ -11,7 +11,6 @@ DOCKER_IMAGE_RELEASE_TAG_PATTERN='^centos-(6-1|7-2).[0-9]+.[0-9]+$'
 # -----------------------------------------------------------------------------
 # Variables
 # -----------------------------------------------------------------------------
-DOCKER_CHROOT_DIRECTORY="${DOCKER_CHROOT_DIRECTORY:-/}"
 
 # Docker image/container settings
 DOCKER_CONTAINER_PARAMETERS_APPEND="${DOCKER_CONTAINER_PARAMETERS_APPEND:-}"
@@ -19,9 +18,6 @@ DOCKER_IMAGE_TAG="${DOCKER_IMAGE_TAG:-latest}"
 DOCKER_NAME="${DOCKER_NAME:-ssh.pool-1.1.1}"
 DOCKER_PORT_MAP_TCP_22="${DOCKER_PORT_MAP_TCP_22:-2020}"
 DOCKER_RESTART_POLICY="${DOCKER_RESTART_POLICY:-always}"
-
-# Docker host settings
-DOCKER_IMAGE_PACKAGE_PATH="${DOCKER_IMAGE_PACKAGE_PATH:-/var/services-packages}"
 
 # Docker build --no-cache parameter
 NO_CACHE="${NO_CACHE:-false}"
