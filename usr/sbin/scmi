@@ -1098,6 +1098,10 @@ function scmi_fleet_unit_is_active ()
 
 function scmi_info ()
 {
+	local COLOUR_BOLD='\033[1m'
+	local COLOUR_LIGHT='\033[2m'
+	local COLOUR_RESET='\033[0m'
+	local DETAILS_SCMI_COMMON
 	local DETAILS_SCMI_MANAGER_TYPE
 	local IMAGE_NAME
 	local IMAGE_ID
@@ -1107,6 +1111,7 @@ function scmi_info ()
 	local LABELS
 	local LABEL_NAMESPACE_PREFIX="org.deathe."
 	local LABEL_KEY_CLEAN
+	local LABEL_KEYS_DETAILS
 	local LABEL_KEYS_INFO="
 	 org.deathe.name
 	 org.deathe.version
@@ -1141,6 +1146,13 @@ function scmi_info ()
 	local UNIT_FILES
 	local UNITS
 
+	# Allow for uncolourised output
+	if [[ -n ${SCMI_MONOCHROME} ]]; then
+		COLOUR_BOLD=""
+		COLOUR_LIGHT=""
+		COLOUR_RESET=""
+	fi
+
 	scmi_docker_prerequisites
 
 	# Query docker for image using default user/name:tag
@@ -1160,7 +1172,7 @@ function scmi_info ()
 	fi
 
 	if [[ -n ${IMAGE_ID} ]]; then
-		for KEY_TYPE in LABEL_KEYS_INFO LABEL_KEYS_SOURCE LABEL_KEYS_USAGE; do
+		for KEY_TYPE in LABEL_KEYS_INFO LABEL_KEYS_SOURCE LABEL_KEYS_USAGE LABEL_KEYS_DETAILS; do
 
 			case "${KEY_TYPE}" in
 				LABEL_KEYS_SOURCE)
@@ -1172,15 +1184,27 @@ function scmi_info ()
 				LABEL_KEYS_USAGE)
 					INFO_SECTION="Image Usage"
 					;;
+				LABEL_KEYS_DETAILS)
+					INFO_SECTION="SCMI Details"
+					;;
 			esac
 
 			# Section heading
 			printf -v \
 				INFO \
-				-- '%s%s%s\n' \
+				-- '%s%b%s%s%b' \
 				"${INFO}" \
+				"${COLOUR_BOLD}" \
 				"${INFO_SECTION_PREFIX}" \
-				"${INFO_SECTION}"
+				"${INFO_SECTION}" \
+				"${COLOUR_RESET}"
+
+			if [[ -n ${!KEY_TYPE} ]]; then
+				printf -v \
+					INFO \
+					-- '%s\n' \
+					"${INFO}"
+			fi
 
 			for LABEL_KEY in ${!KEY_TYPE}; do
 				LABEL_KEY_CLEAN="${LABEL_KEY//${LABEL_NAMESPACE_PREFIX}}"
@@ -1193,28 +1217,65 @@ function scmi_info ()
 				# Fixed width label key output - {{KEY}} : {{VALUE}}
 				printf -v \
 					INFO \
-					-- '%s%s%*.*s : %s\n' \
+					-- '%s%b%s%*.*s :%b %s\n' \
 					"${INFO}" \
+					"${COLOUR_LIGHT}" \
 					"${LABEL_KEY_CLEAN}" \
 					0 \
 					$(( ${PADDING_WIDTH} - ${#LABEL_KEY_CLEAN} )) \
 					"${PADDING}" \
+					"${COLOUR_RESET}" \
 					"${LABEL_VALUE}"
 			done
 
-			# New line to separate sections
-			printf -v \
-				INFO \
-				-- '%s\n' \
-				"${INFO}"
+			if [[ -n ${!KEY_TYPE} ]]; then
+				printf -v \
+					INFO \
+					-- '%s\n' \
+					"${INFO}"
+			fi
 		done
 	fi
+
+	printf -v \
+		DETAILS_SCMI_COMMON \
+		-- '%s%bimage           :%b %s\n' \
+		"${DETAILS_SCMI_COMMON}" \
+		"${COLOUR_LIGHT}" \
+		"${COLOUR_RESET}" \
+		"${IMAGE_NAME}"
+
+	printf -v \
+		DETAILS_SCMI_COMMON \
+		-- '%s%bimage id        :%b %s\n' \
+		"${DETAILS_SCMI_COMMON}" \
+		"${COLOUR_LIGHT}" \
+		"${COLOUR_RESET}" \
+		"${IMAGE_ID}"
+
+	printf -v \
+		DETAILS_SCMI_COMMON \
+		-- '%s%bdocker name     :%b %s\n' \
+		"${DETAILS_SCMI_COMMON}" \
+		"${COLOUR_LIGHT}" \
+		"${COLOUR_RESET}" \
+		"${SCMI_NAME}"
+
+	printf -v \
+		DETAILS_SCMI_COMMON \
+		-- '%s%bmanager         :%b %s\n' \
+		"${DETAILS_SCMI_COMMON}" \
+		"${COLOUR_LIGHT}" \
+		"${COLOUR_RESET}" \
+		"${SCMI_MANAGER_TYPE}"
 
 	case "${SCMI_MANAGER_TYPE}" in
 		docker)
 			printf -v \
 				DETAILS_SCMI_MANAGER_TYPE \
-				-- 'template        : %s\n' \
+				-- '%btemplate        :%b %s\n' \
+				"${COLOUR_LIGHT}" \
+				"${COLOUR_RESET}" \
 				"$(
 					scmi_docker_get_create_template
 				)"
@@ -1232,13 +1293,17 @@ function scmi_info ()
 
 			printf -v \
 				DETAILS_SCMI_MANAGER_TYPE \
-				-- 'units           : %s\n' \
+				-- '%bunits           :%b %s\n' \
+				"${COLOUR_LIGHT}" \
+				"${COLOUR_RESET}" \
 				"${UNITS}"
 
 			printf -v \
 				DETAILS_SCMI_MANAGER_TYPE \
-				-- '%sunit-files      : %s\n' \
+				-- '%s%bunit-files      :%b %s\n' \
 				"${DETAILS_SCMI_MANAGER_TYPE}" \
+				"${COLOUR_LIGHT}" \
+				"${COLOUR_RESET}" \
 				"${UNIT_FILES}"
 
 			if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
@@ -1262,8 +1327,10 @@ function scmi_info ()
 					&& [[ -n ${UNIT_FILE_CONTENT} ]]; then
 					printf -v \
 						DETAILS_SCMI_MANAGER_TYPE \
-						-- '%sunit preview    : %s\n%s\n' \
+						-- '%s%bunit preview    :%b %s\n%s\n' \
 						"${DETAILS_SCMI_MANAGER_TYPE}" \
+						"${COLOUR_LIGHT}" \
+						"${COLOUR_RESET}" \
 						"${UNIT_FILE_PATH}" \
 						"${UNIT_FILE_CONTENT//Exec*/...}"
 				fi
@@ -1282,13 +1349,17 @@ function scmi_info ()
 
 			printf -v \
 				DETAILS_SCMI_MANAGER_TYPE \
-				-- 'units           : %s\n' \
+				-- '%bunits           :%b %s\n' \
+				"${COLOUR_LIGHT}" \
+				"${COLOUR_RESET}" \
 				"${UNITS}"
 
 			printf -v \
 				DETAILS_SCMI_MANAGER_TYPE \
-				-- '%sunit-files      : %s\n' \
+				-- '%s%bunit-files      :%b %s\n' \
 				"${DETAILS_SCMI_MANAGER_TYPE}" \
+				"${COLOUR_LIGHT}" \
+				"${COLOUR_RESET}" \
 				"${UNIT_FILES}"
 
 			if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
@@ -1312,8 +1383,10 @@ function scmi_info ()
 					&& [[ -n ${UNIT_FILE_CONTENT} ]]; then
 					printf -v \
 						DETAILS_SCMI_MANAGER_TYPE \
-						-- '%sdrop-in         : %s\n%s\n' \
+						-- '%s%bdrop-in         :%b %s\n%s\n' \
 						"${DETAILS_SCMI_MANAGER_TYPE}" \
+						"${COLOUR_LIGHT}" \
+						"${COLOUR_RESET}" \
 						"${UNIT_FILE_PATH}" \
 						"${UNIT_FILE_CONTENT}"
 				fi
@@ -1322,12 +1395,8 @@ function scmi_info ()
 	esac
 
 	cat <<-EOF
-		${INFO}${INFO_SECTION_PREFIX}SCMI Details
-		image           : ${IMAGE_NAME}
-		image id        : ${IMAGE_ID}
-		docker name     : ${SCMI_NAME}
-		manager         : ${SCMI_MANAGER_TYPE}
-		${DETAILS_SCMI_MANAGER_TYPE}
+		${INFO}
+		${DETAILS_SCMI_COMMON}${DETAILS_SCMI_MANAGER_TYPE}
 	EOF
 
 	exit 1
