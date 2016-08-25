@@ -101,6 +101,10 @@ function scmi ()
 				SCMI_MANAGER_TYPE=${1#*=}
 				shift 1
 				;;
+			--monochrome)
+				SCMI_MONOCHROME=true
+				shift 1
+				;;
 			-n)
 				SCMI_NAME="${2}"
 				shift 2
@@ -2207,6 +2211,7 @@ function scmi_usage ()
 	  --info                     Show image information and exit.
 	  -m, --manager=MANAGER      Container manager (docker, systemd or fleet) 
 	                             defaults to docker.
+	  --monochrome               Output colour is suppressed.
 	  -n, --name=NAME            Container name. The required format is as follows
 	                             where <instance> and <node> are required numeric
 	                             values. 
