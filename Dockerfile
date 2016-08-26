@@ -139,7 +139,7 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="1.6.0"
+ARG RELEASE_VERSION="1.7.0"
 LABEL \
 	install="docker run \
 --rm \
