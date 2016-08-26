@@ -88,13 +88,13 @@ $ sftp -p 2021 -i id_rsa_insecure \
 
 ### Running
 
-To run the a docker container from this image you can use the standard docker commands. Alternatively you can use the embedded (Service Container Manager Interface) [scmi](https://github.com/jdeathe/centos-ssh/blob/centos-7/usr/sbin/scmi) that is included in the image since `centos-7-2.1.0` or, if you have a checkout of the [source repository](https://github.com/jdeathe/centos-ssh), and have make installed the Makefile provides targets to build, install, start, stop etc. The helper scripts will terminate any running container of the same name and run a new daemonised container. You can use environment variables to configure the container options and set custom docker run parameters.
+To run the a docker container from this image you can use the standard docker commands. Alternatively, you can use the embedded (Service Container Manager Interface) [scmi](https://github.com/jdeathe/centos-ssh/blob/centos-7/usr/sbin/scmi) that is included in the image since `centos-6-1.7.0`|`centos-7-2.1.0` or, if you have a checkout of the [source repository](https://github.com/jdeathe/centos-ssh), and have make installed the Makefile provides targets to build, install, start, stop etc. where environment variables can be used to configure the container options and set custom docker run parameters.
 
 #### SCMI Installation Examples
 
 The following example uses docker to run the SCMI install command to create and start a container named `ssh.pool-1.1.1`. To use SCMI it requires the use of the `--privileged` docker run parameter and the docker host's root directory mounted as a volume with the container's mount directory also being set in the `scmi` `--chroot` option. The `--setopt` option is used to add extra parameters to the default docker run command template; in the following example a named configuration volume is added which allows the SSH host keys to persist after the first container initialisation. Not that the placeholder `{{NAME}}` can be used in this option and is replaced with the container's name.
 
-##### SCMI Basic Installation
+##### SCMI Install
 
 ```
 $ docker run \
@@ -109,7 +109,7 @@ $ docker run \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
 
-#### SCMI Uninstall Example
+#### SCMI Uninstall
 
 To uninstall the previous example simply run the same docker run command with the scmi `uninstall` command.
 
@@ -126,7 +126,7 @@ $ docker run \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
 
-#### SCMI Installation Systemd Example
+#### SCMI Systemd Support
 
 If your docker host has systemd (and optionally etcd) installed then `scmi` provides a method to install the container as a systemd service unit. This provides some additional features for managing a group of instances on a single docker host and has the option to use an etcd backed service registry. Using a systemd unit file allows the System Administrator to use a Drop-In to override the settings of a unit-file template used to create service instances. To use the systemd method of installation use the `-m` or `--manager` option of `scmi` and to include the optional etcd register companion unit use the `--register` option.
 
@@ -147,55 +147,58 @@ $ docker run \
     --setopt='--volume {{NAME}}.config-ssh:/etc/ssh'
 ```
 
+#### SCMI Fleet Support
+
+If your docker host has systemd, fleetd (and optionally etcd) installed then `scmi` provides a method to schedule the container  to run on the cluster. This provides some additional features for managing a group of instances on a [fleet](https://github.com/coreos/fleet) cluster and has the option to use an etcd backed service registry. To use the fleet method of installation use the `-m` or `--manager` option of `scmi` and to include the optional etcd register companion unit use the `--register` option.
+
 ##### SCMI Image Information
 
 Since release `centos-7-2.1.0` the install template has been added to the image metadata. Using docker inspect you can access `scmi` to simplify install/uninstall tasks.
 
-To see all available `scmi` options run with the `--help` option:
+To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
 
 ```
-$ eval "sudo -E $(docker inspect -f "{{.ContainerConfig.Labels.install}}" jdeathe/centos-ssh:centos-7-2.1.0) --help"
+$ eval "sudo -E $(
+    docker inspect \
+    -f "{{.ContainerConfig.Labels.install}}" \
+    jdeathe/centos-ssh:centos-7-2.1.0
+  ) --info"
 ```
 
-To see detailed information about the image run `scmi` with the `--info` option:
+To perform an installation using the docker name `ssh.pool-1.2.1` simply use the `--name` or `-n` option.
 
 ```
-$ eval "sudo -E $(docker inspect -f "{{.ContainerConfig.Labels.install}}" jdeathe/centos-ssh:centos-7-2.1.0) --info"
+$ eval "sudo -E $(
+    docker inspect \
+    -f "{{.ContainerConfig.Labels.install}}" \
+    jdeathe/centos-ssh:centos-7-2.1.0
+  ) --name=ssh.pool-1.2.1"
 ```
 
-To perform a simple installation using the docker name `ssh.pool-1.2.1`:
+To uninstall use the *same command* that was used to install but with the `uninstall` Label.
 
 ```
-$ eval "sudo -E $(docker inspect -f "{{.ContainerConfig.Labels.install}}" jdeathe/centos-ssh:centos-7-2.1.0) --name=ssh.pool-1.2.1"
+$ eval "sudo -E $(
+    docker inspect \
+    -f "{{.ContainerConfig.Labels.uninstall}}" \
+    jdeathe/centos-ssh:centos-7-2.1.0
+  ) --name=ssh.pool-1.2.1"
 ```
 
-To uninstall use the same command that was used to install but with the uninstall Label:
+##### SCMI on Atomic Host
 
-```
-$ eval "sudo -E $(docker inspect -f "{{.ContainerConfig.Labels.uninstall}}" jdeathe/centos-ssh:centos-7-2.1.0) --name=ssh.pool-1.2.1"
-```
+With the addition of install/uninstall image labels it is possible to use [Project Atomic's](http://www.projectatomic.io/) `atomic install` command to simplify install/uninstall tasks on [CentOS Atomic](https://wiki.centos.org/SpecialInterestGroup/Atomic) Hosts.
 
-##### SCMI Atomic Host Installation
-
-With the addition of install/uninstall image labels it is now possible to use [Project Atomic's](http://www.projectatomic.io/) `atomic install` command to simplify install/uninstall tasks on [CentOS Atomic](https://wiki.centos.org/SpecialInterestGroup/Atomic) Hosts.
-
-To see all available `scmi` options run with the `--help` option:
-
-```
-$ sudo -E atomic install \
-  -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:centos-7-2.1.0 --help
-```
-
-To see detailed information about the image run `scmi` with the `--info` option:
+To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
 
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:centos-7-2.1.0 --info
+  jdeathe/centos-ssh:centos-7-2.1.0 \
+  --info
 ```
 
-To perform a simple installation using the docker name `ssh.pool-1.3.1`:
+To perform an installation using the docker name `ssh.pool-1.3.1` simply use the `-n` option of the `atomic install` command.
 
 ```
 $ sudo -E atomic install \
@@ -203,7 +206,15 @@ $ sudo -E atomic install \
   jdeathe/centos-ssh:centos-7-2.1.0
 ```
 
-To uninstall use the same command that was used to install but with the uninstall Label:
+Alternatively, you could use the `scmi` options `--name` or `-n` for naming the container.
+
+```
+$ sudo -E atomic install \
+  jdeathe/centos-ssh:centos-7-2.1.0 \
+  --name ssh.pool-1.3.1
+```
+
+To uninstall use the *same command* that was used to install but with the `uninstall` Label.
 
 ```
 $ sudo -E atomic uninstall \
