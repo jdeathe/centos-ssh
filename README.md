@@ -1,9 +1,9 @@
 centos-ssh
 ==========
 
-Docker Images of CentOS-6 6.7 x86_64 / CentOS-7 7.2.1511 x86_64
+Docker Images of CentOS-6 6.8 x86_64 / CentOS-7 7.2.1511 x86_64
 
-Includes public key authentication, Automated password generation, supports custom configuration via environment variables and/or a configuration data volume.
+Includes public key authentication, Automated password generation and supports custom configuration via environment variables.
 
 ## Overview & links
 
@@ -86,76 +86,141 @@ $ sftp -p 2021 -i id_rsa_insecure \
 
 ## Instructions
 
-### (Optional) Configuration Data Volume
-
-A configuration "data volume" allows you to share the same configuration files between multiple docker containers. Docker mounts a host directory into the data volume allowing you to edit the default configuration files and have those changes persist.
-
-#### Standard volume
-
-Naming of the volume is optional, it is possible to leave the naming up to Docker by simply specifying the container path only.
-
-```
-$ docker run \
-  --name volume-config.ssh.pool-1.1.1 \
-  -v /etc/services-config \
-  jdeathe/centos-ssh:centos-7 \
-  /bin/true
-```
-
-To identify the docker host directory path to the volume within the container volume-config.ssh.pool-1.1.1 you can use ```docker inspect``` to view the Mounts.
-
-```
-$ docker inspect \
-  --format '{{ json (index .Mounts 0).Source }}' \
-  volume-config.ssh.pool-1.1.1
-```
-
-#### Named volume
-
-To create a named data volume, mounting our docker host's configuration directory /var/lib/docker/volumes/volume-config.ssh.pool-1.1.1 to /etc/services-config in the docker container use the following run command. Note that we use the same image as for the application container to reduce the number of images/layers required.
-
-```
-$ docker run \
-  --name volume-config.ssh.pool-1.1.1 \
-  -v volume-config.ssh.pool-1.1.1:/etc/services-config \
-  jdeathe/centos-ssh:centos-7 \
-  /bin/true
-```
-
-When using named volumes the directory path from the docker host mounts the path on the container so we need to upload the configuration files. The simplest method of achieving this is to upload the contents of the [etc/services-config](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/) directory using ```docker cp```.
-
-```
-$ docker cp \
-  ./etc/services-config/. \
-  volume-config.ssh.pool-1.1.1:/etc/services-config
-```
-
-#### Editing configuration
-
-To make changes to the configuration files you need a running container that uses the volumes from the configuration volume. To edit a single file you could use the following, where {path_to_file} can be one of the [required configuration files](https://github.com/jdeathe/centos-ssh/blob/centos-7/README.md#required-configuration-files), or you could run a ```bash``` shell and then make the changes required using ```vi```. On exiting the container it will be removed since we specify the ```--rm``` parameter.
-
-```
-$ docker run --rm -it \
-  --volumes-from volume-config.ssh.pool-1.1.1 \
-  jdeathe/centos-ssh:centos-7 \
-  vi /etc/services-config/{path_to_file}
-```
-
-##### Required configuration files
-
-The following configuration files are required to run the application container and should be located in the directory /etc/services-config/.
-
-- [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/authorized_keys)
-- [ssh/sshd-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd-bootstrap.conf)
-- [ssh/sshd-bootstrap.env](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd-bootstrap.env)
-- [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd_config)
-- [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.conf)
-- [supervisor/supervisord.d/sshd.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.d/sshd.conf)
-- [supervisor/supervisord.d/sshd-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf)
-
 ### Running
 
-To run the a docker container from this image you can use the included [run.sh](https://github.com/jdeathe/centos-ssh/blob/centos-7/run.sh) and [run.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/run.conf) scripts. The helper script will stop any running container of the same name, remove it and run a new daemonised container on an unspecified host port. Alternatively you can use the following methods.
+To run the a docker container from this image you can use the standard docker commands. Alternatively, you can use the embedded (Service Container Manager Interface) [scmi](https://github.com/jdeathe/centos-ssh/blob/centos-7/usr/sbin/scmi) that is included in the image since `centos-6-1.7.0`|`centos-7-2.1.0` or, if you have a checkout of the [source repository](https://github.com/jdeathe/centos-ssh), and have make installed the Makefile provides targets to build, install, start, stop etc. where environment variables can be used to configure the container options and set custom docker run parameters.
+
+#### SCMI Installation Examples
+
+The following example uses docker to run the SCMI install command to create and start a container named `ssh.pool-1.1.1`. To use SCMI it requires the use of the `--privileged` docker run parameter and the docker host's root directory mounted as a volume with the container's mount directory also being set in the `scmi` `--chroot` option. The `--setopt` option is used to add extra parameters to the default docker run command template; in the following example a named configuration volume is added which allows the SSH host keys to persist after the first container initialisation. Not that the placeholder `{{NAME}}` can be used in this option and is replaced with the container's name.
+
+##### SCMI Install
+
+```
+$ docker run \
+  --rm \
+  --privileged \
+  --volume /:/media/root \
+  jdeathe/centos-ssh:centos-7-2.1.0 \
+  /sbin/scmi install \
+    --chroot=/media/root \
+    --tag=centos-7-2.1.0 \
+    --name=ssh.pool-1.1.1 \
+    --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
+```
+
+#### SCMI Uninstall
+
+To uninstall the previous example simply run the same docker run command with the scmi `uninstall` command.
+
+```
+$ docker run \
+  --rm \
+  --privileged \
+  --volume /:/media/root \
+  jdeathe/centos-ssh:centos-7-2.1.0 \
+  /sbin/scmi uninstall \
+    --chroot=/media/root \
+    --tag=centos-7-2.1.0 \
+    --name=ssh.pool-1.1.1 \
+    --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
+```
+
+#### SCMI Systemd Support
+
+If your docker host has systemd (and optionally etcd) installed then `scmi` provides a method to install the container as a systemd service unit. This provides some additional features for managing a group of instances on a single docker host and has the option to use an etcd backed service registry. Using a systemd unit file allows the System Administrator to use a Drop-In to override the settings of a unit-file template used to create service instances. To use the systemd method of installation use the `-m` or `--manager` option of `scmi` and to include the optional etcd register companion unit use the `--register` option.
+
+```
+$ docker run \
+  --rm \
+  --privileged \
+  --volume /:/media/root \
+  jdeathe/centos-ssh:centos-7-2.1.0 \
+  /sbin/scmi install \
+    --chroot=/media/root \
+    --tag=centos-7-2.1.0 \
+    --name=ssh.pool-1.1.1 \
+    --manager=systemd \
+    --register \
+    --env='SSH_SUDO="ALL=(ALL) NOPASSWD:ALL"' \
+    --env='SSH_USER="centos"' \
+    --setopt='--volume {{NAME}}.config-ssh:/etc/ssh'
+```
+
+#### SCMI Fleet Support
+
+If your docker host has systemd, fleetd (and optionally etcd) installed then `scmi` provides a method to schedule the container  to run on the cluster. This provides some additional features for managing a group of instances on a [fleet](https://github.com/coreos/fleet) cluster and has the option to use an etcd backed service registry. To use the fleet method of installation use the `-m` or `--manager` option of `scmi` and to include the optional etcd register companion unit use the `--register` option.
+
+##### SCMI Image Information
+
+Since release `centos-7-2.1.0` the install template has been added to the image metadata. Using docker inspect you can access `scmi` to simplify install/uninstall tasks.
+
+To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
+
+```
+$ eval "sudo -E $(
+    docker inspect \
+    -f "{{.ContainerConfig.Labels.install}}" \
+    jdeathe/centos-ssh:centos-7-2.1.0
+  ) --info"
+```
+
+To perform an installation using the docker name `ssh.pool-1.2.1` simply use the `--name` or `-n` option.
+
+```
+$ eval "sudo -E $(
+    docker inspect \
+    -f "{{.ContainerConfig.Labels.install}}" \
+    jdeathe/centos-ssh:centos-7-2.1.0
+  ) --name=ssh.pool-1.2.1"
+```
+
+To uninstall use the *same command* that was used to install but with the `uninstall` Label.
+
+```
+$ eval "sudo -E $(
+    docker inspect \
+    -f "{{.ContainerConfig.Labels.uninstall}}" \
+    jdeathe/centos-ssh:centos-7-2.1.0
+  ) --name=ssh.pool-1.2.1"
+```
+
+##### SCMI on Atomic Host
+
+With the addition of install/uninstall image labels it is possible to use [Project Atomic's](http://www.projectatomic.io/) `atomic install` command to simplify install/uninstall tasks on [CentOS Atomic](https://wiki.centos.org/SpecialInterestGroup/Atomic) Hosts.
+
+To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
+
+```
+$ sudo -E atomic install \
+  -n ssh.pool-1.3.1 \
+  jdeathe/centos-ssh:centos-7-2.1.0 \
+  --info
+```
+
+To perform an installation using the docker name `ssh.pool-1.3.1` simply use the `-n` option of the `atomic install` command.
+
+```
+$ sudo -E atomic install \
+  -n ssh.pool-1.3.1 \
+  jdeathe/centos-ssh:centos-7-2.1.0
+```
+
+Alternatively, you could use the `scmi` options `--name` or `-n` for naming the container.
+
+```
+$ sudo -E atomic install \
+  jdeathe/centos-ssh:centos-7-2.1.0 \
+  --name ssh.pool-1.3.1
+```
+
+To uninstall use the *same command* that was used to install but with the `uninstall` Label.
+
+```
+$ sudo -E atomic uninstall \
+  -n ssh.pool-1.3.1 \
+  jdeathe/centos-ssh:centos-7-2.1.0
+```
 
 #### Using environment variables
 
@@ -170,20 +235,6 @@ $ docker stop ssh.pool-1.1.1 \
   --name ssh.pool-1.1.1 \
   -p :22 \
   --env "SSH_USER=app-user" \
-  jdeathe/centos-ssh:centos-7
-```
-
-#### Using configuration volume
-
-The following example uses the settings from the optional configuration volume volume-config.ssh.pool-1.1.1.
-
-```
-$ docker stop ssh.pool-1.1.1 \
-  && docker rm ssh.pool-1.1.1 \
-  ; docker run -d \
-  --name ssh.pool-1.1.1 \
-  -p :22 \
-  --volumes-from volume-config.ssh.pool-1.1.1 \
   jdeathe/centos-ssh:centos-7
 ```
 
@@ -406,65 +457,3 @@ $ ssh -p {container-port} \
   app-admin@{docker-host-ip} \
   -o StrictHostKeyChecking=no
 ```
-
-### Custom Configuration
-
-If using the optional data volume for container configuration you are able to customise the configuration. In the following examples your custom docker configuration files should be located on the Docker host under the directory ```/var/lib/docker/volumes/{volume-name}/``` where ```{volume-name}``` should identify the applicable container name such as "volume-config.ssh.pool-1.1.1" if using named volumes or will be an ID generated automatically by Docker. To identify the correct path on the Docker host use the ```docker inspect``` command.
-
-#### [ssh/authorized_keys](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/authorized_keys)
-
-The supplied insecure private key is for demonstration/review purposes only. You should create your own private key if you don't already have one using the following command; pressing the enter key when asked for a passphrase to prevent you being prompted for a passphrase.
-
-```
-$ ssh-keygen -q -t rsa -f ~/.ssh/id_rsa
-```
-
-You should now have an SSH public key, (~/.ssh/id_rsa.pub), that can be used to replace the default one in your custom authorized_keys file.
-
-To copy your file to a remote docker host where using a configuration "data" volume container named "volume-config.ssh.pool-1.1.1" with a volume mapping of "volume-config.ssh.pool-1.1.1:/etc/services-config" use:
-
-```
-$ docker cp ~/.ssh/id_rsa.pub \
-  volume-config.ssh.pool-1.1.1:/etc/services-config/ssh/authorized_keys
-```
-
-Alternatively, to replace the autorized_keys directly on a running container with the ```SSH_USER``` app-admin using SSH use:
-
-```
-$ cat ~/.ssh/id_rsa.pub | ssh -p {container-port} \
-  -i ~/.vagrant.d/insecure_private_key \
-  app-admin@{docker-host-ip} \
-  "cat > ~/.ssh/authorized_keys"
-```
-
-To connect to the running container use:
-
-```
-$ ssh -p {container-port} \
-  app-admin@{docker-host-ip} \
-  -o StrictHostKeyChecking=no
-```
-
-#### [ssh/sshd-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd-bootstrap.conf)
-
-The bootstrap script sets up the sudo user and generates a random 8 character password you can override this behaviour by supplying your own values in your custom sshd-bootstrap.conf file. You can also change the sudoer username to something other that the default "app-admin".
-
-#### [ssh/sshd-bootstrap.env](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd-bootstrap.env)
-
-This is an intentionally empty file used for storing the Docker environment variables. If the environment variable ```SSH_INHERIT_ENVIRONMENT``` is set to true then environment variables stored in this file are added to the SSH user's environment.
-
-#### [ssh/sshd_config](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/ssh/sshd_config)
-
-The SSH daemon options can be overridden with your custom sshd_config file.
-
-#### [supervisor/supervisord.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.conf)
-
-The supervisor service's primary configuration can also be overridden by editing the custom supervisord.conf file. Program specific configuration files will be loaded from /etc/supervisor.d/ from the container.
-
-#### [supervisor/supervisord.d/sshd.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.d/sshd.conf)
-
-The supervisor program configuration for the sshd service.
-
-#### [supervisor/supervisord.d/sshd-bootstrap.conf](https://github.com/jdeathe/centos-ssh/blob/centos-7/etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf)
-
-The supervisor program configuration for the sshd_boostrap script.

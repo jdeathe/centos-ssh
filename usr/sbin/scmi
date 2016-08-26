@@ -1,0 +1,2209 @@
+#!/usr/bin/env bash
+
+# Change working directory
+cd -- "$(
+	dirname "${0}"
+)"
+
+function scmi ()
+{
+	# Default settings
+	local SCMI_COMMAND=""
+	local SCMI_CHROOT_PATH="/"
+	declare -a local SCMI_ENV
+	local SCMI_IMAGE_PACKAGE_PATH="/var/opt/scmi/packages"
+	local readonly SCMI_INCLUDE_FILES="
+	 environment.sh
+	 default.sh
+	 service-unit.sh
+	"
+	local SCMI_INFO=false
+	local SCMI_MANAGER_TYPE="docker"
+	local readonly SCMI_MANAGER_TYPE_PATTERN='^(docker|fleet|systemd)$'
+	local SCMI_NAME=""
+	local readonly SCMI_NAME_FORMAT='{<name>|<name>.[group]}.<instance>.<node>'
+	local readonly SCMI_PACKAGE_NAME="scmi"
+	local SCMI_QUIET=false
+	local SCMI_REGISTER_ENABLED=false
+	local SCMI_RESTART=""
+	declare -a local SCMI_SETOPT
+	local SCMI_TAG="latest"
+
+	# Abort if not run by root user or with sudo
+	if [[ ${EUID} -ne 0 ]]; then
+		scmi_print_message "error" \
+			"Run as root or use: sudo -E $(basename ${0})"
+		exit 1
+	fi
+
+	# Parse install options
+	while [[ ${#} -gt 0 ]]; do
+		case "${1}" in
+			-h|--help)
+				scmi_usage
+				break
+				;;
+			-c)
+				if [[ -z ${2:-} ]]; then
+					scmi_print_message "error" \
+						"Empty option value (${1})"
+					scmi_usage
+				fi
+				SCMI_CHROOT_PATH="${2}"
+				shift 2
+				;;
+			--chroot=*)
+				if [[ -z ${1#*=} ]]; then
+					scmi_print_message "error" \
+						"Empty option value (${1})"
+					scmi_usage
+				fi
+				SCMI_CHROOT_PATH="${1#*=}"
+				shift 1
+				;;
+			--env=*)
+				if [[ -z ${1#*=} ]]; then
+					scmi_print_message "error" \
+						"Empty option value (${1})"
+					scmi_usage
+				fi
+				SCMI_ENV+=("${1#*=}")
+				shift 1
+				;;
+			--image-package-path=*)
+				if [[ -z ${1#*=} ]]; then
+					scmi_print_message "error" \
+						"Empty option value (${1})"
+					scmi_usage
+				fi
+				SCMI_IMAGE_PACKAGE_PATH="${1#*=}"
+				shift 1
+				;;
+			--info)
+				SCMI_INFO=true
+				shift 1
+				;;
+			-m)
+				if [[ ! ${2:-} =~ ${SCMI_MANAGER_TYPE_PATTERN} ]]; then
+					scmi_print_message "error" \
+						"Invalid option value (${1})"
+					scmi_usage
+				fi
+				SCMI_MANAGER_TYPE=${2}
+				shift 2
+				;;
+			--manager=*)
+				if [[ ! ${1#*=} =~ ${SCMI_MANAGER_TYPE_PATTERN} ]]; then
+					scmi_print_message "error" \
+						"Invalid option value (${1})"
+					scmi_usage
+				fi
+				SCMI_MANAGER_TYPE=${1#*=}
+				shift 1
+				;;
+			--monochrome)
+				SCMI_MONOCHROME=true
+				shift 1
+				;;
+			-n)
+				SCMI_NAME="${2}"
+				shift 2
+				;;
+			--name=*)
+				SCMI_NAME="${1#*=}"
+				shift 1
+				;;
+			-q|--quiet)
+				SCMI_QUIET=true
+				shift 1
+				;;
+			--register)
+				SCMI_REGISTER_ENABLED=true
+				shift 1
+				;;
+			--restart=*)
+				if [[ -z ${1#*=} ]]; then
+					scmi_print_message "error" \
+						"Empty option value (${1})"
+					scmi_usage
+				fi
+				SCMI_RESTART="${1#*=}"
+				shift 1
+				;;
+			--setopt=*)
+				if [[ -z ${1#*=} ]]; then
+					scmi_print_message "error" \
+						"Empty option value (${1})"
+					scmi_usage
+				fi
+				SCMI_SETOPT+=("${1#*=}")
+				shift 1
+				;;
+			-t)
+				if [[ -z ${2:-} ]]; then
+					scmi_print_message "error" \
+						"Empty option value (${1})"
+					scmi_usage
+				fi
+				SCMI_TAG="${2}"
+				shift 2
+				;;
+			--tag=*)
+				SCMI_TAG="${1#*=}"
+				shift 1
+				;;
+			-i|install)
+				SCMI_COMMAND="install"
+				shift 1
+				;;
+			-u|uninstall)
+				SCMI_COMMAND="uninstall"
+				shift 1
+				;;
+			*)
+				scmi_print_message "error" \
+					"Unkown option or option expects a value (${1})"
+				scmi_usage
+				;;
+		esac
+	done
+
+	if [[ -z ${SCMI_COMMAND} ]]; then
+		scmi_usage
+	fi
+
+	# Export environment options
+	if [[ ${#SCMI_ENV[@]} -gt 0 ]]; then
+		for ENV in "${SCMI_ENV[@]}"; do
+			eval "$(
+				printf -- \
+					'export %s' \
+					"${ENV}"
+			)"
+		done
+	fi
+
+	if [[ -d ${SCMI_CHROOT_PATH} ]]; then
+		export SCMI_CHROOT_PATH="${SCMI_CHROOT_PATH}"
+	else
+		scmi_print_message "error" \
+			"Invalid chroot path."
+		exit 1
+	fi
+
+	# Let SCMI override values set in the environment.
+	if [[ -n ${SCMI_NAME} ]]; then
+		export DOCKER_NAME="${SCMI_NAME}"
+	fi
+
+	case "${SCMI_RESTART}" in
+		no|always|on-failure)
+			# common
+			export DOCKER_RESTART_POLICY="${SCMI_RESTART}"
+			;;
+		on-failure:*|unless-stopped)
+			# docker specific
+			if [[ ${SCMI_MANAGER_TYPE} != docker ]]; then
+				scmi_restart_option_error
+			fi
+			export DOCKER_RESTART_POLICY="${SCMI_RESTART}"
+			;;
+		on-success|on-abnormal|on-abort|on-watchdog)
+			# systemd specific
+			if [[ ! ${SCMI_MANAGER_TYPE} =~ ^(fleet|systemd)$ ]]; then
+				scmi_restart_option_error
+			fi
+			;;
+		*)
+			# Allow unset restart policy as include defaults can vary.
+			if [[ -n ${SCMI_RESTART} ]]; then
+				# Unknown setting
+				scmi_restart_option_error
+			fi
+			;;
+	esac
+
+	if [[ -n ${SCMI_TAG} ]]; then
+		export DOCKER_IMAGE_TAG="${SCMI_TAG}"
+	fi
+
+	if [[ -n ${SCMI_IMAGE_PACKAGE_PATH} ]]; then
+		export DOCKER_IMAGE_PACKAGE_PATH="${SCMI_IMAGE_PACKAGE_PATH}"
+	fi
+
+	# Source include files
+	for INCLUDE_FILE in ${SCMI_INCLUDE_FILES}; do
+		if [[ -f ${INCLUDE_FILE} ]]; then
+			source ${INCLUDE_FILE}
+		elif [[ -f ../../opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
+			source ../../opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE}
+		elif [[ -f /opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
+			source /opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE}
+		fi
+	done
+
+	# Use the default docker name if SCMI name is unset
+	if [[ -z ${SCMI_NAME} ]]; then
+		SCMI_NAME="${DOCKER_NAME}"
+	fi
+
+	if [[ ${#SCMI_SETOPT[@]} -gt 0 ]]; then
+		for OPT in "${SCMI_SETOPT[@]}"; do
+			# Abort if operator attempts to set a --name option. 
+			if [[ ${OPT} =~ ^--name.+$ ]]; then
+				scmi_print_message "error" \
+					"Option conflict (--setopt=\"${OPT}\")"
+				exit 1
+			fi
+
+			printf -v \
+				DOCKER_CONTAINER_PARAMETERS_APPEND \
+				-- '%s %s' \
+				"${DOCKER_CONTAINER_PARAMETERS_APPEND}" \
+				"$(
+					sed \
+						-e "s~{{NAME}}~${DOCKER_NAME}~g" \
+					<<< "${OPT}"
+				)"
+		done
+	fi
+
+	# Validate variable values
+	if ! scmi_is_valid_managed_docker_name "${DOCKER_NAME}"; then
+		scmi_print_message "error" \
+			"Invalid container name (${DOCKER_NAME})"
+		scmi_print_message "error_info" \
+			"Required format: ${SCMI_NAME_FORMAT}"
+		exit 1
+	fi
+
+	if [[ ! ${DOCKER_IMAGE_TAG} =~ ${DOCKER_IMAGE_TAG_PATTERN} ]]; then 
+		scmi_print_message "error" \
+			"Invalid image tag (${DOCKER_IMAGE_TAG})"
+		exit 1
+	fi
+
+	# If requested, display info and exit.
+	if [[ ${SCMI_INFO} == true ]]; then
+		scmi_info
+	fi
+
+	# Run command for selected service manager
+	case ${SCMI_MANAGER_TYPE} in
+		fleet)
+			scmi_fleet_${SCMI_COMMAND}
+			;;
+		systemd)
+			scmi_systemd_${SCMI_COMMAND}
+			;;
+		docker|*)
+			scmi_docker_${SCMI_COMMAND}
+			;;
+	esac
+}
+
+function scmi_cleanup_background_task ()
+{
+	local PID="${1:-}"
+	local PID_CHILD="${2:-}"
+
+	if [[ -n ${PID} ]]; then
+
+		# Descendents
+		if [[ -z ${PID_CHILD} ]]; then
+			PID_CHILD="$(
+				ps -o pid= --ppid ${PID} \
+					| awk '$0 ~ /[0-9]{1,}/ { print $1 }'
+			)"
+		fi
+
+		if [[ -n ${PID_CHILD} ]]; then
+			PID=${PID_CHILD}
+		fi
+
+		if kill -15 -- ${PID} > /dev/null 2>&1; then
+			wait ${PID} 2> /dev/null
+		fi
+	fi
+}
+
+function scmi_docker_create ()
+{
+	local RESPONSE_CREATED
+	local SHELL_OPTIONS=""
+
+	scmi_docker_require_container_not
+	scmi_print_message "step_info" \
+		"Creating container"
+
+	if [[ ${SCMI_QUIET} != true ]]; then
+		SHELL_OPTIONS='set -x;'
+	fi
+
+	(
+		eval \
+			"${SHELL_OPTIONS}$(scmi_docker_get_create_template) \
+			1> /dev/null;"
+	)
+
+	RESPONSE_CREATED=$(
+		${docker} ps -aq \
+			--filter "name=${DOCKER_NAME}" \
+			--filter "status=created"
+	)
+
+	if [[ -n ${RESPONSE_CREATED} ]]; then
+		scmi_print_message "sub_step_info" \
+			"${RESPONSE_CREATED}"
+		scmi_print_message "sub_step_complete" \
+			"Container created"
+	else
+		scmi_print_message "sub_step_error" \
+			"Container creation failed"
+		exit 1
+	fi
+}
+
+function scmi_docker_get_create_template ()
+{
+	scmi_docker_prerequisites
+
+	printf -- \
+		'%s create %s %s %s/%s:%s' \
+		"${docker}" \
+		"${DOCKER_CONTAINER_PARAMETERS}" \
+		"${DOCKER_CONTAINER_PARAMETERS_APPEND}" \
+		"${DOCKER_USER}" \
+		"${DOCKER_IMAGE_NAME}" \
+		"${DOCKER_IMAGE_TAG}"
+}
+
+function scmi_docker_get_image ()
+{
+	local IMAGE_ID
+	local IMAGE_PATH
+	local GET_TYPE="load"
+	local xz
+
+	# Get the path to the xz binary if available on the local host.
+	if command -v xz &> /dev/null; then
+		printf -v \
+			xz \
+			-- '%s' \
+			"$(
+				command -v \
+					xz
+			)"
+	fi
+
+	# Release images don't get updated so only need loading/pulling once. 
+	# Check if release image is available.
+	if [[ -n ${DOCKER_IMAGE_RELEASE_TAG_PATTERN} ]] \
+		&& [[ ${DOCKER_IMAGE_TAG} =~ ${DOCKER_IMAGE_RELEASE_TAG_PATTERN} ]]; then
+
+		# Query docker for image using default user/name:tag
+		IMAGE_ID="$(
+			${docker} images -q \
+			${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+		)"
+
+		# On CentOS-7 hosts images might get saved under the docker.io namespace.
+		if [[ -z ${IMAGE_ID} ]]; then
+			IMAGE_ID="$(
+				${docker} images -q \
+				docker.io/${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+			)"
+		fi
+	fi
+
+	# If image is not available (or is not a release tag) load from disk or pull 
+	# from the registry.
+	if [[ -z ${IMAGE_ID} ]]; then
+		printf -v \
+			IMAGE_PATH \
+			-- '%s/%s/%s.%s.tar.xz' \
+			"${SCMI_CHROOT_PATH%*/}${SCMI_IMAGE_PACKAGE_PATH}" \
+			"${DOCKER_USER}" \
+			"${DOCKER_IMAGE_NAME}" \
+			"${DOCKER_IMAGE_TAG}"
+
+		if [[ -n ${xz} ]] \
+			&& [[ -f ${IMAGE_PATH} ]]; then
+			GET_TYPE="load"
+
+			scmi_print_message "step_info" \
+				"Pre-loading image from package"
+
+			${xz} -dc "${IMAGE_PATH}" \
+				| ${docker} load
+		else
+			GET_TYPE="pull"
+
+			scmi_print_message "step_info" \
+				"Pre-pulling image from registry"
+
+			${docker} pull \
+				${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
+		fi
+
+		if [[ ${?} -ne 0 ]]; then
+			scmi_print_message "sub_step_error" \
+				"Image ${GET_TYPE} failed."
+			exit 1
+		fi
+	fi
+}
+
+function scmi_docker_install ()
+{
+	scmi_docker_prerequisites
+	scmi_docker_get_image
+
+	# Cleanup if interrupted, killed or on exit
+	trap scmi_docker_install_cleanup \
+		INT TERM EXIT
+
+	scmi_docker_terminate
+	scmi_docker_create
+	scmi_docker_start
+
+	trap - \
+		INT TERM EXIT
+}
+
+function scmi_docker_install_cleanup ()
+{
+	scmi_docker_uninstall
+	exit 1
+}
+
+function scmi_docker_prerequisites ()
+{
+	scmi_manager_type_command_prerequisites \
+		"${SCMI_MANAGER_TYPE}"
+}
+
+# Deleting a container from host from a container that has the docker host's
+# root directory volume mounted fails for CentOS hosts. To work around this
+# issue we unmount the shm mount before calling docker rm.
+function scmi_docker_release_host_mounted_container ()
+{
+	# Skip if not applicable case.
+	if [[ -z ${SCMI_CHROOT_PATH} ]] \
+		|| [[ ${SCMI_CHROOT_PATH} == / ]]; then
+		return 0
+	else
+		scmi_docker_prerequisites
+
+		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+			CONTAINER_ID=$(
+				${docker} inspect --format="{{.Id}}" ${DOCKER_NAME}
+			)
+			CONTAINER_SHM_MOUNT=$(
+				find \
+					"${SCMI_CHROOT_PATH%*/}/var/lib/docker/containers/${CONTAINER_ID}" \
+					-type d \
+					-name "shm" \
+					2> /dev/null
+			)
+
+			if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]; then
+				scmi_print_message "sub_step_info" \
+					"Unmounting container id: ${CONTAINER_ID}"
+				umount \
+					"${SCMI_CHROOT_PATH%*/}/var/lib/docker/containers/${CONTAINER_ID}/shm"
+			fi
+		fi
+	fi
+}
+
+function scmi_docker_require_container ()
+{
+	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+		scmi_print_message "step_error" \
+			"This operation requires the ${DOCKER_NAME} docker container."
+		exit 1
+	fi
+}
+
+function scmi_docker_require_container_not ()
+{
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+		scmi_print_message "step_error" \
+			"This operation requires the ${DOCKER_NAME} docker container be removed (or renamed)."
+		scmi_print_message "sub_step_info" \
+			"Try removing it with: docker rm -f ${DOCKER_NAME}"
+		exit 1
+	fi
+}
+
+function scmi_docker_require_container_not_status_paused ()
+{
+	if [[ -n $(
+		${docker} ps -aq \
+			--filter "name=${DOCKER_NAME}" \
+			--filter "status=paused"
+	) ]]; then
+		scmi_print_message "step_error" \
+			"This operation requires the ${DOCKER_NAME} docker container to be unpaused."
+		scmi_print_message "sub_step_info" \
+			"Try unpausing it with: docker ${DOCKER_NAME} unpause"
+		exit 1
+	fi
+}
+
+function scmi_docker_start ()
+{
+	scmi_docker_require_container
+	scmi_docker_require_container_not_status_paused
+	scmi_print_message "step_info" \
+		"Starting container"
+
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]] \
+		&& [[ -z $(
+			${docker} ps -aq \
+				--filter "name=${DOCKER_NAME}" \
+				--filter "status=running"
+		) ]]; then
+		${docker} start ${DOCKER_NAME} 1> /dev/null
+	fi
+
+	if [[ -n $(
+		${docker} ps -aq \
+			--filter "name=${DOCKER_NAME}" \
+			--filter "status=running"
+	) ]]; then
+		scmi_print_message "sub_step_complete" \
+			"Container started"
+	else
+		scmi_print_message "sub_step_error" \
+			"Container start failed"
+		exit 1
+	fi
+}
+
+function scmi_docker_terminate ()
+{
+	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+		scmi_print_message "step_info" \
+			"Container termination skipped"
+	else
+		scmi_print_message "step_info" \
+			"Terminating container"
+		if [[ -n $(
+			${docker} ps -aq \
+				--filter "name=${DOCKER_NAME}" \
+				--filter "status=paused"
+		) ]]; then
+			scmi_print_message "sub_step_info" \
+				"Unpausing container"
+			${docker} unpause ${DOCKER_NAME} 1> /dev/null
+		fi
+
+		if [[ -n $(
+			${docker} ps -aq \
+				--filter "name=${DOCKER_NAME}" \
+				--filter "status=running"
+		) ]]; then
+			scmi_print_message "sub_step_info" \
+				"Stopping container"
+			${docker} stop ${DOCKER_NAME} 1> /dev/null
+		fi
+
+		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+			scmi_print_message "sub_step_info" \
+				"Removing container"
+			scmi_docker_release_host_mounted_container
+			${docker} rm -f ${DOCKER_NAME} 1> /dev/null
+		fi
+
+		if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]] \
+			&& [[ -z $(
+				find \
+					"${SCMI_CHROOT_PATH%*/}/var/lib/docker/containers" \
+					-type d \
+					-name "${CONTAINER_ID}" 2> /dev/null
+			) ]]; then
+			scmi_print_message "sub_step_complete" \
+				"Container terminated"
+		else
+			scmi_print_message "sub_step_error" \
+				"Container termination failed"
+			exit 1
+		fi
+	fi
+}
+
+function scmi_docker_uninstall ()
+{
+	scmi_docker_prerequisites
+	scmi_docker_terminate
+	scmi_print_message "sub_step_complete" \
+		"Uninstall complete"
+}
+
+function scmi_fleet_get_unit_file_hash ()
+{
+	local UNIT_FILE_NAME="${1:-}"
+	local HASH=""
+
+	if [[ -n ${UNIT_FILE_NAME} ]]; then
+		HASH="$(
+			${fleetctl} list-unit-files -full -no-legend -fields unit,hash \
+			| awk -v pattern="^${UNIT_FILE_NAME}$" \
+				'$1 ~ pattern { print $NF; }'
+		)"
+	fi
+
+	printf -- \
+		'%s' \
+		"${HASH}"
+}
+
+function scmi_fleet_get_unit_state ()
+{
+	local STATE
+	local OUTPUT_PATTERN
+	local UNIT_NAME="${1:-}"
+	local UNIT_STATE_TYPE="${2:-}"
+
+	if [[ -n ${UNIT_NAME} ]]; then
+		case "${UNIT_STATE_TYPE}" in
+			load)
+				OUTPUT_PATTERN="'\$1 ~ pattern { print \$3; }'"
+				;;
+			active)
+				OUTPUT_PATTERN="'\$1 ~ pattern { print \$4; }'"
+				;;
+			sub)
+				OUTPUT_PATTERN="'\$1 ~ pattern { print \$5; }'"
+				;;
+			all)
+				OUTPUT_PATTERN="'\$1 ~ pattern { print \$3\":\"\$4\":\"\$5; }'"
+				;;
+			full|*)
+				OUTPUT_PATTERN="'\$1 ~ pattern { print \$0; }'"
+				;;
+		esac
+
+		STATE="$(
+			eval "${fleetctl} list-units -no-legend \
+				-fields unit,machine,load,active,sub \
+				| awk -v pattern="^${UNIT_NAME}$" \
+				${OUTPUT_PATTERN}"
+		)"
+	fi
+
+	printf -- \
+		'%s' \
+		"${STATE}"
+}
+
+function scmi_fleet_install ()
+{
+	declare -a local UNIT_FILE_HASH
+	declare -a local PIDS
+	local STATUS_COMMAND
+
+	scmi_fleet_prerequisites
+
+	# Cleanup if interrupted, killed or on exit
+	trap scmi_fleet_install_cleanup \
+		INT TERM EXIT
+
+	scmi_print_message "step_info" \
+		"Installing ${SERVICE_UNIT_INSTANCE_NAME}"
+
+	# Install template unit files on local host.
+	scmi_systemd_install_template_unit_files
+
+	# Purge service template unit-file drop-in when not required.
+	scmi_systemd_uninstall_template_unit_file_drop_in \
+		"${DOCKER_IMAGE_NAME}@.service"
+
+	# Purge register template unit-file when not required.
+	if [[ ${SCMI_REGISTER_ENABLED} != true ]]; then
+		scmi_systemd_uninstall_template_unit_file \
+			"${DOCKER_IMAGE_NAME}.register@.service"
+		scmi_systemd_uninstall_template_unit_file_drop_in \
+			"${DOCKER_IMAGE_NAME}.register@.service"
+	fi
+
+	# ----------------------------------------------------------------------------
+	# Template units
+	# ----------------------------------------------------------------------------
+
+	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+		# Pre re-deploy hash
+		UNIT_FILE_HASH[0]=$(
+			scmi_fleet_get_unit_file_hash \
+				"${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+		)
+
+		# Once a unit-file has been loaded into the cluster it cannot be changed.
+		# If unit-file was loaded previously, destroying it to allow re-deployment.
+		if [[ -n ${UNIT_FILE_HASH[0]} ]]; then
+			scmi_print_message "sub_step_info" \
+				"Terminating template unit-file ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+			scmi_run_step \
+				"${fleetctl} destroy ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+		fi
+
+		scmi_print_message "sub_step_info" \
+			"Submitting template unit-file ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+		scmi_run_step \
+			"${fleetctl} submit /etc/systemd/system/${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+
+		# Post re-deploy hash
+		UNIT_FILE_HASH[1]=$(
+			scmi_fleet_get_unit_file_hash \
+				"${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+		)
+	fi
+
+	# Pre re-deploy hash
+	UNIT_FILE_HASH[2]=$(
+		scmi_fleet_get_unit_file_hash \
+			"${SERVICE_UNIT_TEMPLATE_NAME}"
+	)
+
+	# Once a unit-file has been loaded into the cluster it cannot be changed.
+	# If unit-file was loaded previously, destroying it to allow re-deployment.
+	if [[ -n ${UNIT_FILE_HASH[2]} ]]; then
+		scmi_print_message "sub_step_info" \
+			"Terminating template unit-file ${SERVICE_UNIT_TEMPLATE_NAME}"
+		scmi_run_step \
+			"${fleetctl} destroy ${SERVICE_UNIT_TEMPLATE_NAME}"
+	fi
+
+	scmi_print_message "sub_step_info" \
+		"Submitting template unit-file ${SERVICE_UNIT_TEMPLATE_NAME}"
+	scmi_run_step \
+		"${fleetctl} submit /etc/systemd/system/${SERVICE_UNIT_TEMPLATE_NAME}"
+
+	# Post re-deploy hash
+	UNIT_FILE_HASH[3]=$(
+		scmi_fleet_get_unit_file_hash \
+			"${SERVICE_UNIT_TEMPLATE_NAME}"
+	)
+
+	# ----------------------------------------------------------------------------
+	# instance units
+	# ----------------------------------------------------------------------------
+
+	# Fleet will not update the in-memory unit file if you re-submit it. 
+	# To update an existing unit file, you must destroy and then re-submit it.
+	if ${fleetctl} list-units -full -no-legend -fields unit \
+		| grep -q "^${SERVICE_UNIT_REGISTER_INSTANCE_NAME}$"; then
+		scmi_print_message "sub_step_info" \
+			"Terminating unit instance ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+		scmi_run_step \
+			"${fleetctl} destroy ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+	fi
+
+	if ${fleetctl} list-units -full -no-legend -fields unit \
+		| grep -q "^${SERVICE_UNIT_INSTANCE_NAME}$"; then
+		scmi_print_message "sub_step_info" \
+			"Terminating unit instance ${SERVICE_UNIT_INSTANCE_NAME}"
+		scmi_run_step \
+			"${fleetctl} destroy ${SERVICE_UNIT_INSTANCE_NAME}"
+	fi
+
+	# Check if the template unit-file has changed. If so, warn operator if any 
+	# unit instances are still using the previous template unit-file.
+	if [[ -n ${UNIT_FILE_HASH[2]} ]] && [[ -n ${UNIT_FILE_HASH[3]} ]] \
+		&& [[ ${UNIT_FILE_HASH[2]} != ${UNIT_FILE_HASH[3]} ]]; then
+		if ${fleetctl} list-unit-files -full -no-legend -fields unit,hash \
+			| awk -v pattern="^${SERVICE_UNIT_NAME}@[0-9]{1,}.[0-9]{1,}.service$" \
+				'$1 ~ pattern { print $NF; }' \
+			| grep -qv "${UNIT_FILE_HASH[3]}"; then
+			scmi_print_message "sub_step_info" \
+				"$(
+					printf -- \
+						'%s The template unit-file %s has changed. %s' \
+						'[NOTICE]' \
+						"${SERVICE_UNIT_TEMPLATE_NAME}" \
+						'Instance units will need re-deploying.'
+				)"
+		fi
+	fi
+
+	scmi_print_message "sub_step_info" \
+		"Scheduling unit instance ${SERVICE_UNIT_INSTANCE_NAME}"
+	scmi_run_step \
+		"${fleetctl} load ${SERVICE_UNIT_INSTANCE_NAME}"
+
+	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+		scmi_print_message "sub_step_info" \
+			"Scheduling unit instance ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+		scmi_run_step \
+			"${fleetctl} load ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+	fi
+
+	# Tail the systemd unit logs unitl installation completes
+	if [[ ${SCMI_QUIET} != true ]]; then
+		${fleetctl} journal -follow -lines 0 ${SERVICE_UNIT_INSTANCE_NAME} &
+		PIDS[2]=${!}
+
+		# There can be a delay in starting journalctl on remote hosts
+		sleep 1
+	fi
+
+	scmi_print_message "sub_step_info" \
+		"Starting unit instance ${SERVICE_UNIT_INSTANCE_NAME}"
+	scmi_run_step \
+		"${fleetctl} start ${SERVICE_UNIT_INSTANCE_NAME}" &
+	PIDS[0]=${!}
+
+	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+		scmi_print_message "sub_step_info" \
+			"Starting unit instance ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+		scmi_run_step \
+			"${fleetctl} start ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}" &
+		PIDS[1]=${!}
+	fi
+
+	# Wait for installtion to complete
+	[[ -n ${PIDS[0]} ]] && wait ${PIDS[0]}
+	[[ -n ${PIDS[1]} ]] && wait ${PIDS[1]}
+
+	# Allow time for the container bootstrap to complete
+	sleep ${SERVICE_UNIT_INSTALL_TIMEOUT:-0}
+
+	# Stop tailing the journal logs
+	scmi_cleanup_background_task \
+		"${PIDS[2]}"
+
+	# Wait for the instance units to enter the active state or reach the timeout.
+	COUNTER=$((
+		2 * ${SERVICE_UNIT_INSTALL_TIMEOUT:-10}
+	))
+	while (( ${COUNTER} >= 1 )); do
+		sleep 0.5
+
+		if scmi_fleet_unit_is_active "${SERVICE_UNIT_INSTANCE_NAME}" \
+			&& ( \
+				[[ ${SCMI_REGISTER_ENABLED} != true ]] \
+				|| scmi_fleet_unit_is_active "${SERVICE_UNIT_REGISTER_INSTANCE_NAME}" \
+			); then
+			break
+		fi
+
+		(( COUNTER -= 1 ))
+	done
+
+	if scmi_fleet_unit_is_active "${SERVICE_UNIT_INSTANCE_NAME}" \
+		&& ( \
+			[[ ${SCMI_REGISTER_ENABLED} != true ]] \
+			|| scmi_fleet_unit_is_active "${SERVICE_UNIT_REGISTER_INSTANCE_NAME}" \
+		); then
+
+		scmi_print_message "step_info" \
+			"Service unit state         : $(
+				scmi_fleet_get_unit_state \
+					"${SERVICE_UNIT_INSTANCE_NAME}" \
+					"full"
+			)"
+
+		if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+			scmi_print_message "step_info" \
+				"Service register unit state: $(
+					scmi_fleet_get_unit_state \
+						"${SERVICE_UNIT_REGISTER_INSTANCE_NAME}" \
+						"full"
+				)"
+		else
+			scmi_print_message "step_info" \
+				"Service register unit state: disabled (not installed)"
+		fi
+
+		scmi_print_message "sub_step_complete" \
+			"Install complete"
+	else
+		STATUS_COMMAND="fleetctl status ${SERVICE_UNIT_INSTANCE_NAME}"
+
+		scmi_print_message "sub_step_error" \
+			"Install error"
+		scmi_print_message "error_info" \
+			"Review the status for additonal information: ${STATUS_COMMAND}"
+	fi
+
+	trap - \
+		INT TERM EXIT
+}
+
+function scmi_fleet_install_cleanup ()
+{
+	trap - \
+		INT TERM EXIT
+	scmi_cleanup_background_task \
+		"${PIDS[2]}"
+	scmi_fleet_uninstall
+	exit 1
+}
+
+function scmi_fleet_prerequisites ()
+{
+	scmi_manager_type_command_prerequisites \
+		"${SCMI_MANAGER_TYPE}"
+	scmi_systemd_set_service_unit_names
+}
+
+function scmi_fleet_uninstall ()
+{
+	local INSTANCE_UNITS
+	local SOURCE_UNIT_FILE_NAME
+	local SOURCE_UNIT_FILE_NAMES="
+	 ${DOCKER_IMAGE_NAME}@.service
+	 ${DOCKER_IMAGE_NAME}.register@.service
+	"
+	local TEMPLATE_UNITS
+	local UNIT_NAME
+
+	scmi_fleet_prerequisites
+
+	INSTANCE_UNITS="
+	 ${SERVICE_UNIT_INSTANCE_NAME}
+	 ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
+	"
+	TEMPLATE_UNITS="
+	 ${SERVICE_UNIT_TEMPLATE_NAME}
+	 ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}
+	"
+
+	scmi_print_message "step_info" \
+		"Uninstalling ${SERVICE_UNIT_INSTANCE_NAME}"
+
+	# Remove template units
+	if ${fleetctl} list-units -full -no-legend -fields unit \
+		| grep -q "^${SERVICE_UNIT_INSTANCE_NAME}$"; then
+		for UNIT_NAME in ${TEMPLATE_UNITS}; do
+			if [[ -n $(scmi_fleet_get_unit_file_hash "${UNIT_NAME}") ]]; then
+				scmi_print_message "sub_step_info" \
+					"Terminating template unit-file ${UNIT_NAME}"
+				scmi_run_step \
+					"${fleetctl} destroy ${UNIT_NAME}"
+			fi
+		done
+	fi
+
+	# Remove instance units
+	for UNIT_NAME in ${INSTANCE_UNITS}; do
+		if ${fleetctl} list-units -full -no-legend -fields unit \
+			| grep -q "^${UNIT_NAME}$"; then
+			scmi_print_message "sub_step_info" \
+				"Terminating unit instance ${UNIT_NAME}"
+			scmi_run_step \
+				"${fleetctl} destroy ${UNIT_NAME}"
+		fi
+	done
+
+	# Remove template unit-files and drop-in
+	for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}; do
+		scmi_systemd_uninstall_template_unit_file \
+			"${SOURCE_UNIT_FILE_NAME}"
+		scmi_systemd_uninstall_template_unit_file_drop_in \
+			"${SOURCE_UNIT_FILE_NAME}"
+	done
+
+	scmi_print_message "sub_step_complete" \
+		"Uninstall complete"
+}
+
+function scmi_fleet_unit_is_active ()
+{
+	local UNIT_NAME="${1:-}"
+
+	if [[ -n ${UNIT_NAME} ]]; then
+		if [[ $(
+			scmi_fleet_get_unit_state "${UNIT_NAME}" "active"
+		) == active ]]; then
+			return 0
+		fi
+	fi
+
+	return 1
+}
+
+function scmi_info ()
+{
+	local COLOUR_BOLD='\033[1m'
+	local COLOUR_LIGHT='\033[2m'
+	local COLOUR_RESET='\033[0m'
+	local DETAILS_SCMI_COMMON
+	local DETAILS_SCMI_MANAGER_TYPE
+	local IMAGE_NAME
+	local IMAGE_ID
+	local INFO=""
+	local INFO_SECTION
+	local INFO_SECTION_PREFIX="// "
+	local KEY_TYPE
+	local KEY_TYPES
+	local LABELS
+	local LABEL_NAMESPACE_PREFIX="org.deathe."
+	local LABEL_KEY_CLEAN
+	local LABEL_KEYS_DETAILS
+	local LABEL_KEYS_INFO="
+	 org.deathe.name
+	 org.deathe.version
+	 org.deathe.release
+	 org.deathe.license
+	 org.deathe.vendor
+	 org.deathe.url
+	 org.deathe.description
+	"
+	local LABEL_KEYS_SOURCE="
+	 name
+	 vendor
+	 license
+	"
+	local LABEL_KEYS_USAGE="
+	 install
+	 uninstall
+	"
+	local LABEL_VALUE
+	local PADDING=$(
+		printf -- \
+			'%0.1s' \
+			" "{1..80}
+	)
+	local PADDING_WIDTH=15
+	local SOURCE_UNIT_FILE_NAME
+	local SOURCE_UNIT_FILE_NAMES="${DOCKER_IMAGE_NAME}@.service"
+	local SOURCE_UNIT_FILE_PATH
+	local TEMPLATE_UNIT_NAME
+	local UNIT_FILE_CONTENT
+	local UNIT_FILE_PATH
+	local UNIT_FILES
+	local UNITS
+
+	# Allow for uncolourised output
+	if [[ -n ${SCMI_MONOCHROME} ]]; then
+		COLOUR_BOLD=""
+		COLOUR_LIGHT=""
+		COLOUR_RESET=""
+	fi
+
+	scmi_docker_prerequisites
+
+	# Query docker for image using default user/name:tag
+	IMAGE_NAME="${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}"
+	IMAGE_ID="$(
+		${docker} images -q \
+		${IMAGE_NAME}
+	)"
+
+	# On CentOS-7 hosts images might get saved under the docker.io namespace.
+	if [[ -z ${IMAGE_ID} ]]; then
+		IMAGE_NAME="docker.io/${IMAGE_NAME}"
+		IMAGE_ID="$(
+			${docker} images -q \
+			${IMAGE_NAME}
+		)"
+	fi
+
+	if [[ -n ${IMAGE_ID} ]]; then
+		KEY_TYPES="LABEL_KEYS_INFO"
+		KEY_TYPES+=" LABEL_KEYS_SOURCE"
+		KEY_TYPES+=" LABEL_KEYS_USAGE"
+		KEY_TYPES+=" LABEL_KEYS_DETAILS"
+
+		for KEY_TYPE in ${KEY_TYPES}; do
+
+			case "${KEY_TYPE}" in
+				LABEL_KEYS_SOURCE)
+					INFO_SECTION="Source Information"
+					;;
+				LABEL_KEYS_INFO)
+					INFO_SECTION="Image Information"
+					;;
+				LABEL_KEYS_USAGE)
+					INFO_SECTION="Image Usage"
+					;;
+				LABEL_KEYS_DETAILS)
+					INFO_SECTION="SCMI Details"
+					;;
+			esac
+
+			# Section heading
+			printf -v \
+				INFO \
+				-- '%s%b%s%s%b' \
+				"${INFO}" \
+				"${COLOUR_BOLD}" \
+				"${INFO_SECTION_PREFIX}" \
+				"${INFO_SECTION}" \
+				"${COLOUR_RESET}"
+
+			if [[ -n ${!KEY_TYPE} ]]; then
+				printf -v \
+					INFO \
+					-- '%s\n' \
+					"${INFO}"
+			fi
+
+			for LABEL_KEY in ${!KEY_TYPE}; do
+				LABEL_KEY_CLEAN="${LABEL_KEY//${LABEL_NAMESPACE_PREFIX}}"
+				LABEL_VALUE="$(
+					${docker} inspect --format \
+						"{{ index .ContainerConfig.Labels \"${LABEL_KEY}\" }}" \
+						"${IMAGE_ID}"
+				)"
+
+				# Fixed width label key output - {{KEY}} : {{VALUE}}
+				printf -v \
+					INFO \
+					-- '%s%b%s%*.*s :%b %s\n' \
+					"${INFO}" \
+					"${COLOUR_LIGHT}" \
+					"${LABEL_KEY_CLEAN}" \
+					0 \
+					$(( ${PADDING_WIDTH} - ${#LABEL_KEY_CLEAN} )) \
+					"${PADDING}" \
+					"${COLOUR_RESET}" \
+					"${LABEL_VALUE}"
+			done
+
+			if [[ -n ${!KEY_TYPE} ]]; then
+				printf -v \
+					INFO \
+					-- '%s\n' \
+					"${INFO}"
+			fi
+		done
+	fi
+
+	printf -v \
+		DETAILS_SCMI_COMMON \
+		-- '%s%bimage           :%b %s\n' \
+		"${DETAILS_SCMI_COMMON}" \
+		"${COLOUR_LIGHT}" \
+		"${COLOUR_RESET}" \
+		"${IMAGE_NAME}"
+
+	printf -v \
+		DETAILS_SCMI_COMMON \
+		-- '%s%bimage id        :%b %s\n' \
+		"${DETAILS_SCMI_COMMON}" \
+		"${COLOUR_LIGHT}" \
+		"${COLOUR_RESET}" \
+		"${IMAGE_ID}"
+
+	printf -v \
+		DETAILS_SCMI_COMMON \
+		-- '%s%bdocker name     :%b %s\n' \
+		"${DETAILS_SCMI_COMMON}" \
+		"${COLOUR_LIGHT}" \
+		"${COLOUR_RESET}" \
+		"${SCMI_NAME}"
+
+	printf -v \
+		DETAILS_SCMI_COMMON \
+		-- '%s%bmanager         :%b %s\n' \
+		"${DETAILS_SCMI_COMMON}" \
+		"${COLOUR_LIGHT}" \
+		"${COLOUR_RESET}" \
+		"${SCMI_MANAGER_TYPE}"
+
+	case "${SCMI_MANAGER_TYPE}" in
+		docker)
+			printf -v \
+				DETAILS_SCMI_MANAGER_TYPE \
+				-- '%btemplate        :%b %s\n' \
+				"${COLOUR_LIGHT}" \
+				"${COLOUR_RESET}" \
+				"$(
+					scmi_docker_get_create_template
+				)"
+			;;
+		fleet)
+			scmi_systemd_set_service_unit_names
+
+			UNITS="${SERVICE_UNIT_INSTANCE_NAME}"
+			UNIT_FILES="${SERVICE_UNIT_TEMPLATE_NAME}"
+
+			if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+				UNITS+=", ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+				UNIT_FILES+=", ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+			fi
+
+			printf -v \
+				DETAILS_SCMI_MANAGER_TYPE \
+				-- '%bunits           :%b %s\n' \
+				"${COLOUR_LIGHT}" \
+				"${COLOUR_RESET}" \
+				"${UNITS}"
+
+			printf -v \
+				DETAILS_SCMI_MANAGER_TYPE \
+				-- '%s%bunit-files      :%b %s\n' \
+				"${DETAILS_SCMI_MANAGER_TYPE}" \
+				"${COLOUR_LIGHT}" \
+				"${COLOUR_RESET}" \
+				"${UNIT_FILES}"
+
+			if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+				SOURCE_UNIT_FILE_NAMES+=" ${DOCKER_IMAGE_NAME}.register@.service"
+			fi
+
+			for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}; do
+				UNIT_FILE_CONTENT="$(
+					scmi_systemd_get_template_unit_file_content \
+						"${SOURCE_UNIT_FILE_NAME}"
+				)"
+				UNIT_FILE_PATH="$(
+					scmi_systemd_get_unit_file_install_path \
+						"$(
+							scmi_systemd_get_template_unit_file_name \
+								"${SOURCE_UNIT_FILE_NAME}"
+						)"
+				)"
+
+				if [[ -n ${UNIT_FILE_PATH} ]] \
+					&& [[ -n ${UNIT_FILE_CONTENT} ]]; then
+					printf -v \
+						DETAILS_SCMI_MANAGER_TYPE \
+						-- '%s%bunit preview    :%b %s\n%s\n' \
+						"${DETAILS_SCMI_MANAGER_TYPE}" \
+						"${COLOUR_LIGHT}" \
+						"${COLOUR_RESET}" \
+						"${UNIT_FILE_PATH}" \
+						"${UNIT_FILE_CONTENT//Exec*/...}"
+				fi
+			done
+			;;
+		systemd)
+			scmi_systemd_set_service_unit_names
+
+			UNITS="${SERVICE_UNIT_INSTANCE_NAME}"
+			UNIT_FILES="${SERVICE_UNIT_TEMPLATE_NAME}"
+
+			if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+				UNITS+=", ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+				UNIT_FILES+=", ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+			fi
+
+			printf -v \
+				DETAILS_SCMI_MANAGER_TYPE \
+				-- '%bunits           :%b %s\n' \
+				"${COLOUR_LIGHT}" \
+				"${COLOUR_RESET}" \
+				"${UNITS}"
+
+			printf -v \
+				DETAILS_SCMI_MANAGER_TYPE \
+				-- '%s%bunit-files      :%b %s\n' \
+				"${DETAILS_SCMI_MANAGER_TYPE}" \
+				"${COLOUR_LIGHT}" \
+				"${COLOUR_RESET}" \
+				"${UNIT_FILES}"
+
+			if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+				SOURCE_UNIT_FILE_NAMES+=" ${DOCKER_IMAGE_NAME}.register@.service"
+			fi
+
+			for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}; do
+				UNIT_FILE_CONTENT="$(
+					scmi_systemd_get_template_unit_file_drop_in_content \
+						"${SOURCE_UNIT_FILE_NAME}"
+				)"
+				UNIT_FILE_PATH="$(
+					scmi_systemd_get_template_unit_file_drop_in_path \
+						"$(
+							scmi_systemd_get_template_unit_file_name \
+								"${SOURCE_UNIT_FILE_NAME}"
+						)"
+				)"
+
+				if [[ -n ${UNIT_FILE_PATH} ]] \
+					&& [[ -n ${UNIT_FILE_CONTENT} ]]; then
+					printf -v \
+						DETAILS_SCMI_MANAGER_TYPE \
+						-- '%s%bdrop-in         :%b %s\n%s\n' \
+						"${DETAILS_SCMI_MANAGER_TYPE}" \
+						"${COLOUR_LIGHT}" \
+						"${COLOUR_RESET}" \
+						"${UNIT_FILE_PATH}" \
+						"${UNIT_FILE_CONTENT}"
+				fi
+			done
+			;;
+	esac
+
+	cat <<-EOF
+		${INFO}
+		${DETAILS_SCMI_COMMON}${DETAILS_SCMI_MANAGER_TYPE}
+	EOF
+
+	exit 1
+}
+
+# Require a docker name of the form described with SCMI_NAME_FORMAT
+function scmi_is_valid_managed_docker_name ()
+{
+	local NAME="${1:-}"
+	local NAME_PATTERN='^[a-zA-Z0-9][a-zA-Z0-9_.-]*\.[0-9][0-9]*\.[0-9][0-9]*$'
+
+	if [[ -z ${NAME} ]]; then
+		return 1
+	fi
+
+	if [[ ${NAME} =~ ${NAME_PATTERN} ]]; then
+		return 0
+	fi
+
+	return 1
+}
+
+function scmi_manager_type_command_prerequisites ()
+{
+	local COMMAND
+	declare -a local COMMANDS
+	declare -a local COMMAND_PATHS=(
+		'/usr/local/bin'
+		'/usr/bin'
+	)
+	local MANAGER_TYPE="${1:-${SCMI_MANAGER_TYPE}}"
+
+	case "${MANAGER_TYPE}" in
+		systemd)
+			COMMANDS=(
+				'docker'
+				'systemctl'
+				'journalctl'
+			)
+			;;
+		fleet)
+			COMMANDS=(
+				'docker'
+				'systemctl'
+				'fleetctl'
+				'journalctl'
+			)
+			;;
+		docker|*)
+			COMMANDS=(
+				'docker'
+			)
+			;;
+	esac
+
+	if [[ ${SCMI_CHROOT_PATH} == / ]]; then
+		for COMMAND in "${COMMANDS[@]}"; do
+			if ! command -v ${COMMAND} &> /dev/null; then
+				scmi_print_message "error" \
+					"Missing required command: ${COMMAND}"
+				exit 1
+			fi
+
+			printf -v \
+				${COMMAND} \
+				-- '%s' \
+				"$(
+					command -v \
+						${COMMAND}
+				)"
+		done
+	else
+		for COMMAND in "${COMMANDS[@]}"; do
+			for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
+				if [[ -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
+					printf -v \
+						${COMMAND} \
+						-- 'chroot %s %s/%s' \
+						"${SCMI_CHROOT_PATH}" \
+						"${COMMAND_PATH}" \
+						"${COMMAND}"
+					break
+				fi
+			done
+
+			if [[ ! -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
+				scmi_print_message "error" \
+					"Missing required chroot command: ${COMMAND}"
+				exit 1
+			fi
+		done
+	fi
+
+	# Test docker connection given that docker is a common prerequisite
+	if [[ -z $(${docker} info) ]]; then
+		scmi_print_message "error" \
+			"docker failed to connect to host."
+		exit 1
+	fi
+}
+
+function scmi_print_message ()
+{
+	local COLOUR_NEGATIVE='\033[1;31m'
+	local COLOUR_POSITIVE='\033[1;32m'
+	local COLOUR_RESET='\033[0m'
+	local CHARACTER_STEP='--->'
+	local FORMAT='%s\n'
+	local MESSAGE="${2:-}"
+	local PREFIX=""
+	local TYPE="${1:-}"
+	local TYPE_PATTERN_ERROR='^(error|error_info|step_error|sub_step_error)$'
+
+	# Allow for uncolourised output
+	if [[ -n ${SCMI_MONOCHROME} ]]; then
+		COLOUR_NEGATIVE=""
+		COLOUR_POSITIVE=""
+		COLOUR_RESET=""
+	fi
+
+	case "${TYPE}" in
+		error)
+			PREFIX=$(
+				printf -- \
+					'%b%s%b ' \
+					"${COLOUR_NEGATIVE}" \
+					"[ERROR]" \
+					"${COLOUR_RESET}"
+			)
+			;;
+		error_info)
+			PREFIX=$(
+				printf -- \
+					'%s ' \
+					"       "
+			)
+			;;
+		step_info)
+			PREFIX=$(
+				printf -- \
+					'%s ' \
+					"${CHARACTER_STEP}"
+			)
+			;;
+		step_compete)
+			PREFIX=$(
+				printf -- \
+					'%b%s%b ' \
+					"${COLOUR_POSITIVE}" \
+					"${CHARACTER_STEP}" \
+					"${COLOUR_RESET}"
+			)
+			;;
+		step_error)
+			PREFIX=$(
+				printf -- \
+					'%b%s%b ' \
+					"${COLOUR_NEGATIVE}" \
+					"${CHARACTER_STEP}" \
+					"${COLOUR_RESET}"
+			)
+			;;
+		sub_step_info)
+			PREFIX=$(
+				printf -- \
+					' %s ' \
+					"${CHARACTER_STEP}"
+			)
+			;;
+		sub_step_complete)
+			PREFIX=$(
+				printf -- \
+					' %b%s%b ' \
+					"${COLOUR_POSITIVE}" \
+					"${CHARACTER_STEP}" \
+					"${COLOUR_RESET}"
+			)
+			;;
+		sub_step_error)
+			PREFIX=$(
+				printf -- \
+					' %b%s%b ' \
+					"${COLOUR_NEGATIVE}" \
+					"${CHARACTER_STEP}" \
+					"${COLOUR_RESET}"
+			)
+			;;
+		*)
+			MESSAGE="${TYPE}"
+			;;
+	esac
+
+	if [[ ${SCMI_QUIET} != true ]] \
+		|| [[ ${TYPE} =~ ${TYPE_PATTERN_ERROR} ]]; then
+		printf -- \
+			"${PREFIX}${FORMAT}" \
+			"${MESSAGE}"
+	fi
+}
+
+function scmi_restart_option_error ()
+{
+	local RESTART_TYPES
+
+	scmi_print_message "error" \
+		"Invalid restart policy (${SCMI_RESTART})"
+
+	if [[ ${SCMI_MANAGER_TYPE} == systemd ]] \
+		|| [[ ${SCMI_MANAGER_TYPE} == fleet ]]; then
+		RESTART_TYPES="on|always|on-success|on-failure|on-abort|on-watchdog"
+	elif [[ ${SCMI_MANAGER_TYPE} == docker ]]; then
+		RESTART_TYPES="on|always|on-failure[:max-retries]|unless-stopped"
+	fi
+
+	scmi_print_message "error_info" \
+		"Valid docker settings: ${RESTART_TYPES}"
+
+	exit 1
+}
+
+function scmi_run_step ()
+{
+	local COMMAND="${1:-}"
+	local COMMAND_OUTPUT
+
+	if [[ -n ${COMMAND} ]]; then
+
+		COMMAND_OUTPUT="$(
+			${COMMAND}
+		)"
+
+		if [[ -n ${COMMAND_OUTPUT} ]] \
+			&& [[ ${SCMI_QUIET} != true ]]; then
+			printf -- \
+				'%s\n' \
+				"${COMMAND_OUTPUT}"
+		fi
+	fi
+}
+
+function scmi_systemd_get_template_unit_file_drop_in_content ()
+{
+	local KEYS
+	local SOURCE_UNIT_FILE_NAME="${1:-}"
+	local UNIT_SERVICE
+	local VALUE
+
+	case "${SOURCE_UNIT_FILE_NAME}" in
+		${DOCKER_IMAGE_NAME}.register@.service)
+			KEYS="SERVICE_UNIT_REGISTER_ENVIRONMENT_KEYS"
+			;;
+		${DOCKER_IMAGE_NAME}@.service|*)
+			SOURCE_UNIT_FILE_NAME="${DOCKER_IMAGE_NAME}@.service"
+			KEYS="SERVICE_UNIT_ENVIRONMENT_KEYS"
+			if [[ -n ${SCMI_RESTART} ]]; then
+				printf -v \
+					UNIT_SERVICE \
+					-- '%sRestart=%s\n' \
+					"${UNIT_SERVICE}" \
+					"${SCMI_RESTART}"
+			fi
+			;;
+	esac
+
+	# Create drop-in to set environment variables defined at install time.
+	if [[ -n ${!KEYS} ]]; then
+
+		# Set each key and value - escaping any % characters.
+		for KEY in ${!KEYS}; do
+			# Escape % and leading and trailing " characters.
+			VALUE="$(
+				sed \
+					-e 's~%~%%~g' \
+					-e 's~\([^\\]\)"~\1\\"~g' \
+					<<< "${!KEY}"
+			)"
+
+			printf -v \
+				UNIT_SERVICE \
+				-- '%sEnvironment="%s=%s"\n' \
+				"${UNIT_SERVICE}" \
+				"${KEY}" \
+				"${VALUE}"
+		done
+
+		cat <<-EOF
+			[Service]
+			${UNIT_SERVICE}
+		EOF
+	fi
+}
+
+function scmi_systemd_get_template_unit_file_content ()
+{
+	local KEYS
+	local SED_COMMAND_LIST
+	local SOURCE_UNIT_FILE_NAME="${1:-${DOCKER_IMAGE_NAME}@.service}"
+	local SOURCE_UNIT_FILE_PATH
+	local UNIT_FILE_KEY
+	local VALUE
+
+	# Remove comment and blank lines then add newline before section headings
+	for SED_COMMAND_ITEM in '/^[ \t]*#.*$/d' '/^$/d'; do
+		printf -v \
+			SED_COMMAND_LIST \
+			-- '%s -e "%s"' \
+			"${SED_COMMAND_LIST}" \
+			"${SED_COMMAND_ITEM}"
+	done
+
+	case "${SOURCE_UNIT_FILE_NAME}" in
+		${DOCKER_IMAGE_NAME}.register@.service)
+			KEYS="SERVICE_UNIT_REGISTER_ENVIRONMENT_KEYS"
+
+			# Replace placehoder values
+			printf -v \
+				SED_COMMAND_LIST \
+				-- '%s -e %s' \
+				"${SED_COMMAND_LIST}" \
+				"\"s~{{SERVICE_UNIT_NAME}}~${SERVICE_UNIT_NAME}~g\""
+
+			# Modify bound unit to allow fleetd to start|stop it directly.
+			if [[ ${SCMI_MANAGER_TYPE} == fleet ]]; then
+				printf -v \
+					SED_COMMAND_LIST \
+					-- '%s -e %s -e %s' \
+					"${SED_COMMAND_LIST}" \
+					"\"/^RefuseManualStart=true$/d\"" \
+					"\"/^RefuseManualStop=true$/d\""
+			fi
+			;;
+		${DOCKER_IMAGE_NAME}@.service|*)
+			KEYS="SERVICE_UNIT_ENVIRONMENT_KEYS"
+			SOURCE_UNIT_FILE_NAME="${DOCKER_IMAGE_NAME}@.service"
+
+			# Only modify the template directly for fleet manager.
+			# Drop-In override method is used for systemd.
+			if [[ ${SCMI_MANAGER_TYPE} == fleet ]]; then
+				# Set the restart policy if defined
+				if [[ -n ${SCMI_RESTART} ]]; then
+					UNIT_FILE_KEY="Restart"
+					VALUE="${SCMI_RESTART}"
+
+					printf -v \
+						SED_COMMAND_LIST \
+						-- "%s -e \"s~^\(%s=\).*$~\\\1%s~\"" \
+						"${SED_COMMAND_LIST}" \
+						"${UNIT_FILE_KEY}" \
+						"${VALUE}"
+				fi
+			fi
+			;;
+	esac
+
+	SOURCE_UNIT_FILE_PATH="$(
+		scmi_systemd_get_unit_file_path \
+			"${SOURCE_UNIT_FILE_NAME}"
+	)"
+
+	if [[ ! -f ${SOURCE_UNIT_FILE_PATH} ]]; then
+		scmi_print_message "error" \
+			"Invalid template unit-file source path: ${SOURCE_UNIT_FILE_PATH}"
+		exit 1
+	fi
+
+	# Set environment variables defined at install time.
+	if [[ ${SCMI_MANAGER_TYPE} == fleet ]] \
+		&& [[ -n ${!KEYS} ]]; then
+		UNIT_FILE_KEY="Environment"
+
+		# Set each key and value - escaping any % characters.
+		for KEY in ${!KEYS}; do
+			# Escape % and leading and trailing " characters.
+			VALUE="$(
+				sed \
+					-e 's~%~%%~g' \
+					-e 's~\([^\\]\)"~\1\\"~g' \
+					<<< "${!KEY}"
+			)"
+
+			printf -v \
+				SED_COMMAND_LIST \
+				-- "%s -e \"s~^\(%s=\\\\\"%s=\).*\(\\\\\"\)$~\\\1%s\\\2~\"" \
+				"${SED_COMMAND_LIST}" \
+				"${UNIT_FILE_KEY}" \
+				"${KEY}" \
+				"${VALUE}"
+		done
+	fi
+
+	if [[ -n ${SED_COMMAND_LIST} ]]; then
+		# Output a normalised unit-file
+		eval "$(
+			printf -- \
+				'sed %s %s' \
+				"${SED_COMMAND_LIST}" \
+				"${SOURCE_UNIT_FILE_PATH}"
+		) \
+		| awk '/\[[-A-Za-z]*\]/ { print \"\" } 1' \
+		| tail -n +2"
+	else
+		cat "${SOURCE_UNIT_FILE_PATH}"
+	fi
+}
+
+function scmi_systemd_get_template_unit_file_drop_in_path ()
+{
+	local TEMPLATE_UNIT_FILE="${1:-${SERVICE_UNIT_TEMPLATE_NAME}}"
+
+	printf -- \
+		'%s/etc/systemd/system/%s.d/%s' \
+		"${SCMI_CHROOT_PATH%*/}" \
+		"${TEMPLATE_UNIT_FILE}" \
+		"10-override.conf"
+}
+
+function scmi_systemd_get_template_unit_file_name ()
+{
+	local SOURCE_UNIT_FILE_NAME="${1:-}"
+	local TEMPLATE_UNIT_NAME
+
+	case "${SOURCE_UNIT_FILE_NAME}" in
+		${DOCKER_IMAGE_NAME}.register@.service)
+			TEMPLATE_UNIT_NAME="${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
+			;;
+		${DOCKER_IMAGE_NAME}@.service|*)
+			TEMPLATE_UNIT_NAME="${SERVICE_UNIT_TEMPLATE_NAME}"
+			;;
+	esac
+
+	printf -- \
+		'%s' \
+		"${TEMPLATE_UNIT_NAME}"
+}
+
+function scmi_systemd_get_unit_file_install_path ()
+{
+	local UNIT_FILE="${1:-}"
+
+	printf -- \
+		'%s/etc/systemd/system/%s' \
+		"${SCMI_CHROOT_PATH%*/}" \
+		"${UNIT_FILE}"
+}
+
+function scmi_systemd_get_unit_file_path ()
+{
+	local UNIT_FILE="${1:-}"
+	local UNIT_FILE_PATH=""
+	local TEMPLATE_PATHS="
+	 .
+	 ../../etc/systemd/system
+	 /etc/systemd/system
+	"
+
+	if [[ -z ${UNIT_FILE} ]]; then
+		scmi_print_message "error" \
+			"Missing unit file name."
+		exit 1
+	fi
+
+	for TEMPLATE_PATH in ${TEMPLATE_PATHS}; do
+		if [[ -f ${TEMPLATE_PATH}/${UNIT_FILE} ]]; then
+			UNIT_FILE_PATH=${TEMPLATE_PATH}/${UNIT_FILE}
+			break
+		fi
+	done
+
+	if [[ -z ${UNIT_FILE_PATH} ]]; then
+		exit 1
+	fi
+
+	printf -- \
+		'%s' \
+		"${UNIT_FILE_PATH}"
+}
+
+function scmi_systemd_install ()
+{
+	declare -a local PIDS
+	local STATUS_COMMAND
+
+	scmi_systemd_prerequisites
+
+	# Cleanup if interrupted, killed or on exit
+	trap scmi_systemd_install_cleanup \
+		INT TERM EXIT
+
+	scmi_print_message "step_info" \
+		"Installing ${SERVICE_UNIT_INSTANCE_NAME}"
+
+	scmi_systemd_install_template_unit_files
+
+	# Purge register template unit-file when not required.
+	if [[ ${SCMI_REGISTER_ENABLED} != true ]]; then
+		scmi_systemd_uninstall_template_unit_file \
+			"${DOCKER_IMAGE_NAME}.register@.service"
+		scmi_systemd_uninstall_template_unit_file_drop_in \
+			"${DOCKER_IMAGE_NAME}.register@.service"
+	fi
+
+	${systemctl} daemon-reload
+	scmi_print_message "sub_step_info" \
+		"Enabling ${SERVICE_UNIT_INSTANCE_NAME}"
+	scmi_run_step \
+		"${systemctl} enable -f ${SERVICE_UNIT_INSTANCE_NAME}"
+
+	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+		scmi_print_message "sub_step_info" \
+			"Enabling ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+		scmi_run_step \
+			"${systemctl} enable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+	elif ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}; then
+		scmi_print_message "sub_step_info" \
+			"Disabling ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+		scmi_run_step \
+			"${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+		scmi_print_message "sub_step_info" \
+			"Stopping ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+		scmi_run_step \
+			"${systemctl} stop ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+	fi
+
+	if [[ ${SCMI_CHROOT_PATH} != / ]]; then
+		scmi_print_message "sub_step_info" \
+			"Releasing host mounted container"
+		scmi_docker_release_host_mounted_container
+	fi
+
+	# Tail the systemd unit logs unitl installation completes
+	if [[ ${SCMI_QUIET} != true ]]; then
+		${journalctl} -fn 0 -u ${SERVICE_UNIT_INSTANCE_NAME} &
+		PIDS[1]=${!}
+	fi
+
+	scmi_print_message "sub_step_info" \
+		"Restarting ${SERVICE_UNIT_INSTANCE_NAME}"
+	scmi_run_step \
+		"${systemctl} restart ${SERVICE_UNIT_INSTANCE_NAME}" &
+	PIDS[0]=${!}
+
+	# Wait for installtion to complete
+	[[ -n ${PIDS[0]} ]] && wait ${PIDS[0]}
+
+	# Allow time for the container bootstrap to complete
+	sleep ${SERVICE_UNIT_INSTALL_TIMEOUT}
+
+	# Stop tailing the journal logs
+	scmi_cleanup_background_task \
+		"${PIDS[1]}"
+
+	if ${systemctl} -q is-active ${SERVICE_UNIT_INSTANCE_NAME} \
+		&& ( \
+			[[ ${SCMI_REGISTER_ENABLED} != true ]] \
+			|| ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME} \
+		); then
+
+		scmi_print_message "step_info" \
+			"Service unit state         : $(
+				${systemctl} list-units --type=service \
+				| grep "^[ ]*${SERVICE_UNIT_INSTANCE_NAME}"
+			)"
+
+		if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+			scmi_print_message "step_info" \
+				"Service register unit state: $(
+					${systemctl} list-units --type=service \
+					| grep "^[ ]*${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+				)"
+		else
+			scmi_print_message "step_info" \
+				"Service register unit state: disabled (not installed)"
+		fi
+
+		scmi_print_message "sub_step_complete" \
+			"Install complete"
+	else
+		STATUS_COMMAND="systemctl status ${SERVICE_UNIT_INSTANCE_NAME}"
+
+		scmi_print_message "sub_step_error" \
+			"Install error"
+		scmi_print_message "error_info" \
+			"Review the status for additonal information: ${STATUS_COMMAND}"
+	fi
+
+	trap - \
+		INT TERM EXIT
+}
+
+function scmi_systemd_install_template_unit_file ()
+{
+	local SOURCE_UNIT_FILE_NAME="${1:-${DOCKER_IMAGE_NAME}@.service}"
+	local SOURCE_UNIT_FILE_PATH
+	local UNIT_FILE_INSTALL_PATH
+
+	SOURCE_UNIT_FILE_PATH="$(
+		scmi_systemd_get_unit_file_path \
+			"${SOURCE_UNIT_FILE_NAME}"
+	)"
+
+	if [[ -z ${SOURCE_UNIT_FILE_PATH} ]]; then
+		scmi_print_message "error" \
+			"Cannot locate template unit-file ${SOURCE_UNIT_FILE_NAME}"
+		exit 1
+	fi
+
+	UNIT_FILE_INSTALL_PATH="$(
+		scmi_systemd_get_unit_file_install_path \
+			"$(
+				scmi_systemd_get_template_unit_file_name \
+					"${SOURCE_UNIT_FILE_NAME}"
+			)"
+	)"
+	scmi_print_message "sub_step_info" \
+		"Installing template unit-file: ${UNIT_FILE_INSTALL_PATH}"
+	printf -- \
+		'%s\n' \
+		"$(
+			scmi_systemd_get_template_unit_file_content \
+				"${SOURCE_UNIT_FILE_NAME}"
+		)" \
+		> "${UNIT_FILE_INSTALL_PATH}"
+}
+
+function scmi_systemd_install_template_unit_file_drop_in ()
+{
+	local SOURCE_UNIT_FILE_NAME="${1:-${DOCKER_IMAGE_NAME}@.service}"
+	local UNIT_FILE_DROP_IN_PATH
+
+	UNIT_FILE_DROP_IN_PATH="$(
+		scmi_systemd_get_template_unit_file_drop_in_path \
+			"$(
+				scmi_systemd_get_template_unit_file_name \
+					"${SOURCE_UNIT_FILE_NAME}"
+			)"
+	)"
+
+	mkdir -p "$(
+		dirname "${UNIT_FILE_DROP_IN_PATH}"
+	)"
+
+	scmi_print_message "sub_step_info" \
+		"Populating drop-in: ${UNIT_FILE_DROP_IN_PATH}"
+	printf -- \
+		'%s' \
+		"$(
+			scmi_systemd_get_template_unit_file_drop_in_content \
+				"${SOURCE_UNIT_FILE_NAME}"
+		)" \
+		> "${UNIT_FILE_DROP_IN_PATH}"
+}
+
+function scmi_systemd_install_template_unit_files ()
+{
+	local SOURCE_UNIT_FILE_NAME
+	local SOURCE_UNIT_FILE_NAMES="${DOCKER_IMAGE_NAME}@.service"
+
+	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+		SOURCE_UNIT_FILE_NAMES+=" ${DOCKER_IMAGE_NAME}.register@.service"
+	fi
+
+	for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}; do
+		scmi_systemd_install_template_unit_file \
+			"${SOURCE_UNIT_FILE_NAME}"
+		if [[ ${SCMI_MANAGER_TYPE} == systemd ]]; then
+			scmi_systemd_install_template_unit_file_drop_in \
+				"${SOURCE_UNIT_FILE_NAME}"
+		fi
+	done
+}
+
+function scmi_systemd_install_cleanup ()
+{
+	trap - \
+		INT TERM EXIT
+	scmi_systemd_uninstall
+	exit 1
+}
+
+function scmi_systemd_prerequisites ()
+{
+	scmi_manager_type_command_prerequisites \
+		"${SCMI_MANAGER_TYPE}"
+	scmi_systemd_set_service_unit_names
+}
+
+function scmi_systemd_set_service_unit_names ()
+{
+	SERVICE_UNIT_NAME=$(
+		expr \
+			"${DOCKER_NAME}" : \
+			'\([^\.]*\.*[^\.]*\)\.[0-9][0-9]*\.[0-9][0-9]*'
+	)
+	SERVICE_UNIT_INSTANCE=$(
+		expr \
+			"${DOCKER_NAME}" : \
+			'.*\.\([0-9][0-9]*\.[0-9][0-9]*\)'
+	)
+
+	printf -v \
+		SERVICE_UNIT_TEMPLATE_NAME \
+		-- '%s@.service' \
+		"${SERVICE_UNIT_NAME}"
+
+	printf -v \
+		SERVICE_UNIT_INSTANCE_NAME \
+		-- '%s@%s.service' \
+		"${SERVICE_UNIT_NAME}" \
+		"${SERVICE_UNIT_INSTANCE}"
+
+	printf -v \
+		SERVICE_UNIT_REGISTER_TEMPLATE_NAME \
+		-- '%s.register@.service' \
+		"${SERVICE_UNIT_NAME}"
+
+	printf -v \
+		SERVICE_UNIT_REGISTER_INSTANCE_NAME \
+		-- '%s.register@%s.service' \
+		"${SERVICE_UNIT_NAME}" \
+		"${SERVICE_UNIT_INSTANCE}"
+}
+
+function scmi_systemd_uninstall ()
+{
+	local SOURCE_UNIT_FILE_NAME
+	local SOURCE_UNIT_FILE_NAMES="
+	 ${DOCKER_IMAGE_NAME}@.service
+	 ${DOCKER_IMAGE_NAME}.register@.service
+	"
+	local UNIT_FILE
+	local UNIT_FILE_DROP_IN_DIRECTORY
+	local UNIT_FILE_PATH
+
+	scmi_systemd_prerequisites
+	scmi_print_message "step_info" \
+		"Uninstalling ${SERVICE_UNIT_INSTANCE_NAME}"
+
+	${systemctl} daemon-reload
+	scmi_print_message "sub_step_info" \
+		"Disabling ${SERVICE_UNIT_INSTANCE_NAME}"
+	scmi_run_step \
+		"${systemctl} disable -f ${SERVICE_UNIT_INSTANCE_NAME}" 2> /dev/null
+	if [[ ! -n $(
+		${systemctl} list-units --all type=service ${SERVICE_UNIT_INSTANCE_NAME} \
+		| grep '0 loaded units listed.'
+	) ]]; then
+		scmi_print_message "sub_step_info" \
+			"Stopping ${SERVICE_UNIT_INSTANCE_NAME}"
+		scmi_run_step \
+			"${systemctl} stop ${SERVICE_UNIT_INSTANCE_NAME}"
+	fi
+
+	scmi_print_message "sub_step_info" \
+		"Disabling ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
+	scmi_run_step \
+		"${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}" 2> /dev/null
+
+	# Before removing the template unit-files all units must first be disabled
+	if [[ -n $(
+		${systemctl} list-units --all type=service ${SERVICE_UNIT_NAME}@* \
+		| grep '0 loaded units listed.'
+	) ]]; then
+		for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}; do
+			scmi_systemd_uninstall_template_unit_file \
+				"${SOURCE_UNIT_FILE_NAME}"
+			scmi_systemd_uninstall_template_unit_file_drop_in \
+				"${SOURCE_UNIT_FILE_NAME}"
+		done
+		${systemctl} daemon-reload
+	fi
+
+	# Remove stopped container
+	scmi_docker_terminate
+
+	scmi_print_message "sub_step_complete" \
+		"Uninstall complete"
+}
+
+function scmi_systemd_uninstall_template_unit_file ()
+{
+	local SOURCE_UNIT_FILE_NAME="${1:-${DOCKER_IMAGE_NAME}@.service}"
+	local UNIT_FILE_INSTALL_PATH
+
+	UNIT_FILE_INSTALL_PATH="$(
+		scmi_systemd_get_unit_file_install_path \
+			"$(
+				scmi_systemd_get_template_unit_file_name \
+					"${SOURCE_UNIT_FILE_NAME}"
+			)"
+	)"
+
+	if [[ -f ${UNIT_FILE_INSTALL_PATH} ]]; then
+		scmi_print_message "sub_step_info" \
+			"Removing template unit-file: ${UNIT_FILE_INSTALL_PATH}"
+		rm -f "${UNIT_FILE_INSTALL_PATH}"
+	fi
+}
+
+function scmi_systemd_uninstall_template_unit_file_drop_in ()
+{
+	local SOURCE_UNIT_FILE_NAME="${1:-${DOCKER_IMAGE_NAME}@.service}"
+	local UNIT_FILE_DROP_IN_DIRECTORY
+
+	UNIT_FILE_DROP_IN_DIRECTORY="$(
+		dirname "$(
+			scmi_systemd_get_template_unit_file_drop_in_path \
+				"$(
+					scmi_systemd_get_template_unit_file_name \
+						"${SOURCE_UNIT_FILE_NAME}"
+				)"
+		)"
+	)"
+
+	if [[ -d ${UNIT_FILE_DROP_IN_DIRECTORY} ]]; then
+		scmi_print_message "sub_step_info" \
+			"Removing ${UNIT_FILE_DROP_IN_DIRECTORY}"
+		rm -rf "${UNIT_FILE_DROP_IN_DIRECTORY}"
+	fi
+}
+
+function scmi_usage ()
+{
+	cat <<-EOF
+	Usage: $(basename ${0}) <COMMAND> [OPTIONS]
+	       $(basename ${0}) [{-h|--help}]
+
+	SCMI simplifes the creation and removal of docker container instances.
+
+	Commands:
+	  -i, install                Install, create and start the container and any 
+	                             supporting files. If the named container exists 
+	                             it will be stopped and removed (terminated).
+	  -u, uninstall              Terminate and uninstall the container and any 
+	                             supporting files.
+	Options:
+	  -h, --help                 Show this help and exit.
+	  -c, --chroot=CHROOT_PATH   Set the chroot path to run commands. Use when 
+	                             running from a container where the docker host's 
+	                             root directory is set as a volume mount.
+	  --env='KEY="VALUE"'        A key/value pair that will be placed in the scmi 
+	                             environment. This option can be repeated.
+	  --image-package-path=PATH  Path to container image package directory. This 
+	                             path should contain vendor, (docker user), 
+	                             sub-directories containing saved, xz compressed, 
+	                             images. This is useful if you don't have access 
+	                             to a registry or want to reduce the time to load 
+	                             released container images. The default path is:
+	                             ${SCMI_IMAGE_PACKAGE_PATH}
+	  --info                     Show image information and exit.
+	  -m, --manager=MANAGER      Container manager (docker, systemd or fleet) 
+	                             defaults to docker.
+	  --monochrome               Output colour is suppressed.
+	  -n, --name=NAME            Container name. The required format is as follows
+	                             where <instance> and <node> are required numeric
+	                             values. 
+	                             {<name>|<name>.[group]}.<instance>.<node>
+	  -q, --quiet                Display less message output except for errors.
+	  --register                 If manager is set to systemd use this to enable 
+	                             the optional etcd registration service.
+	  --restart=POLICY           Set the container manager's restart policy. Valid
+	                             settings are dependant on the container manager.
+	                             Common settings are no, always and on-failure.
+	                             specific to docker is unless-stopped and the 
+	                             optional :max-retries suffix to on-failure. 
+	                             Systemd adds on-success, on-abort & on-watchdog.
+	  --setopt='OPTION VALUE'    Append options to the default docker create 
+	                             template. This option can be repeated.
+	  -t, --tag=TAG              The docker image tag to use. Defaults to latest.
+	EOF
+
+	exit 1
+}
+
+scmi "${@}"
