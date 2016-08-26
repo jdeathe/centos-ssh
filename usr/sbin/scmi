@@ -12,7 +12,7 @@ function scmi ()
 	local SCMI_CHROOT_PATH="/"
 	declare -a local SCMI_ENV
 	local SCMI_IMAGE_PACKAGE_PATH="/var/opt/scmi/packages"
-	local SCMI_INCLUDE_FILES="
+	local readonly SCMI_INCLUDE_FILES="
 	 environment.sh
 	 default.sh
 	 service-unit.sh
