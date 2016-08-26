@@ -479,59 +479,8 @@ function scmi_docker_install_cleanup ()
 
 function scmi_docker_prerequisites ()
 {
-	local COMMAND
-	declare -a local COMMANDS=(
-		'docker'
-	)
-	declare -a local COMMAND_PATHS=(
-		'/usr/local/bin'
-		'/usr/bin'
-	)
-
-	if [[ ${SCMI_CHROOT_PATH} == / ]]; then
-		for COMMAND in "${COMMANDS[@]}"; do
-			if ! command -v ${COMMAND} &> /dev/null; then
-				scmi_print_message "error" \
-					"Missing required command: ${COMMAND}"
-				exit 1
-			fi
-
-			printf -v \
-				${COMMAND} \
-				-- '%s' \
-				"$(
-					command -v \
-						${COMMAND}
-				)"
-		done
-	else
-		for COMMAND in "${COMMANDS[@]}"; do
-			for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
-				if [[ -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
-					printf -v \
-						${COMMAND} \
-						-- 'chroot %s %s/%s' \
-						"${SCMI_CHROOT_PATH}" \
-						"${COMMAND_PATH}" \
-						"${COMMAND}"
-					break
-				fi
-			done
-
-			if [[ ! -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
-				scmi_print_message "error" \
-					"Missing required chroot command: ${COMMAND}"
-				exit 1
-			fi
-		done
-	fi
-
-	# Test docker connection
-	if [[ -z $(${docker} info) ]]; then
-		scmi_print_message "error" \
-			"docker failed to connect to host."
-		exit 1
-	fi
+	scmi_manager_type_command_prerequisites \
+		"${SCMI_MANAGER_TYPE}"
 }
 
 # Deleting a container from host from a container that has the docker host's
@@ -959,56 +908,8 @@ function scmi_fleet_install_cleanup ()
 
 function scmi_fleet_prerequisites ()
 {
-	local COMMAND
-	declare -a local COMMANDS=(
-		'docker'
-		'systemctl'
-		'fleetctl'
-		'journalctl'
-	)
-	declare -a local COMMAND_PATHS=(
-		'/usr/local/bin'
-		'/usr/bin'
-	)
-
-	if [[ ${SCMI_CHROOT_PATH} == / ]]; then
-		for COMMAND in "${COMMANDS[@]}"; do
-			if ! command -v ${COMMAND} &> /dev/null; then
-				scmi_print_message "error" \
-					"Missing required command: ${COMMAND}"
-				exit 1
-			fi
-
-			printf -v \
-				${COMMAND} \
-				-- '%s' \
-				"$(
-					command -v \
-						${COMMAND}
-				)"
-		done
-	else
-		for COMMAND in "${COMMANDS[@]}"; do
-			for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
-				if [[ -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
-					printf -v \
-						${COMMAND} \
-						-- 'chroot %s %s/%s' \
-						"${SCMI_CHROOT_PATH}" \
-						"${COMMAND_PATH}" \
-						"${COMMAND}"
-					break
-				fi
-			done
-
-			if [[ ! -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
-				scmi_print_message "error" \
-					"Missing required chroot command: ${COMMAND}"
-				exit 1
-			fi
-		done
-	fi
-
+	scmi_manager_type_command_prerequisites \
+		"${SCMI_MANAGER_TYPE}"
 	scmi_systemd_set_service_unit_names
 }
 
@@ -1407,6 +1308,85 @@ function scmi_is_valid_managed_docker_name ()
 	fi
 
 	return 1
+}
+
+function scmi_manager_type_command_prerequisites ()
+{
+	local COMMAND
+	declare -a local COMMANDS
+	declare -a local COMMAND_PATHS=(
+		'/usr/local/bin'
+		'/usr/bin'
+	)
+	local MANAGER_TYPE="${1:-${SCMI_MANAGER_TYPE}}"
+
+	case "${MANAGER_TYPE}" in
+		systemd)
+			COMMANDS=(
+				'docker'
+				'systemctl'
+				'journalctl'
+			)
+			;;
+		fleet)
+			COMMANDS=(
+				'docker'
+				'systemctl'
+				'fleetctl'
+				'journalctl'
+			)
+			;;
+		docker|*)
+			COMMANDS=(
+				'docker'
+			)
+			;;
+	esac
+
+	if [[ ${SCMI_CHROOT_PATH} == / ]]; then
+		for COMMAND in "${COMMANDS[@]}"; do
+			if ! command -v ${COMMAND} &> /dev/null; then
+				scmi_print_message "error" \
+					"Missing required command: ${COMMAND}"
+				exit 1
+			fi
+
+			printf -v \
+				${COMMAND} \
+				-- '%s' \
+				"$(
+					command -v \
+						${COMMAND}
+				)"
+		done
+	else
+		for COMMAND in "${COMMANDS[@]}"; do
+			for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
+				if [[ -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
+					printf -v \
+						${COMMAND} \
+						-- 'chroot %s %s/%s' \
+						"${SCMI_CHROOT_PATH}" \
+						"${COMMAND_PATH}" \
+						"${COMMAND}"
+					break
+				fi
+			done
+
+			if [[ ! -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
+				scmi_print_message "error" \
+					"Missing required chroot command: ${COMMAND}"
+				exit 1
+			fi
+		done
+	fi
+
+	# Test docker connection given that docker is a common prerequisite
+	if [[ -z $(${docker} info) ]]; then
+		scmi_print_message "error" \
+			"docker failed to connect to host."
+		exit 1
+	fi
 }
 
 function scmi_print_message ()
@@ -1982,55 +1962,8 @@ function scmi_systemd_install_cleanup ()
 
 function scmi_systemd_prerequisites ()
 {
-	local COMMAND
-	declare -a local COMMANDS=(
-		'docker'
-		'systemctl'
-		'journalctl'
-	)
-	declare -a local COMMAND_PATHS=(
-		'/usr/local/bin'
-		'/usr/bin'
-	)
-
-	if [[ ${SCMI_CHROOT_PATH} == / ]]; then
-		for COMMAND in "${COMMANDS[@]}"; do
-			if ! command -v ${COMMAND} &> /dev/null; then
-				scmi_print_message "error" \
-					"Missing required command: ${COMMAND}"
-				exit 1
-			fi
-
-			printf -v \
-				${COMMAND} \
-				-- '%s' \
-				"$(
-					command -v \
-						${COMMAND}
-				)"
-		done
-	else
-		for COMMAND in "${COMMANDS[@]}"; do
-			for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
-				if [[ -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
-					printf -v \
-						${COMMAND} \
-						-- 'chroot %s %s/%s' \
-						"${SCMI_CHROOT_PATH}" \
-						"${COMMAND_PATH}" \
-						"${COMMAND}"
-					break
-				fi
-			done
-
-			if [[ ! -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
-				scmi_print_message "error" \
-					"Missing required chroot command: ${COMMAND}"
-				exit 1
-			fi
-		done
-	fi
-
+	scmi_manager_type_command_prerequisites \
+		"${SCMI_MANAGER_TYPE}"
 	scmi_systemd_set_service_unit_names
 }
 
