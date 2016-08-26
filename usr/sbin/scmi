@@ -937,24 +937,10 @@ function scmi_fleet_install ()
 		scmi_print_message "sub_step_complete" \
 			"Install complete"
 	else
-		scmi_print_message "step_info" \
-			"Service unit state         : $(
-				scmi_fleet_get_unit_state \
-					"${SERVICE_UNIT_INSTANCE_NAME}" \
-					"full"
-			)"
-		scmi_print_message "step_info" \
-			"Service register unit state: $(
-				scmi_fleet_get_unit_state \
-					"${SERVICE_UNIT_REGISTER_INSTANCE_NAME}" \
-					"full"
-			)"
-		# scmi_print_message ""
-		# scmi_print_message "Service status:"
-		# ${fleetctl} status "${SERVICE_UNIT_INSTANCE_NAME}"
-		scmi_print_message ""
 		scmi_print_message "sub_step_error" \
 			"Install error"
+		scmi_print_message "error_info" \
+			"Review the status for additonal information: fleetctl status ${SERVICE_UNIT_INSTANCE_NAME}"
 	fi
 
 	trap - \
@@ -963,11 +949,11 @@ function scmi_fleet_install ()
 
 function scmi_fleet_install_cleanup ()
 {
+	trap - \
+		INT TERM EXIT
 	scmi_cleanup_background_task \
 		"${PIDS[2]}"
 	scmi_fleet_uninstall
-	trap - \
-		INT TERM EXIT
 	exit 1
 }
 
@@ -1558,38 +1544,6 @@ function scmi_run_step ()
 	fi
 }
 
-function scmi_systemd_get_unit_file_path ()
-{
-	local UNIT_FILE="${1:-}"
-	local UNIT_FILE_PATH=""
-	local TEMPLATE_PATHS="
-	 .
-	 ../../etc/systemd/system
-	 /etc/systemd/system
-	"
-
-	if [[ -z ${UNIT_FILE} ]]; then
-		scmi_print_message "error" \
-			"Missing unit file name."
-		exit 1
-	fi
-
-	for TEMPLATE_PATH in ${TEMPLATE_PATHS}; do
-		if [[ -f ${TEMPLATE_PATH}/${UNIT_FILE} ]]; then
-			UNIT_FILE_PATH=${TEMPLATE_PATH}/${UNIT_FILE}
-			break
-		fi
-	done
-
-	if [[ -z ${UNIT_FILE_PATH} ]]; then
-		exit 1
-	fi
-
-	printf -- \
-		'%s' \
-		"${UNIT_FILE_PATH}"
-}
-
 function scmi_systemd_get_template_unit_file_drop_in_content ()
 {
 	local KEYS
@@ -1795,6 +1749,38 @@ function scmi_systemd_get_unit_file_install_path ()
 		"${UNIT_FILE}"
 }
 
+function scmi_systemd_get_unit_file_path ()
+{
+	local UNIT_FILE="${1:-}"
+	local UNIT_FILE_PATH=""
+	local TEMPLATE_PATHS="
+	 .
+	 ../../etc/systemd/system
+	 /etc/systemd/system
+	"
+
+	if [[ -z ${UNIT_FILE} ]]; then
+		scmi_print_message "error" \
+			"Missing unit file name."
+		exit 1
+	fi
+
+	for TEMPLATE_PATH in ${TEMPLATE_PATHS}; do
+		if [[ -f ${TEMPLATE_PATH}/${UNIT_FILE} ]]; then
+			UNIT_FILE_PATH=${TEMPLATE_PATH}/${UNIT_FILE}
+			break
+		fi
+	done
+
+	if [[ -z ${UNIT_FILE_PATH} ]]; then
+		exit 1
+	fi
+
+	printf -- \
+		'%s' \
+		"${UNIT_FILE_PATH}"
+}
+
 function scmi_systemd_install ()
 {
 	declare -a local PIDS
@@ -1821,39 +1807,30 @@ function scmi_systemd_install ()
 	${systemctl} daemon-reload
 	scmi_print_message "sub_step_info" \
 		"Enabling ${SERVICE_UNIT_INSTANCE_NAME}"
-	if [[ ${SCMI_QUIET} == true ]]; then
-		${systemctl} enable -f ${SERVICE_UNIT_INSTANCE_NAME} 2> /dev/null
-	else
-		${systemctl} enable -f ${SERVICE_UNIT_INSTANCE_NAME}
-	fi
+	scmi_run_step \
+		"${systemctl} enable -f ${SERVICE_UNIT_INSTANCE_NAME}"
 
 	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
 		scmi_print_message "sub_step_info" \
 			"Enabling ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
-		if [[ ${SCMI_QUIET} == true ]]; then
-			${systemctl} enable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME} 2> /dev/null
-		else
-			${systemctl} enable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
-		fi
+		scmi_run_step \
+			"${systemctl} enable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 	elif ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}; then
 		scmi_print_message "sub_step_info" \
 			"Disabling ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
-		${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
+		scmi_run_step \
+			"${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 		scmi_print_message "sub_step_info" \
 			"Stopping ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
-		${systemctl} stop ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
+		scmi_run_step \
+			"${systemctl} stop ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 	fi
 
 	if [[ ${SCMI_CHROOT_PATH} != / ]]; then
 		scmi_print_message "sub_step_info" \
 			"Releasing host mounted container"
+		scmi_docker_release_host_mounted_container
 	fi
-	scmi_docker_release_host_mounted_container
-
-	scmi_print_message "sub_step_info" \
-		"Restarting ${SERVICE_UNIT_INSTANCE_NAME}"
-	${systemctl} restart ${SERVICE_UNIT_INSTANCE_NAME} &
-	PIDS[0]=${!}
 
 	# Tail the systemd unit logs unitl installation completes
 	if [[ ${SCMI_QUIET} != true ]]; then
@@ -1861,17 +1838,21 @@ function scmi_systemd_install ()
 		PIDS[1]=${!}
 	fi
 
+	scmi_print_message "sub_step_info" \
+		"Restarting ${SERVICE_UNIT_INSTANCE_NAME}"
+	scmi_run_step \
+		"${systemctl} restart ${SERVICE_UNIT_INSTANCE_NAME}" &
+	PIDS[0]=${!}
+
 	# Wait for installtion to complete
 	[[ -n ${PIDS[0]} ]] && wait ${PIDS[0]}
 
 	# Allow time for the container bootstrap to complete
 	sleep ${SERVICE_UNIT_INSTALL_TIMEOUT}
 
-	# Stop tailing the logs after the expected install time
-	if [[ -n ${PIDS[1]} ]]; then
-		kill -15 -- ${PIDS[1]}
-		wait ${PIDS[1]} 2> /dev/null
-	fi
+	# Stop tailing the journal logs
+	scmi_cleanup_background_task \
+		"${PIDS[1]}"
 
 	if ${systemctl} -q is-active ${SERVICE_UNIT_INSTANCE_NAME} \
 		&& ( \
@@ -1880,31 +1861,29 @@ function scmi_systemd_install ()
 		); then
 
 		scmi_print_message "step_info" \
-			"Service unit is active: $(
+			"Service unit state         : $(
 				${systemctl} list-units --type=service \
 				| grep "^[ ]*${SERVICE_UNIT_INSTANCE_NAME}"
 			)"
 
 		if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
 			scmi_print_message "step_info" \
-				"Service register unit is active: $(
+				"Service register unit state: $(
 					${systemctl} list-units --type=service \
 					| grep "^[ ]*${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 				)"
 		else
 			scmi_print_message "step_info" \
-				"Service register unit is disabled (not installed)"
+				"Service register unit state: disabled (not installed)"
 		fi
 
 		scmi_print_message "sub_step_complete" \
 			"Install complete"
 	else
-		scmi_print_message ""
-		scmi_print_message "Service status:"
-		${systemctl} status -ln 50 ${SERVICE_UNIT_INSTANCE_NAME}
-		scmi_print_message ""
 		scmi_print_message "sub_step_error" \
 			"Install error"
+		scmi_print_message "error_info" \
+			"Review the status for additonal information: systemctl status ${SERVICE_UNIT_INSTANCE_NAME}"
 	fi
 
 	trap - \
@@ -1995,9 +1974,9 @@ function scmi_systemd_install_template_unit_files ()
 
 function scmi_systemd_install_cleanup ()
 {
-	scmi_systemd_uninstall
 	trap - \
 		INT TERM EXIT
+	scmi_systemd_uninstall
 	exit 1
 }
 
@@ -2109,19 +2088,28 @@ function scmi_systemd_uninstall ()
 	${systemctl} daemon-reload
 	scmi_print_message "sub_step_info" \
 		"Disabling ${SERVICE_UNIT_INSTANCE_NAME}"
-	${systemctl} disable -f ${SERVICE_UNIT_INSTANCE_NAME} 2> /dev/null
-	if [[ ! -n $(${systemctl} list-units --all type=service ${SERVICE_UNIT_INSTANCE_NAME} | grep '0 loaded units listed.') ]]; then
+	scmi_run_step \
+		"${systemctl} disable -f ${SERVICE_UNIT_INSTANCE_NAME}" 2> /dev/null
+	if [[ ! -n $(
+		${systemctl} list-units --all type=service ${SERVICE_UNIT_INSTANCE_NAME} \
+		| grep '0 loaded units listed.'
+	) ]]; then
 		scmi_print_message "sub_step_info" \
 			"Stopping ${SERVICE_UNIT_INSTANCE_NAME}"
-		${systemctl} stop ${SERVICE_UNIT_INSTANCE_NAME}
+		scmi_run_step \
+			"${systemctl} stop ${SERVICE_UNIT_INSTANCE_NAME}"
 	fi
 
 	scmi_print_message "sub_step_info" \
 		"Disabling ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
-	${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME} 2> /dev/null
+	scmi_run_step \
+		"${systemctl} disable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}" 2> /dev/null
 
 	# Before removing the template unit-files all units must first be disabled
-	if [[ -n $(${systemctl} list-units --all type=service ${SERVICE_UNIT_NAME}@* | grep '0 loaded units listed.') ]]; then
+	if [[ -n $(
+		${systemctl} list-units --all type=service ${SERVICE_UNIT_NAME}@* \
+		| grep '0 loaded units listed.'
+	) ]]; then
 		for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}; do
 			scmi_systemd_uninstall_template_unit_file \
 				"${SOURCE_UNIT_FILE_NAME}"
