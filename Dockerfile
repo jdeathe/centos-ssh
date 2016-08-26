@@ -25,6 +25,7 @@ RUN rpm --rebuilddb \
 	epel-release \
 	https://centos6.iuscommunity.org/ius-release.rpm \
 	vim-minimal-7.4.629-5.el6 \
+	xz-4.999.9-0.5.beta.20091007git.el6.x86_64 \
 	sudo-1.8.6p3-24.el6 \
 	openssh-5.3p1-118.1.el6_8 \
 	openssh-server-5.3p1-118.1.el6_8 \
@@ -33,6 +34,7 @@ RUN rpm --rebuilddb \
 	yum-plugin-versionlock-1.1.30-37.el6 \
 	&& yum versionlock add \
 	vim-minimal \
+	xz \
 	sudo \
 	openssh \
 	openssh-server \
@@ -40,9 +42,12 @@ RUN rpm --rebuilddb \
 	python-setuptools \
 	yum-plugin-versionlock \
 	&& rm -rf /var/cache/yum/* \
-	&& rpm --erase --nodeps redhat-logos \
-	&& rpm --rebuilddb \
-	&& yum clean all
+	&& yum clean all \
+	&& /bin/find /usr/share \
+	-type f \
+	-regextype posix-extended \
+	-regex '.*\.(jpg|png)$' \
+	-delete
 
 # -----------------------------------------------------------------------------
 # Install supervisord (required to run more than a single process in a container)
@@ -50,7 +55,7 @@ RUN rpm --rebuilddb \
 # We require supervisor-stdout to allow output of services started by 
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
-RUN easy_install 'supervisor == 3.2.3' 'supervisor-stdout == 0.1.1' \
+RUN easy_install 'supervisor == 3.3.1' 'supervisor-stdout == 0.1.1' \
 	&& mkdir -p /var/log/supervisor/
 
 # -----------------------------------------------------------------------------
@@ -77,12 +82,18 @@ RUN sed -i 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' /etc/sudoers
 # -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
-ADD usr/sbin/sshd-bootstrap /usr/sbin/sshd-bootstrap
+ADD usr/sbin \
+	/usr/sbin/
+ADD opt/scmi \
+	/opt/scmi/
+ADD etc/systemd/system \
+	/etc/systemd/system/
 ADD etc/services-config/ssh/authorized_keys \
 	etc/services-config/ssh/sshd-bootstrap.conf \
 	etc/services-config/ssh/sshd-bootstrap.env \
 	/etc/services-config/ssh/
-ADD etc/services-config/supervisor/supervisord.conf /etc/services-config/supervisor/
+ADD etc/services-config/supervisor/supervisord.conf \
+	/etc/services-config/supervisor/
 ADD etc/services-config/supervisor/supervisord.d/sshd.conf \
 	etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
 	/etc/services-config/supervisor/supervisord.d/
@@ -95,14 +106,14 @@ RUN mkdir -p /etc/supervisord.d/ \
 	&& ln -sf /etc/services-config/supervisor/supervisord.conf /etc/supervisord.conf \
 	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd.conf /etc/supervisord.d/sshd.conf \
 	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf /etc/supervisord.d/sshd-bootstrap.conf \
-	&& chmod +x /usr/sbin/sshd-bootstrap
+	&& chmod +x /usr/sbin/{scmi,sshd-bootstrap}
 
 # -----------------------------------------------------------------------------
 # Purge
 # -----------------------------------------------------------------------------
 RUN rm -rf /etc/ld.so.cache \
 	; rm -rf /sbin/sln \
-	; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,gnome/help,cracklib,il8n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
+	; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,cracklib,i18n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
 	; rm -rf /{root,tmp,var/cache/{ldconfig,yum}}/* \
 	; > /etc/sysconfig/i18n
 
@@ -120,9 +131,42 @@ ENV SSH_AUTHORIZED_KEYS="" \
 	SSH_USER="app-admin" \
 	SSH_USER_FORCE_SFTP=false \
 	SSH_USER_HOME="/home/%u" \
+	SSH_USER_ID="500:500" \
 	SSH_USER_PASSWORD="" \
 	SSH_USER_PASSWORD_HASHED=false \
-	SSH_USER_SHELL="/bin/bash" \
-	SSH_USER_ID="500:500"
+	SSH_USER_SHELL="/bin/bash"
+
+# -----------------------------------------------------------------------------
+# Set image metadata
+# -----------------------------------------------------------------------------
+ARG RELEASE_VERSION="1.7.0"
+LABEL \
+	install="docker run \
+--rm \
+--privileged \
+--volume /:/media/root \
+jdeathe/centos-ssh:centos-6-${RELEASE_VERSION} \
+/sbin/scmi install \
+--chroot=/media/root \
+--name=\${NAME} \
+--tag=centos-6-${RELEASE_VERSION} \
+--setopt='--volume {{NAME}}.config-ssh:/etc/ssh'" \
+	uninstall="docker run \
+--rm \
+--privileged \
+--volume /:/media/root \
+jdeathe/centos-ssh:centos-6-${RELEASE_VERSION} \
+/sbin/scmi uninstall \
+--chroot=/media/root \
+--name=\${NAME} \
+--tag=centos-6-${RELEASE_VERSION} \
+--setopt='--volume {{NAME}}.config-ssh:/etc/ssh'" \
+	org.deathe.name="centos-ssh" \
+	org.deathe.version="${RELEASE_VERSION}" \
+	org.deathe.release="jdeathe/centos-ssh:centos-6-${RELEASE_VERSION}" \
+	org.deathe.license="MIT" \
+	org.deathe.vendor="jdeathe" \
+	org.deathe.url="https://github.com/jdeathe/centos-ssh" \
+	org.deathe.description="CentOS-6 6.8 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
