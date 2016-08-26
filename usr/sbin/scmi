@@ -539,7 +539,11 @@ function scmi_docker_require_container_not ()
 
 function scmi_docker_require_container_not_status_paused ()
 {
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=paused") ]]; then
+	if [[ -n $(
+		${docker} ps -aq \
+			--filter "name=${DOCKER_NAME}" \
+			--filter "status=paused"
+	) ]]; then
 		scmi_print_message "step_error" \
 			"This operation requires the ${DOCKER_NAME} docker container to be unpaused."
 		scmi_print_message "sub_step_info" \
@@ -556,11 +560,19 @@ function scmi_docker_start ()
 		"Starting container"
 
 	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]] \
-		&& [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
+		&& [[ -z $(
+			${docker} ps -aq \
+				--filter "name=${DOCKER_NAME}" \
+				--filter "status=running"
+		) ]]; then
 		${docker} start ${DOCKER_NAME} 1> /dev/null
 	fi
 
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
+	if [[ -n $(
+		${docker} ps -aq \
+			--filter "name=${DOCKER_NAME}" \
+			--filter "status=running"
+	) ]]; then
 		scmi_print_message "sub_step_complete" \
 			"Container started"
 	else
@@ -578,13 +590,21 @@ function scmi_docker_terminate ()
 	else
 		scmi_print_message "step_info" \
 			"Terminating container"
-		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=paused") ]]; then
+		if [[ -n $(
+			${docker} ps -aq \
+				--filter "name=${DOCKER_NAME}" \
+				--filter "status=paused"
+		) ]]; then
 			scmi_print_message "sub_step_info" \
 				"Unpausing container"
 			${docker} unpause ${DOCKER_NAME} 1> /dev/null
 		fi
 
-		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}" --filter "status=running") ]]; then
+		if [[ -n $(
+			${docker} ps -aq \
+				--filter "name=${DOCKER_NAME}" \
+				--filter "status=running"
+		) ]]; then
 			scmi_print_message "sub_step_info" \
 				"Stopping container"
 			${docker} stop ${DOCKER_NAME} 1> /dev/null
@@ -598,7 +618,12 @@ function scmi_docker_terminate ()
 		fi
 
 		if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]] \
-			&& [[ -z $(find ${SCMI_CHROOT_PATH%*/}/var/lib/docker/containers -type d -name "${CONTAINER_ID}" 2> /dev/null) ]]; then
+			&& [[ -z $(
+				find \
+					"${SCMI_CHROOT_PATH%*/}/var/lib/docker/containers" \
+					-type d \
+					-name "${CONTAINER_ID}" 2> /dev/null
+			) ]]; then
 			scmi_print_message "sub_step_complete" \
 				"Container terminated"
 		else
@@ -662,8 +687,10 @@ function scmi_fleet_get_unit_state ()
 		esac
 
 		STATE="$(
-			eval "${fleetctl} list-units -no-legend -fields unit,machine,load,active,sub \
-			| awk -v pattern="^${UNIT_NAME}$" ${OUTPUT_PATTERN}"
+			eval "${fleetctl} list-units -no-legend \
+				-fields unit,machine,load,active,sub \
+				| awk -v pattern="^${UNIT_NAME}$" \
+				${OUTPUT_PATTERN}"
 		)"
 	fi
 
@@ -676,6 +703,7 @@ function scmi_fleet_install ()
 {
 	declare -a local UNIT_FILE_HASH
 	declare -a local PIDS
+	local STATUS_COMMAND
 
 	scmi_fleet_prerequisites
 
@@ -790,7 +818,13 @@ function scmi_fleet_install ()
 				'$1 ~ pattern { print $NF; }' \
 			| grep -qv "${UNIT_FILE_HASH[3]}"; then
 			scmi_print_message "sub_step_info" \
-				"[NOTICE] The template unit-file ${SERVICE_UNIT_TEMPLATE_NAME} has changed. Instance units need re-deploying."
+				"$(
+					printf -- \
+						'%s The template unit-file %s has changed. %s' \
+						'[NOTICE]' \
+						"${SERVICE_UNIT_TEMPLATE_NAME}" \
+						'Instance units will need re-deploying.'
+				)"
 		fi
 	fi
 
@@ -886,10 +920,12 @@ function scmi_fleet_install ()
 		scmi_print_message "sub_step_complete" \
 			"Install complete"
 	else
+		STATUS_COMMAND="fleetctl status ${SERVICE_UNIT_INSTANCE_NAME}"
+
 		scmi_print_message "sub_step_error" \
 			"Install error"
 		scmi_print_message "error_info" \
-			"Review the status for additonal information: fleetctl status ${SERVICE_UNIT_INSTANCE_NAME}"
+			"Review the status for additonal information: ${STATUS_COMMAND}"
 	fi
 
 	trap - \
@@ -979,7 +1015,9 @@ function scmi_fleet_unit_is_active ()
 	local UNIT_NAME="${1:-}"
 
 	if [[ -n ${UNIT_NAME} ]]; then
-		if [[ $(scmi_fleet_get_unit_state "${UNIT_NAME}" "active") == active ]]; then
+		if [[ $(
+			scmi_fleet_get_unit_state "${UNIT_NAME}" "active"
+		) == active ]]; then
 			return 0
 		fi
 	fi
@@ -999,6 +1037,8 @@ function scmi_info ()
 	local INFO=""
 	local INFO_SECTION
 	local INFO_SECTION_PREFIX="// "
+	local KEY_TYPE
+	local KEY_TYPES
 	local LABELS
 	local LABEL_NAMESPACE_PREFIX="org.deathe."
 	local LABEL_KEY_CLEAN
@@ -1063,7 +1103,12 @@ function scmi_info ()
 	fi
 
 	if [[ -n ${IMAGE_ID} ]]; then
-		for KEY_TYPE in LABEL_KEYS_INFO LABEL_KEYS_SOURCE LABEL_KEYS_USAGE LABEL_KEYS_DETAILS; do
+		KEY_TYPES="LABEL_KEYS_INFO"
+		KEY_TYPES+=" LABEL_KEYS_SOURCE"
+		KEY_TYPES+=" LABEL_KEYS_USAGE"
+		KEY_TYPES+=" LABEL_KEYS_DETAILS"
+
+		for KEY_TYPE in ${KEY_TYPES}; do
 
 			case "${KEY_TYPE}" in
 				LABEL_KEYS_SOURCE)
@@ -1490,16 +1535,20 @@ function scmi_print_message ()
 
 function scmi_restart_option_error ()
 {
+	local RESTART_TYPES
+
 	scmi_print_message "error" \
 		"Invalid restart policy (${SCMI_RESTART})"
 
-	if [[ ${SCMI_MANAGER_TYPE} == systemd ]]; then
-		scmi_print_message "error_info" \
-			"Valid systemd settings: on|always|on-success|on-failure|on-abort|on-watchdog"
+	if [[ ${SCMI_MANAGER_TYPE} == systemd ]] \
+		|| [[ ${SCMI_MANAGER_TYPE} == fleet ]]; then
+		RESTART_TYPES="on|always|on-success|on-failure|on-abort|on-watchdog"
 	elif [[ ${SCMI_MANAGER_TYPE} == docker ]]; then
-		scmi_print_message "error_info" \
-			"Valid docker settings: on|always|on-failure[:max-retries]|unless-stopped"
+		RESTART_TYPES="on|always|on-failure[:max-retries]|unless-stopped"
 	fi
+
+	scmi_print_message "error_info" \
+		"Valid docker settings: ${RESTART_TYPES}"
 
 	exit 1
 }
@@ -1764,6 +1813,7 @@ function scmi_systemd_get_unit_file_path ()
 function scmi_systemd_install ()
 {
 	declare -a local PIDS
+	local STATUS_COMMAND
 
 	scmi_systemd_prerequisites
 
@@ -1860,10 +1910,12 @@ function scmi_systemd_install ()
 		scmi_print_message "sub_step_complete" \
 			"Install complete"
 	else
+		STATUS_COMMAND="systemctl status ${SERVICE_UNIT_INSTANCE_NAME}"
+
 		scmi_print_message "sub_step_error" \
 			"Install error"
 		scmi_print_message "error_info" \
-			"Review the status for additonal information: systemctl status ${SERVICE_UNIT_INSTANCE_NAME}"
+			"Review the status for additonal information: ${STATUS_COMMAND}"
 	fi
 
 	trap - \
