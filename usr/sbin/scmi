@@ -32,7 +32,7 @@ function scmi ()
 	# Abort if not run by root user or with sudo
 	if [[ ${EUID} -ne 0 ]]; then
 		scmi_print_message "error" \
-			"Run as root or use: sudo -E $(basename $0)"
+			"Run as root or use: sudo -E $(basename ${0})"
 		exit 1
 	fi
 
