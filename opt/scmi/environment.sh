@@ -25,6 +25,11 @@ NO_CACHE="${NO_CACHE:-false}"
 # Directory path for release packages
 PACKAGE_PATH="${PACKAGE_PATH:-./packages/jdeathe}"
 
+# ETCD register service settings
+REGISTER_ETCD_PARAMETERS="${REGISTER_ETCD_PARAMETERS:-}"
+REGISTER_TTL="${REGISTER_TTL:-60}"
+REGISTER_UPDATE_INTERVAL="${REGISTER_UPDATE_INTERVAL:-55}"
+
 # Application container configuration
 SSH_AUTHORIZED_KEYS="${SSH_AUTHORIZED_KEYS:-}"
 SSH_AUTOSTART_SSHD="${SSH_AUTOSTART_SSHD:-true}"
