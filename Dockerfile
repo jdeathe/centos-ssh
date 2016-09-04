@@ -77,7 +77,10 @@ RUN sed -i \
 # -----------------------------------------------------------------------------
 # Enable the wheel sudoers group
 # -----------------------------------------------------------------------------
-RUN sed -i 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' /etc/sudoers
+RUN sed -i \
+	-e 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' \
+	-e 's~\(.*\) requiretty$~#\1requiretty~' \
+	/etc/sudoers
 
 # -----------------------------------------------------------------------------
 # Copy files into place
