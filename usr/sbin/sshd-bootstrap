@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 
+# Create lock file
+touch /tmp/sshd-bootstrap.lock
+
 TIMER_START=$(
 	date +%s.%N
 )
+
+# Populate the environment source file
+env >> /etc/sshd-bootstrap.env
 
 source /etc/sshd-bootstrap.conf
 
@@ -668,5 +674,8 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 
 	EOT
 fi
+
+# Release lock file
+rm -f /tmp/sshd-bootstrap.lock
 
 exit 0
