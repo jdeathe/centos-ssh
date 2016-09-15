@@ -18,9 +18,6 @@ PREFIX_SUB_STEP_POSITIVE := $(shell printf -- '%b%s%b' "$(COLOUR_POSITIVE)" "$(P
 
 .DEFAULT_GOAL := build
 
-# Get absolute file paths
-PACKAGE_PATH := $(realpath $(PACKAGE_PATH))
-
 # Package prerequisites
 docker := $(shell type -p docker)
 xz := $(shell type -p xz)
@@ -54,6 +51,7 @@ get-docker-info := $(shell $(docker) info)
 	require-docker-container-status-running \
 	require-docker-image-tag \
 	require-docker-release-tag \
+	require-package-path \
 	restart \
 	rm \
 	rmi \
@@ -89,6 +87,7 @@ create: prerequisites require-docker-container-not
 	@ set -x; \
 		$(docker) create \
 			$(DOCKER_CONTAINER_PARAMETERS) \
+			$(DOCKER_PUBLISH) \
 			$(DOCKER_CONTAINER_PARAMETERS_APPEND) \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null;
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=created") ]]; then \
@@ -99,23 +98,22 @@ create: prerequisites require-docker-container-not
 			exit 1; \
 		fi
 
-dist: prerequisites require-docker-release-tag | pull
-	@ if [[ -s $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
+dist: prerequisites require-docker-release-tag require-package-path | pull
+	$(eval $@_dist_path := $(realpath \
+		$(DIST_PATH) \
+	))
+	@ if [[ -s $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
 			echo "$(PREFIX_STEP) Saving package"; \
-			echo "$(PREFIX_SUB_STEP) Package path: $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
+			echo "$(PREFIX_SUB_STEP) Package path: $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
 			echo "$(PREFIX_SUB_STEP_POSITIVE) Package already exists"; \
 		else \
-			if [[ ! -d $(PACKAGE_PATH) ]]; then \
-				echo "$(PREFIX_STEP) Creating package directory"; \
-				mkdir -p $(PACKAGE_PATH); \
-			fi; \
 			echo "$(PREFIX_STEP) Saving package"; \
 			$(docker) save \
 				$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) | \
 				$(xz) -9 > \
-					$(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz; \
+					$($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz; \
 				if [[ $${?} -eq 0 ]]; then \
-					echo "$(PREFIX_SUB_STEP) Package path: $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
+					echo "$(PREFIX_SUB_STEP) Package path: $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
 					echo "$(PREFIX_SUB_STEP_POSITIVE) Package saved"; \
 				else \
 					echo "$(PREFIX_SUB_STEP_NEGATIVE) Package save error"; \
@@ -123,14 +121,17 @@ dist: prerequisites require-docker-release-tag | pull
 				fi; \
 		fi
 
-distclean: prerequisites require-docker-release-tag | clean
-	@ if [[ -e $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
+distclean: prerequisites require-docker-release-tag require-package-path | clean
+	$(eval $@_dist_path := $(realpath \
+		$(DIST_PATH) \
+	))
+	@ if [[ -e $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
 			echo "$(PREFIX_STEP) Deleting package"; \
-			echo "$(PREFIX_SUB_STEP) Package path: $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
-			find $(PACKAGE_PATH) \
+			echo "$(PREFIX_SUB_STEP) Package path: $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
+			find $($@_dist_path) \
 				-name $(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz \
 				-delete; \
-			if [[ ! -e $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
+			if [[ ! -e $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
 				echo "$(PREFIX_SUB_STEP_POSITIVE) Package cleanup complete"; \
 			else \
 				echo "$(PREFIX_SUB_STEP_NEGATIVE) Package cleanup failed"; \
@@ -157,15 +158,18 @@ logs-delayed: prerequisites
 	@ sleep 2
 	@ $(MAKE) logs
 
-load: prerequisites require-docker-release-tag
+load: prerequisites require-docker-release-tag require-package-path
+	$(eval $@_dist_path := $(realpath \
+		$(DIST_PATH) \
+	))
 	@ echo "$(PREFIX_STEP) Loading image from package"; \
-		echo "$(PREFIX_SUB_STEP) Package path: $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
-		if [[ ! -s $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
+		echo "$(PREFIX_SUB_STEP) Package path: $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
+		if [[ ! -s $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
 			echo "$(PREFIX_STEP_NEGATIVE) Package not found"; \
 			echo "$(PREFIX_SUB_STEP_NEGATIVE) To create a package try: DOCKER_IMAGE_TAG=\"$(DOCKER_IMAGE_TAG)\" make dist"; \
 			exit 1; \
 		else \
-			$(xz) -dc $(PACKAGE_PATH)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz | \
+			$(xz) -dc $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz | \
 				$(docker) load; \
 			echo "$(PREFIX_SUB_STEP) $$( if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) ]]; then echo $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)); else echo $$($(docker) images -q docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)); fi; )"; \
 			echo "$(PREFIX_SUB_STEP_POSITIVE) Image loaded"; \
@@ -266,6 +270,19 @@ require-docker-release-tag:
 			exit 1; \
 		fi
 
+require-package-path:
+	@ if [[ -n $(DIST_PATH) ]] && [[ ! -d $(DIST_PATH) ]]; then \
+			echo "$(PREFIX_STEP) Creating package directory"; \
+			mkdir -p $(DIST_PATH); \
+		fi; \
+		if [[ ! $${?} -eq 0 ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) Failed to make package path: $(DIST_PATH)"; \
+			exit 1; \
+		elif [[ -z $(DIST_PATH) ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) Undefined DIST_PATH"; \
+			exit 1; \
+		fi
+
 restart: prerequisites require-docker-container require-docker-container-not-status-paused
 	@ echo "$(PREFIX_STEP) Restarting container"
 	@ $(docker) restart $(DOCKER_NAME) 1> /dev/null
@@ -307,6 +324,7 @@ run: prerequisites require-docker-image-tag
 		$(docker) run \
 			--detach \
 			$(DOCKER_CONTAINER_PARAMETERS) \
+			$(DOCKER_PUBLISH) \
 			$(DOCKER_CONTAINER_PARAMETERS_APPEND) \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null;
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running") ]]; then \
