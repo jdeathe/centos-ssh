@@ -51,7 +51,7 @@ Environment="DOCKER_USER=jdeathe"
 Environment="DOCKER_IMAGE_NAME=centos-ssh"
 Environment="DOCKER_CONTAINER_PARAMETERS_APPEND="
 Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/opt/scmi/packages"
-Environment="DOCKER_IMAGE_TAG=centos-7-2.1.0"
+Environment="DOCKER_IMAGE_TAG=centos-7-2.1.1"
 Environment="DOCKER_PORT_MAP_TCP_22=2020"
 Environment="SSH_AUTHORIZED_KEYS="
 Environment="SSH_AUTOSTART_SSHD=true"
@@ -95,16 +95,6 @@ ExecStartPre=-/bin/bash -c \
 ExecStart=/bin/bash -c \
   "exec /usr/bin/docker run \
     --name %p.%i \
-    --publish $(\
-      if [[ -n $(/usr/bin/gawk 'match($0, /^([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[2]; }' <<< \"${DOCKER_PORT_MAP_TCP_22}\") ]]; then \
-        printf -- '%%s%%s' \
-          \"$(/usr/bin/gawk 'match($0, /^([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[1]; }' <<< \"${DOCKER_PORT_MAP_TCP_22}\")\" \
-          \"$(( $(/usr/bin/gawk 'match($0, /^([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[2]; }' <<< \"${DOCKER_PORT_MAP_TCP_22}\") + $(/usr/bin/awk -F. '$0=$1' <<< %i) - 1 ))\"; \
-      else \
-        printf -- '%%s' \
-          \"${DOCKER_PORT_MAP_TCP_22}\"; \
-      fi; \
-    ):22 \
     --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
     --env \"SSH_AUTOSTART_SSHD=${SSH_AUTOSTART_SSHD}\" \
     --env \"SSH_AUTOSTART_SSHD_BOOTSTRAP=${SSH_AUTOSTART_SSHD_BOOTSTRAP}\" \
@@ -118,6 +108,18 @@ ExecStart=/bin/bash -c \
     --env \"SSH_USER_PASSWORD=${SSH_USER_PASSWORD}\" \
     --env \"SSH_USER_PASSWORD_HASHED=${SSH_USER_PASSWORD_HASHED}\" \
     --env \"SSH_USER_SHELL=${SSH_USER_SHELL}\" \
+    $(\
+      if [[ ${DOCKER_PORT_MAP_TCP_22} != NULL ]]; then \
+        if [[ -n $(/usr/bin/gawk 'match($0, /^([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[2]; }' <<< \"${DOCKER_PORT_MAP_TCP_22}\") ]]; then \
+          printf -- '--publish %%s%%s:22' \
+            \"$(/usr/bin/gawk 'match($0, /^([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[1]; }' <<< \"${DOCKER_PORT_MAP_TCP_22}\")\" \
+            \"$(( $(/usr/bin/gawk 'match($0, /^([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[2]; }' <<< \"${DOCKER_PORT_MAP_TCP_22}\") + $(/usr/bin/awk -F. '$0=$1' <<< %i) - 1 ))\"; \
+        else \
+          printf -- '--publish %%s:22' \
+            \"${DOCKER_PORT_MAP_TCP_22}\"; \
+        fi; \
+      fi; \
+    ) \
     ${DOCKER_CONTAINER_PARAMETERS_APPEND} \
     ${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   "
