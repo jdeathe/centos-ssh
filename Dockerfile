@@ -105,8 +105,7 @@ ADD etc/services-config/ssh/authorized_keys \
 	/etc/services-config/ssh/
 ADD etc/services-config/supervisor/supervisord.conf \
 	/etc/services-config/supervisor/
-ADD etc/services-config/supervisor/supervisord.d/sshd.conf \
-	etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
+ADD etc/services-config/supervisor/supervisord.d \
 	/etc/services-config/supervisor/supervisord.d/
 
 RUN mkdir -p \

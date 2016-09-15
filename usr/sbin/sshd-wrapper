@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+NICE=/bin/nice
+NICENESS="${SSH_NICENESS:-10}"
+SSHD=/usr/sbin/sshd
+SSHD_OPTIONS="
+ -D
+ -e
+"
+
+while true; do
+	sleep 0.1
+	[[ -e /tmp/sshd-bootstrap.lock ]] || break
+done
+
+exec ${NICE} \
+	-n ${NICENESS} \
+	${SSHD} \
+	${SSHD_OPTIONS}
