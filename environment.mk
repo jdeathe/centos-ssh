@@ -23,7 +23,7 @@ DOCKER_RESTART_POLICY ?= always
 NO_CACHE ?= false
 
 # Directory path for release packages
-PACKAGE_PATH ?= ./packages/jdeathe
+DIST_PATH ?= ./dist
 
 # ------------------------------------------------------------------------------
 # Application container configuration
