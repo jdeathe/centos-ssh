@@ -65,13 +65,15 @@ ExecStartPre=/bin/bash -c \
 
 # Register service
 ExecStart=/bin/bash -c \
-  "while ! /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} get ${REGISTER_KEY_ROOT}/ports/tcp/22 &> /dev/null; do \
-    /usr/bin/etcdctl \
-      ${REGISTER_ETCD_PARAMETERS} \
-      mk \
-      ${REGISTER_KEY_ROOT}/ports/tcp/22 \
-      $(/usr/bin/sed 's/^[0-9.]*://' <<< $(if ! /usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22 &> /dev/null; then echo ''; else /usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22; fi)) \
-      --ttl ${REGISTER_TTL} 2> /dev/null; \
+  "until /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} get ${REGISTER_KEY_ROOT}/ports/tcp/22 &> /dev/null; do \
+    if /usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22 &> /dev/null; then \
+      /usr/bin/etcdctl \
+        ${REGISTER_ETCD_PARAMETERS} \
+        mk \
+        ${REGISTER_KEY_ROOT}/ports/tcp/22 \
+        \"$(/usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22 | /usr/bin/sed 's~^[0-9.]*:~~')\" \
+        --ttl ${REGISTER_TTL} 2> /dev/null; \
+    fi; \
     sleep 0.5; \
   done; \
   /usr/bin/etcdctl \
@@ -82,12 +84,14 @@ ExecStart=/bin/bash -c \
     --ttl ${REGISTER_TTL}; \
   while true; do \
     sleep ${REGISTER_UPDATE_INTERVAL}; \
-    /usr/bin/etcdctl \
-      ${REGISTER_ETCD_PARAMETERS} \
-      $(if ! /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} get ${REGISTER_KEY_ROOT}/ports/tcp/22 &> /dev/null; then echo set; else echo update; fi) \
-      ${REGISTER_KEY_ROOT}/ports/tcp/22 \
-      $(/usr/bin/sed 's/^[0-9.]*://' <<< $(if ! /usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22 &> /dev/null; then echo ''; else /usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22; fi)) \
-      --ttl ${REGISTER_TTL}; \
+    if /usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22 &> /dev/null; then \
+      /usr/bin/etcdctl \
+        ${REGISTER_ETCD_PARAMETERS} \
+        $(if ! /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} get ${REGISTER_KEY_ROOT}/ports/tcp/22 &> /dev/null; then echo set; else echo update; fi) \
+        ${REGISTER_KEY_ROOT}/ports/tcp/22 \
+        \"$(/usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22 | /usr/bin/sed 's~^[0-9.]*:~~')\" \
+        --ttl ${REGISTER_TTL}; \
+    fi; \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
       $(if ! /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} get ${REGISTER_KEY_ROOT}/hostname &> /dev/null; then echo set; else echo update; fi) \

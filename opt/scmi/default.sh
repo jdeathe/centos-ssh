@@ -1,23 +1,24 @@
 
 # If gawk is available handle incrementing the docker host port for instances
-if command -v gawk &> /dev/null; then
-	DOCKER_PORT_MAP_TCP_22_PUBLISH=$(\
-		if [[ -n $(/usr/bin/gawk 'match($0, /^([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[2]; }' <<< "${DOCKER_PORT_MAP_TCP_22}") ]]; then \
-			printf -- '%s%s' \
-				\"$(/usr/bin/gawk 'match($0, /^([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[1]; }' <<< "${DOCKER_PORT_MAP_TCP_22}")\" \
-				\"$(( $(/usr/bin/gawk 'match($0, /^([0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[2]; }' <<< "${DOCKER_PORT_MAP_TCP_22}") + $(/usr/bin/awk -F. '$0=$1' <<< "$( expr match "${DOCKER_NAME}" '.*\.\([0-9][0-9]*\.[0-9][0-9]*\)' )") - 1 ))\"; \
-		else \
-			printf -- '%s' \
-				\"${DOCKER_PORT_MAP_TCP_22}\"; \
-		fi; \
-	):22
-else
-	DOCKER_PORT_MAP_TCP_22_PUBLISH=${DOCKER_PORT_MAP_TCP_22}:22
+DOCKER_PUBLISH=
+if [[ ${DOCKER_PORT_MAP_TCP_22} != NULL ]]; then
+	if command -v gawk &> /dev/null \
+		&& [[ -n $(gawk 'match($0, /^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[2]; }' <<< "${DOCKER_PORT_MAP_TCP_22}") ]]; then
+		printf -v \
+			DOCKER_PUBLISH \
+			-- '--publish %s%s:22' \
+			"$(gawk 'match($0, /^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[1]; }' <<< "${DOCKER_PORT_MAP_TCP_22}")" \
+			"$(( $(gawk 'match($0, /^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[2]; }' <<< "${DOCKER_PORT_MAP_TCP_22}") + $(gawk 'match($0, /^.+\.([0-9]+)\.([0-9]+)$/, matches) { print matches[1]; }' <<< "${DOCKER_NAME}") - 1 ))"
+	else
+		printf -v \
+			DOCKER_PUBLISH \
+			-- '--publish %s:22' \
+			"${DOCKER_PORT_MAP_TCP_22}"
+	fi
 fi
 
 # Common parameters of create and run targets
 DOCKER_CONTAINER_PARAMETERS="--name ${DOCKER_NAME} \
---publish ${DOCKER_PORT_MAP_TCP_22_PUBLISH} \
 --restart ${DOCKER_RESTART_POLICY} \
 --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
 --env \"SSH_AUTOSTART_SSHD=${SSH_AUTOSTART_SSHD}\" \
@@ -31,4 +32,5 @@ DOCKER_CONTAINER_PARAMETERS="--name ${DOCKER_NAME} \
 --env \"SSH_USER_ID=${SSH_USER_ID}\" \
 --env \"SSH_USER_PASSWORD=${SSH_USER_PASSWORD}\" \
 --env \"SSH_USER_PASSWORD_HASHED=${SSH_USER_PASSWORD_HASHED}\" \
---env \"SSH_USER_SHELL=${SSH_USER_SHELL}\""
+--env \"SSH_USER_SHELL=${SSH_USER_SHELL}\" \
+${DOCKER_PUBLISH}"

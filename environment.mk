@@ -25,7 +25,9 @@ NO_CACHE ?= false
 # Directory path for release packages
 PACKAGE_PATH ?= ./packages/jdeathe
 
+# ------------------------------------------------------------------------------
 # Application container configuration
+# ------------------------------------------------------------------------------
 SSH_AUTHORIZED_KEYS ?=
 SSH_AUTOSTART_SSHD ?= true
 SSH_AUTOSTART_SSHD_BOOTSTRAP ?= true
