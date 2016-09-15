@@ -99,21 +99,21 @@ create: prerequisites require-docker-container-not
 		fi
 
 dist: prerequisites require-docker-release-tag require-package-path | pull
-	$(eval $@_package_path := $(realpath \
-		$(PACKAGE_PATH) \
+	$(eval $@_dist_path := $(realpath \
+		$(DIST_PATH) \
 	))
-	@ if [[ -s $($@_package_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
+	@ if [[ -s $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
 			echo "$(PREFIX_STEP) Saving package"; \
-			echo "$(PREFIX_SUB_STEP) Package path: $($@_package_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
+			echo "$(PREFIX_SUB_STEP) Package path: $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
 			echo "$(PREFIX_SUB_STEP_POSITIVE) Package already exists"; \
 		else \
 			echo "$(PREFIX_STEP) Saving package"; \
 			$(docker) save \
 				$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) | \
 				$(xz) -9 > \
-					$($@_package_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz; \
+					$($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz; \
 				if [[ $${?} -eq 0 ]]; then \
-					echo "$(PREFIX_SUB_STEP) Package path: $($@_package_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
+					echo "$(PREFIX_SUB_STEP) Package path: $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
 					echo "$(PREFIX_SUB_STEP_POSITIVE) Package saved"; \
 				else \
 					echo "$(PREFIX_SUB_STEP_NEGATIVE) Package save error"; \
@@ -122,16 +122,16 @@ dist: prerequisites require-docker-release-tag require-package-path | pull
 		fi
 
 distclean: prerequisites require-docker-release-tag require-package-path | clean
-	$(eval $@_package_path := $(realpath \
-		$(PACKAGE_PATH) \
+	$(eval $@_dist_path := $(realpath \
+		$(DIST_PATH) \
 	))
-	@ if [[ -e $($@_package_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
+	@ if [[ -e $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
 			echo "$(PREFIX_STEP) Deleting package"; \
-			echo "$(PREFIX_SUB_STEP) Package path: $($@_package_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
-			find $($@_package_path) \
+			echo "$(PREFIX_SUB_STEP) Package path: $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
+			find $($@_dist_path) \
 				-name $(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz \
 				-delete; \
-			if [[ ! -e $($@_package_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
+			if [[ ! -e $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
 				echo "$(PREFIX_SUB_STEP_POSITIVE) Package cleanup complete"; \
 			else \
 				echo "$(PREFIX_SUB_STEP_NEGATIVE) Package cleanup failed"; \
@@ -159,17 +159,17 @@ logs-delayed: prerequisites
 	@ $(MAKE) logs
 
 load: prerequisites require-docker-release-tag require-package-path
-	$(eval $@_package_path := $(realpath \
-		$(PACKAGE_PATH) \
+	$(eval $@_dist_path := $(realpath \
+		$(DIST_PATH) \
 	))
 	@ echo "$(PREFIX_STEP) Loading image from package"; \
-		echo "$(PREFIX_SUB_STEP) Package path: $($@_package_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
-		if [[ ! -s $($@_package_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
+		echo "$(PREFIX_SUB_STEP) Package path: $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz"; \
+		if [[ ! -s $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; then \
 			echo "$(PREFIX_STEP_NEGATIVE) Package not found"; \
 			echo "$(PREFIX_SUB_STEP_NEGATIVE) To create a package try: DOCKER_IMAGE_TAG=\"$(DOCKER_IMAGE_TAG)\" make dist"; \
 			exit 1; \
 		else \
-			$(xz) -dc $($@_package_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz | \
+			$(xz) -dc $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz | \
 				$(docker) load; \
 			echo "$(PREFIX_SUB_STEP) $$( if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)) ]]; then echo $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)); else echo $$($(docker) images -q docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)); fi; )"; \
 			echo "$(PREFIX_SUB_STEP_POSITIVE) Image loaded"; \
@@ -271,15 +271,15 @@ require-docker-release-tag:
 		fi
 
 require-package-path:
-	@ if [[ -n $(PACKAGE_PATH) ]] && [[ ! -d $(PACKAGE_PATH) ]]; then \
+	@ if [[ -n $(DIST_PATH) ]] && [[ ! -d $(DIST_PATH) ]]; then \
 			echo "$(PREFIX_STEP) Creating package directory"; \
-			mkdir -p $(PACKAGE_PATH); \
+			mkdir -p $(DIST_PATH); \
 		fi; \
 		if [[ ! $${?} -eq 0 ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) Failed to make package path: $(PACKAGE_PATH)"; \
+			echo "$(PREFIX_STEP_NEGATIVE) Failed to make package path: $(DIST_PATH)"; \
 			exit 1; \
-		elif [[ -z $(PACKAGE_PATH) ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) Undefined PACKAGE_PATH"; \
+		elif [[ -z $(DIST_PATH) ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) Undefined DIST_PATH"; \
 			exit 1; \
 		fi
 
