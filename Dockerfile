@@ -11,36 +11,39 @@ MAINTAINER James Deathe <james.deathe@gmail.com>
 # -----------------------------------------------------------------------------
 # Import the RPM GPG keys for Repositories
 # -----------------------------------------------------------------------------
-RUN rpm --import http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-7 \
-	&& rpm --import https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 \
-	&& rpm --import https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY
+RUN rpm --import \
+		http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-7 \
+	&& rpm --import \
+		https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 \
+	&& rpm --import \
+		https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY
 
 # -----------------------------------------------------------------------------
 # Base Install
 # -----------------------------------------------------------------------------
 RUN rpm --rebuilddb \
 	&& yum -y install \
-	centos-release-scl \
-	centos-release-scl-rh \
-	epel-release \
-	https://centos7.iuscommunity.org/ius-release.rpm \
-	vim-minimal-7.4.160-1.el7 \
-	xz-5.1.2-12alpha.el7.x86_64 \
-	sudo-1.8.6p7-17.el7_2 \
-	openssh-6.6.1p1-25.el7_2 \
-	openssh-server-6.6.1p1-25.el7_2 \
-	openssh-clients-6.6.1p1-25.el7_2 \
-	python-setuptools-0.9.8-4.el7 \
-	yum-plugin-versionlock-1.1.31-34.el7 \
+		centos-release-scl \
+		centos-release-scl-rh \
+		epel-release \
+		https://centos7.iuscommunity.org/ius-release.rpm \
+		vim-minimal-7.4.160-1.el7 \
+		xz-5.1.2-12alpha.el7.x86_64 \
+		sudo-1.8.6p7-17.el7_2 \
+		openssh-6.6.1p1-25.el7_2 \
+		openssh-server-6.6.1p1-25.el7_2 \
+		openssh-clients-6.6.1p1-25.el7_2 \
+		python-setuptools-0.9.8-4.el7 \
+		yum-plugin-versionlock-1.1.31-34.el7 \
 	&& yum versionlock add \
-	vim-minimal \
-	xz \
-	sudo \
-	openssh \
-	openssh-server \
-	openssh-clients \
-	python-setuptools \
-	yum-plugin-versionlock \
+		vim-minimal \
+		xz \
+		sudo \
+		openssh \
+		openssh-server \
+		openssh-clients \
+		python-setuptools \
+		yum-plugin-versionlock \
 	&& rm -rf /var/cache/yum/* \
 	&& yum clean all
 
@@ -50,13 +53,18 @@ RUN rpm --rebuilddb \
 # We require supervisor-stdout to allow output of services started by 
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
-RUN easy_install 'supervisor == 3.3.1' 'supervisor-stdout == 0.1.1' \
-	&& mkdir -p /var/log/supervisor/
+RUN easy_install \
+		'supervisor == 3.3.1' \
+		'supervisor-stdout == 0.1.1' \
+	&& mkdir -p \
+		/var/log/supervisor/
 
 # -----------------------------------------------------------------------------
 # UTC Timezone & Networking
 # -----------------------------------------------------------------------------
-RUN ln -sf /usr/share/zoneinfo/UTC /etc/localtime \
+RUN ln -sf \
+		/usr/share/zoneinfo/UTC \
+		/etc/localtime \
 	&& echo "NETWORKING=yes" > /etc/sysconfig/network
 
 # -----------------------------------------------------------------------------
@@ -96,15 +104,31 @@ ADD etc/services-config/supervisor/supervisord.d/sshd.conf \
 	etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
 	/etc/services-config/supervisor/supervisord.d/
 
-RUN mkdir -p /etc/supervisord.d/ \
-	&& cp -pf /etc/ssh/sshd_config /etc/services-config/ssh/ \
-	&& ln -sf /etc/services-config/ssh/sshd_config /etc/ssh/sshd_config \
-	&& ln -sf /etc/services-config/ssh/sshd-bootstrap.conf /etc/sshd-bootstrap.conf \
-	&& ln -sf /etc/services-config/ssh/sshd-bootstrap.env /etc/sshd-bootstrap.env \
-	&& ln -sf /etc/services-config/supervisor/supervisord.conf /etc/supervisord.conf \
-	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd.conf /etc/supervisord.d/sshd.conf \
-	&& ln -sf /etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf /etc/supervisord.d/sshd-bootstrap.conf \
-	&& chmod +x /usr/sbin/{scmi,sshd-bootstrap}
+RUN mkdir -p \
+		/etc/supervisord.d/ \
+	&& cp -pf \
+		/etc/ssh/sshd_config \
+		/etc/services-config/ssh/ \
+	&& ln -sf \
+		/etc/services-config/ssh/sshd_config \
+		/etc/ssh/sshd_config \
+	&& ln -sf \
+		/etc/services-config/ssh/sshd-bootstrap.conf \
+		/etc/sshd-bootstrap.conf \
+	&& ln -sf \
+		/etc/services-config/ssh/sshd-bootstrap.env \
+		/etc/sshd-bootstrap.env \
+	&& ln -sf \
+		/etc/services-config/supervisor/supervisord.conf \
+		/etc/supervisord.conf \
+	&& ln -sf \
+		/etc/services-config/supervisor/supervisord.d/sshd.conf \
+		/etc/supervisord.d/sshd.conf \
+	&& ln -sf \
+		/etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
+		/etc/supervisord.d/sshd-bootstrap.conf \
+	&& chmod 700 \
+		/usr/sbin/{scmi,sshd-bootstrap}
 
 # -----------------------------------------------------------------------------
 # Purge
