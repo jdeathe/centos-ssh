@@ -3,43 +3,32 @@
 # Create lock file
 touch /tmp/sshd-bootstrap.lock
 
-TIMER_START=$(
+TIMER_START="$(
 	date +%s.%N
-)
+)"
 
 # Populate the environment source file
 env >> /etc/sshd-bootstrap.env
 
 source /etc/sshd-bootstrap.conf
 
-get_password ()
+function is_sudo_no_password_all ()
 {
-	local PASSWORD_LENGTH=${1:-8}
-	local PASSWORD=$(
-		head -n 4096 /dev/urandom | \
-		tr -cd '[:alnum:]' | \
-		cut -c1-${PASSWORD_LENGTH}
-	)
-
-	printf -- "%s" "${PASSWORD}"
-}
-
-is_sudo_no_password_all ()
-{
-	local SUDO=${1}
+	local SUDO="${1}"
 
 	if [[ -z ${SUDO} ]]; then
 		return 1
 	fi
 
-	if [[ -n $(echo "${SUDO}" | awk -v pattern="NOPASSWD:ALL" '$NF ~ pattern { print $0; }') ]]; then
+	if [[ -n $(echo "${SUDO}" \
+		| awk -v pattern="NOPASSWD:ALL" '$NF ~ pattern { print $0; }') ]]; then
 		return 0
 	fi
 
 	return 1
 }
 
-is_valid_ssh_authorized_keys ()
+function is_valid_ssh_authorized_keys ()
 {
 	local AUTHORIZED_KEYS="${1:-}"
 	local IFS=
@@ -51,7 +40,10 @@ is_valid_ssh_authorized_keys ()
 	fi
 
 	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
-		if [[ -n ${SSH_KEY} ]] && [[ $(get_ssh_key_fingerprint "${SSH_KEY}") =~ ${INVALID_KEY_PATTERN} ]]; then
+		if [[ -n ${SSH_KEY} ]] \
+			&& [[ $(
+				get_ssh_key_fingerprint "${SSH_KEY}"
+			) =~ ${INVALID_KEY_PATTERN} ]]; then
 			return 1
 		fi
 	done <<< "${AUTHORIZED_KEYS}"
@@ -59,43 +51,44 @@ is_valid_ssh_authorized_keys ()
 	return 0
 }
 
-is_valid_ssh_chroot_directory ()
+function is_valid_ssh_chroot_directory ()
 {
 	local CHROOT_DIRECTORY="${1:-}"
 	local SAFE_DIRECTORY='^(%h|\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+)$'
 
-	if [[ -n $(grep -oP ${SAFE_DIRECTORY} <<< ${CHROOT_DIRECTORY}) ]]; then
+	if grep -qoP "${SAFE_DIRECTORY}" <<< "${CHROOT_DIRECTORY}"; then
 		return 0
 	fi
 
 	return 1
 }
 
-is_valid_ssh_user ()
+function is_valid_ssh_user ()
 {
-	local USERNAME=${1}
+	local USERNAME="${1}"
 	local SAFE_USERNAME='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
 
-	if [[ ${USERNAME} != root ]] && [[ ${USERNAME} =~ ${SAFE_USERNAME} ]]; then
+	if [[ ${USERNAME} != root ]] \
+		&& [[ ${USERNAME} =~ ${SAFE_USERNAME} ]]; then
 		return 0
 	fi
 
 	return 1
 }
 
-is_valid_ssh_user_home ()
+function is_valid_ssh_user_home ()
 {
 	local HOME_DIRECTORY="${1:-}"
 	local SAFE_DIRECTORY='^\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+$'
 
-	if [[ -n $(grep -oP ${SAFE_DIRECTORY} <<< ${HOME_DIRECTORY}) ]]; then
+	if grep -qoP "${SAFE_DIRECTORY}" <<< "${HOME_DIRECTORY}"; then
 		return 0
 	fi
 
 	return 1
 }
 
-is_valid_ssh_user_password_hash ()
+function is_valid_ssh_user_password_hash ()
 {
 	local PASSWORD_HASH="${1:-}"
 	local SHA_512_PATTERN='^\$6\$[a-zA-Z0-9./]{0,16}\$[a-zA-Z0-9./]{86}$'
@@ -111,18 +104,20 @@ is_valid_ssh_user_password_hash ()
 	return 1
 }
 
-is_valid_ssh_user_shell ()
+function is_valid_ssh_user_shell ()
 {
-	local SHELL=${1}
+	local SHELL="${1}"
 	local VALID_SHELL=
-	local VALID_SHELLS=$(chsh --list-shells)
+	local VALID_SHELLS="$(
+		chsh --list-shells
+	)"
 
 	if [[ -z ${SHELL} ]]; then
 		return 1
 	fi
 
 	for VALID_SHELL in ${VALID_SHELLS}; do
-		if [[ ${VALID_SHELL} == ${SHELL} ]]; then
+		if [[ ${VALID_SHELL} == "${SHELL}" ]]; then
 			return 0
 		fi
 	done
@@ -130,10 +125,10 @@ is_valid_ssh_user_shell ()
 	return 1
 }
 
-is_valid_ssh_user_id ()
+function is_valid_ssh_user_id ()
 {
 	local GROUP_ID=500
-	local ID=${1}
+	local ID="${1}"
 	local ID_PATTERN='^([0-9]{3,}):([0-9]{3,})$'
 	local USER_ID=500
 
@@ -145,7 +140,7 @@ is_valid_ssh_user_id ()
 		USER_ID="${BASH_REMATCH[1]}"
 		GROUP_ID="${BASH_REMATCH[2]}"
 
-		if (( ${USER_ID} >= 500 )) && (( ${GROUP_ID} >= 500 )); then
+		if (( USER_ID >= 500 )) && (( GROUP_ID >= 500 )); then
 			return 0
 		fi
 	fi
@@ -153,19 +148,33 @@ is_valid_ssh_user_id ()
 	return 1
 }
 
-get_ssh_authorized_keys ()
+function get_password ()
+{
+	local PASSWORD_LENGTH="${1:-16}"
+	local PASSWORD="$(
+		head -n 4096 /dev/urandom \
+		| tr -cd '[:alnum:]' \
+		| cut -c1-"${PASSWORD_LENGTH}"
+	)"
+
+	printf -- "%s" "${PASSWORD}"
+
+	return 0
+}
+
+function get_ssh_authorized_keys ()
 {
 	local DEFAULT_PATH="${1:-/etc/services-config/ssh/authorized_keys}"
 	local VALUE="${SSH_AUTHORIZED_KEYS:-}"
 
 	if [[ -z ${VALUE} ]] && [[ -s ${DEFAULT_PATH} ]]; then
-		VALUE="$(< ${DEFAULT_PATH})"
+		VALUE="$(< "${DEFAULT_PATH}")"
 	fi
 
 	printf -- "%s" "${VALUE}"
 }
 
-get_ssh_authorized_key_fingerprints ()
+function get_ssh_authorized_key_fingerprints ()
 {
 	local AUTHORIZED_KEYS="${1:-$(get_ssh_authorized_keys)}"
 	local FINGERPRINT=
@@ -180,12 +189,17 @@ get_ssh_authorized_key_fingerprints ()
 	fi
 
 	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
-		if [[ -n ${SSH_KEY} ]] && [[ ! $(get_ssh_key_fingerprint ${SSH_KEY}) =~ ${INVALID_KEY_PATTERN} ]]; then
-			FINGERPRINT=$(
-				printf -- '%s' \
-				$(get_ssh_key_fingerprint ${SSH_KEY}) | \
-				awk '{ print $2; }'
-			)
+		if [[ -n ${SSH_KEY} ]] \
+			&& [[ ! $(
+				get_ssh_key_fingerprint "${SSH_KEY}"
+			) =~ ${INVALID_KEY_PATTERN} ]]; then
+
+			printf -v FINGERPRINT \
+				-- '%s' \
+				"$(
+					get_ssh_key_fingerprint "${SSH_KEY}" \
+					| awk '{ print $2; }'
+				)"
 
 			# Indicate use of insecure public key
 			if [[ ${FINGERPRINT} == ${INSECURE_FINGERPRINT} ]];then
@@ -193,7 +207,7 @@ get_ssh_authorized_key_fingerprints ()
 			fi
 
 			printf -v FINGERPRINTS \
-				'%s%s\n' \
+				-- '%s%s\n' \
 				"${FINGERPRINTS}" \
 				"${FINGERPRINT}"
 		fi
@@ -202,7 +216,7 @@ get_ssh_authorized_key_fingerprints ()
 	printf -- "%s" "${FINGERPRINTS}"
 }
 
-get_ssh_chroot_directory ()
+function get_ssh_chroot_directory ()
 {
 	local DEFAULT_VALUE="${1:-%h}"
 	local VALUE="${SSH_CHROOT_DIRECTORY:-}"
@@ -214,12 +228,16 @@ get_ssh_chroot_directory ()
 	printf -- "%s" "${VALUE}"
 }
 
-get_ssh_chroot_directory_path ()
+function get_ssh_chroot_directory_path ()
 {
 	local CHROOT_DIRECTORY="${1:-$(get_ssh_chroot_directory)}"
 	local DEFAULT_CHROOT_DIRECTORY_VALUE="%h"
-	local USER="$(get_ssh_user)"
-	local HOME="$(get_ssh_user_home)"
+	local USER="$(
+		get_ssh_user
+	)"
+	local HOME="$(
+		get_ssh_user_home
+	)"
 	local VALUE=
 
 	if ! is_valid_ssh_chroot_directory "${CHROOT_DIRECTORY}"; then
@@ -235,7 +253,7 @@ get_ssh_chroot_directory_path ()
 	printf -- "%s" "${VALUE}"
 }
 
-get_ssh_host_key_fingerprint ()
+function get_ssh_host_key_fingerprint ()
 {
 	local FINGERPRINT=
 	local INVALID_KEY_PATTERN='is not a public key file.$'
@@ -243,16 +261,24 @@ get_ssh_host_key_fingerprint ()
 	local SSH_KEY
 	local TYPE="${1:-rsa}"
 
-	case ${TYPE} in
+	case "${TYPE}" in
 		rsa1|rsa|dsa|ecdsa|ed25519)
 			PUBLIC_KEY_PATH=/etc/ssh/ssh_host_${TYPE}_key.pub
-			SSH_KEY="$(< ${PUBLIC_KEY_PATH})"
-			FINGERPRINT=$(get_ssh_key_fingerprint "${SSH_KEY}")
+			SSH_KEY="$(< "${PUBLIC_KEY_PATH}")"
+			FINGERPRINT="$(
+				get_ssh_key_fingerprint "${SSH_KEY}"
+			)"
 
-			if [[ -s ${PUBLIC_KEY_PATH} ]] && [[ ! ${FINGERPRINT} =~ ${INVALID_KEY_PATTERN} ]]; then
-				printf -- '%s\n' "${FINGERPRINT}" | awk '{ print $2; }'
+			if [[ -s ${PUBLIC_KEY_PATH} ]] \
+				&& [[ ! ${FINGERPRINT} =~ ${INVALID_KEY_PATTERN} ]]; then
+				printf \
+					-- '%s\n' \
+					"${FINGERPRINT}" \
+				| awk '{ print $2; }'
 			else
-				printf -- '%s\n' "invalid-key"
+				printf \
+					-- '%s\n' \
+					"invalid-key"
 			fi
 			;;
 		*)
@@ -261,24 +287,26 @@ get_ssh_host_key_fingerprint ()
 	esac
 }
 
-get_ssh_key_fingerprint ()
+function get_ssh_key_fingerprint ()
 {
 	local FINGERPRINT
 	local SSH_KEY="${1:-}"
-	local SSH_KEY_FILE=$(mktemp)
+	local SSH_KEY_FILE="$(
+		mktemp
+	)"
 
-	echo "${SSH_KEY}" > ${SSH_KEY_FILE}
+	echo "${SSH_KEY}" > "${SSH_KEY_FILE}"
 
-	FINGERPRINT=$(
-		ssh-keygen -lf ${SSH_KEY_FILE}
-	)
+	FINGERPRINT="$(
+		ssh-keygen -lf "${SSH_KEY_FILE}"
+	)"
 
-	rm -f ${SSH_KEY_FILE}
+	rm -f "${SSH_KEY_FILE}"
 
 	printf -- "%s" "${FINGERPRINT}"
 }
 
-get_ssh_user ()
+function get_ssh_user ()
 {
 	local DEFAULT_VALUE="${1:-app-admin}"
 	local VALUE="${SSH_USER:-}"
@@ -290,10 +318,12 @@ get_ssh_user ()
 	printf -- "%s" "${VALUE}"
 }
 
-get_ssh_user_home ()
+function get_ssh_user_home ()
 {
 	local DEFAULT_VALUE="${1:-/home/%u}"
-	local USER="$(get_ssh_user)"
+	local USER="$(
+		get_ssh_user
+	)"
 	local VALUE="${SSH_USER_HOME:-}"
 
 	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_home "${VALUE}"; then
@@ -306,11 +336,11 @@ get_ssh_user_home ()
 	printf -- "%s" "${VALUE}"
 }
 
-get_ssh_user_shell ()
+function get_ssh_user_shell ()
 {
 	local DEFAULT_VALUE="${1:-/bin/bash}"
 	local VALUE="${SSH_USER_SHELL:-}"
-	local FORCE_SFTP=${SSH_USER_FORCE_SFTP:-false}
+	local FORCE_SFTP="${SSH_USER_FORCE_SFTP:-false}"
 
 	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_shell "${VALUE}"; then
 		VALUE="${DEFAULT_VALUE}"
@@ -324,10 +354,12 @@ get_ssh_user_shell ()
 	printf -- "%s" "${VALUE}"
 }
 
-get_ssh_user_uid ()
+function get_ssh_user_uid ()
 {
 	local DEFAULT_VALUE="${1:-500}"
-	local ID=$(get_ssh_user_id)
+	local ID="$(
+		get_ssh_user_id
+	)"
 	local ID_PATTERN='^([0-9]{3,}):([0-9]{3,})$'
 	local VALUE="${DEFAULT_VALUE}"
 
@@ -338,7 +370,7 @@ get_ssh_user_uid ()
 	printf "%d" "${VALUE}"
 }
 
-get_ssh_user_id ()
+function get_ssh_user_id ()
 {
 	local DEFAULT_VALUE="${1:-500:500}"
 	local VALUE="${SSH_USER_ID:-}"
@@ -350,10 +382,12 @@ get_ssh_user_id ()
 	printf -- "%s" "${VALUE}"
 }
 
-get_ssh_user_gid ()
+function get_ssh_user_gid ()
 {
 	local DEFAULT_VALUE="${1:-500}"
-	local ID=$(get_ssh_user_id)
+	local ID="$(
+		get_ssh_user_id
+	)"
 	local ID_PATTERN='^([0-9]{3,}):([0-9]{3,})$'
 	local VALUE="${DEFAULT_VALUE}"
 
@@ -364,19 +398,19 @@ get_ssh_user_gid ()
 	printf -- "%d" "${VALUE}"
 }
 
-generate_ssh_host_key ()
+function generate_ssh_host_key ()
 {
 	local PRIVATE_KEY_PATH
 	local PUBLIC_KEY_PATH
-	local REPLACE=${1:-false}
+	local REPLACE="${1:-false}"
 	local RESPONSE='n\n'
-	local TYPE=${2:-rsa}
+	local TYPE="${2:-rsa}"
 
 	if [[ ${REPLACE} == true ]] || [[ ${REPLACE} == 'y' ]]; then
 		RESPONSE='y\n'
 	fi
 
-	case ${TYPE} in
+	case "${TYPE}" in
 		rsa1|rsa|dsa|ecdsa|ed25519)
 			if [[ ${TYPE} != rsa1 ]]; then
 				PRIVATE_KEY_PATH=/etc/ssh/ssh_host_${TYPE}_key
@@ -386,16 +420,17 @@ generate_ssh_host_key ()
 				PUBLIC_KEY_PATH=/etc/ssh/ssh_host_key.pub
 			fi
 
-			echo -e ${RESPONSE} | ssh-keygen \
+			echo -e "${RESPONSE}" \
+			| ssh-keygen \
 				-q \
 				-C "" \
 				-N "" \
-				-t ${TYPE} \
-				-f ${PRIVATE_KEY_PATH} \
+				-t "${TYPE}" \
+				-f "${PRIVATE_KEY_PATH}" \
 				&> /dev/null
 
 			if [[ -x /sbin/restorecon ]]; then
-				/sbin/restorecon ${PUBLIC_KEY_PATH}
+				/sbin/restorecon "${PUBLIC_KEY_PATH}"
 			fi
 
 			;;
@@ -405,30 +440,34 @@ generate_ssh_host_key ()
 	esac
 }
 
-generate_ssh_host_keys ()
+function generate_ssh_host_keys ()
 {
-	local REPLACE=${1:-false}
+	local REPLACE="${1:-false}"
 	local VERSION="${2:-}"
 
 	if [[ -z ${VERSION} ]] && [[ -e /etc/redhat-release ]]; then
-		VERSION=$(rpm -q --whatprovides redhat-release --queryformat "%{VERSION}")
+		VERSION="$(
+			rpm -q \
+				--whatprovides redhat-release \
+				--queryformat "%{VERSION}"
+		)"
 	else
 		echo "ERROR: Unknown EL release."
 		return 1
 	fi
 
-	case ${VERSION} in
+	case "${VERSION}" in
 		6)
-			generate_ssh_host_key ${REPLACE} rsa1
-			generate_ssh_host_key ${REPLACE} rsa
-			generate_ssh_host_key ${REPLACE} dsa
+			generate_ssh_host_key "${REPLACE}" rsa1
+			generate_ssh_host_key "${REPLACE}" rsa
+			generate_ssh_host_key "${REPLACE}" dsa
 			;;
 		7)
-			generate_ssh_host_key ${REPLACE} rsa1
-			generate_ssh_host_key ${REPLACE} rsa
-			generate_ssh_host_key ${REPLACE} dsa
-			generate_ssh_host_key ${REPLACE} ecdsa
-			generate_ssh_host_key ${REPLACE} ed25519
+			generate_ssh_host_key "${REPLACE}" rsa1
+			generate_ssh_host_key "${REPLACE}" rsa
+			generate_ssh_host_key "${REPLACE}" dsa
+			generate_ssh_host_key "${REPLACE}" ecdsa
+			generate_ssh_host_key "${REPLACE}" ed25519
 			;;
 		*)
 			echo "Unknown EL release ${VERSION} - skipping."
@@ -436,12 +475,17 @@ generate_ssh_host_keys ()
 	esac
 }
 
-OPTS_SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT:-false}
-OPTS_SSH_USER="$(get_ssh_user app-admin)"
-OPTS_SSH_USER_HOME="$(get_ssh_user_home)"
+OPTS_SSH_INHERIT_ENVIRONMENT="${SSH_INHERIT_ENVIRONMENT:-false}"
+OPTS_SSH_USER="$(
+	get_ssh_user app-admin
+)"
+OPTS_SSH_USER_HOME="$(
+	get_ssh_user_home
+)"
 
 # Docker ENV inheritance
-if [[ ${OPTS_SSH_INHERIT_ENVIRONMENT} == true ]] && [[ -s /etc/sshd-bootstrap.env ]]; then
+if [[ ${OPTS_SSH_INHERIT_ENVIRONMENT} == true ]] \
+	&& [[ -s /etc/sshd-bootstrap.env ]]; then
 	# Variables to exclude
 	grep -Ev "^([.]*SSH_USER_PASSWORD|_|HOME|HOSTNAME|PATH|PWD|SHLVL|SUPERVISOR_ENABLED|SUPERVISOR_GROUP_NAME|SUPERVISOR_PROCESS_NAME|TERM)=" \
 		/etc/sshd-bootstrap.env > /etc/environment
@@ -459,19 +503,30 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
 	PASSWORD_LENGTH=16
 	REDACTED_VALUE="********"
-	OPTS_SSH_AUTHORIZED_KEYS="$(get_ssh_authorized_keys /etc/services-config/ssh/authorized_keys)"
+	OPTS_SSH_AUTHORIZED_KEYS="$(
+		get_ssh_authorized_keys \
+			/etc/services-config/ssh/authorized_keys
+	)"
 	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
 	OPTS_SSH_USER_PASSWORD_HASHED="${SSH_USER_PASSWORD_HASHED:-false}"
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password ${PASSWORD_LENGTH})}"
 	OPTS_SSH_USER_FORCE_SFTP="${SSH_USER_FORCE_SFTP:-false}"
-	OPTS_SSH_USER_SHELL="$(get_ssh_user_shell /bin/bash)"
-	OPTS_SSH_USER_UID="$(get_ssh_user_uid)"
-	OPTS_SSH_USER_GID="$(get_ssh_user_gid)"
+	OPTS_SSH_USER_SHELL="$(
+		get_ssh_user_shell /bin/bash
+	)"
+	OPTS_SSH_USER_UID="$(
+		get_ssh_user_uid
+	)"
+	OPTS_SSH_USER_GID="$(
+		get_ssh_user_gid
+	)"
 
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
 		SSHD_COMMAND=SFTP
 		SSH_USER_GROUPS=users
-		OPTS_SSH_CHROOT_DIRECTORY=$(get_ssh_chroot_directory %h)
+		OPTS_SSH_CHROOT_DIRECTORY="$(
+			get_ssh_chroot_directory %h
+		)"
 	else
 		SSHD_COMMAND=SSH
 	fi
@@ -504,33 +559,36 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	PIDS[0]=${!}
 
 	# Create base directory for home
-	if [[ -n ${OPTS_SSH_USER_HOME%/*} ]] && [[ ! -d ${OPTS_SSH_USER_HOME%/*} ]]; then
+	if [[ -n ${OPTS_SSH_USER_HOME%/*} ]] \
+		&& [[ ! -d ${OPTS_SSH_USER_HOME%/*} ]]; then
 		echo "Creating home base directory."
-		mkdir -pm 755 ${OPTS_SSH_USER_HOME%/*}
+		mkdir -pm 755 "${OPTS_SSH_USER_HOME%/*}"
 	fi
 
 	groupadd \
 		-f \
-		-g ${OPTS_SSH_USER_GID} \
-		${OPTS_SSH_USER}
+		-g "${OPTS_SSH_USER_GID}" \
+		"${OPTS_SSH_USER}"
 
 	useradd \
-		-u ${OPTS_SSH_USER_UID} \
-		-g ${OPTS_SSH_USER_GID} \
+		-u "${OPTS_SSH_USER_UID}" \
+		-g "${OPTS_SSH_USER_GID}" \
 		-m \
-		-G ${SSH_USER_GROUPS:-users,wheel} \
-		-d ${OPTS_SSH_USER_HOME} \
-		-s ${OPTS_SSH_USER_SHELL} \
-		${OPTS_SSH_USER}
+		-G "${SSH_USER_GROUPS:-users,wheel}" \
+		-d "${OPTS_SSH_USER_HOME}" \
+		-s "${OPTS_SSH_USER_SHELL}" \
+		"${OPTS_SSH_USER}"
 
 	$(
 		# Set root user password
-		echo "root:${SSH_ROOT_PASSWORD:-$(get_password ${PASSWORD_LENGTH})}" | chpasswd
+		echo "root:${SSH_ROOT_PASSWORD:-$(get_password ${PASSWORD_LENGTH})}" \
+		| chpasswd
 	) &
 	PIDS[1]=${!}
 
 	# Set SSH user password
-	if [[ ${OPTS_SSH_USER_PASSWORD_HASHED} == true ]] && [[ -n ${SSH_USER_PASSWORD} ]]; then
+	if [[ ${OPTS_SSH_USER_PASSWORD_HASHED} == true ]] \
+		&& [[ -n ${SSH_USER_PASSWORD} ]]; then
 		# Hashed password must use SHA-512 hashing algorithm
 		if ! is_valid_ssh_user_password_hash "${SSH_USER_PASSWORD}"; then
 			echo "ERROR: Password hash not SHA-512 - setting new password."
@@ -551,39 +609,55 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 
 		# Get the ChrootDirectory path.
 		# %h and %u are replaced with the User's HOME and USERNAME respectively.
-		SSH_CHROOT_DIRECTORY_PATH="$(get_ssh_chroot_directory_path ${OPTS_SSH_CHROOT_DIRECTORY})"
+		SSH_CHROOT_DIRECTORY_PATH="$(
+			get_ssh_chroot_directory_path "${OPTS_SSH_CHROOT_DIRECTORY}"
+		)"
 
-		if [[ ! -d ${SSH_CHROOT_DIRECTORY_PATH} ]] || [[ ${SSH_CHROOT_DIRECTORY_PATH} != ${OPTS_SSH_USER_HOME} ]]; then
+		if [[ ! -d ${SSH_CHROOT_DIRECTORY_PATH} ]] \
+			|| [[ ${SSH_CHROOT_DIRECTORY_PATH} != "${OPTS_SSH_USER_HOME}" ]]; then
 			# ChrootDirectory like /chroot/%u or /home/chroot/%u
-			SSH_CHROOT_HOME_DIRECTORY_PATH=${SSH_CHROOT_DIRECTORY_PATH}${OPTS_SSH_USER_HOME}
+			printf -v SSH_CHROOT_HOME_DIRECTORY_PATH \
+				-- '%s%s' \
+				"${SSH_CHROOT_DIRECTORY_PATH}" \
+				"${OPTS_SSH_USER_HOME}"
 
-			mkdir -pm 711 ${SSH_CHROOT_DIRECTORY_PATH}
-			mkdir -pm 755 ${SSH_CHROOT_HOME_DIRECTORY_PATH}
+			mkdir -pm 711 "${SSH_CHROOT_DIRECTORY_PATH}"
+			mkdir -pm 755 "${SSH_CHROOT_HOME_DIRECTORY_PATH}"
 		else
 			# ChrootDirectory %h
-			SSH_CHROOT_HOME_DIRECTORY_PATH=${OPTS_SSH_USER_HOME}
+			SSH_CHROOT_HOME_DIRECTORY_PATH="${OPTS_SSH_USER_HOME}"
 
-			chmod 750 ${OPTS_SSH_USER_HOME}
+			chmod 750 "${OPTS_SSH_USER_HOME}"
 		fi
 
 		# Create a user writeable data directory if no other directories are mounted.
-		if [[ -z $(ls -l ${SSH_CHROOT_HOME_DIRECTORY_PATH}/ | grep '^d') ]]; then
+		if ! grep -q '^d' <<< "$(ls -l "${SSH_CHROOT_HOME_DIRECTORY_PATH}"/)"; then
 			# Make and set user permissions on new _data directory
-			mkdir -m 700 ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
-			chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
+			mkdir -m 700 \
+				"${SSH_CHROOT_HOME_DIRECTORY_PATH}"/_data
+			chown -R \
+				"${OPTS_SSH_USER}":"${OPTS_SSH_USER}" \
+				"${SSH_CHROOT_HOME_DIRECTORY_PATH}"/_data
 		elif [[ -d ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data ]]; then
 			# Set user permissions on _data directory in case where it exists
-			chmod 700 ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
-			chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${SSH_CHROOT_HOME_DIRECTORY_PATH}/_data
+			chmod 700 \
+				"${SSH_CHROOT_HOME_DIRECTORY_PATH}"/_data
+			chown -R \
+				"${OPTS_SSH_USER}":"${OPTS_SSH_USER}" \
+				"${SSH_CHROOT_HOME_DIRECTORY_PATH}"/_data
 		fi
 
-		if [[ ${SSH_CHROOT_DIRECTORY_PATH} != ${OPTS_SSH_USER_HOME} ]]; then
+		if [[ ${SSH_CHROOT_DIRECTORY_PATH} != "${OPTS_SSH_USER_HOME}" ]]; then
 			# ChrootDirectory must be owned by root user
-			chown root:root ${SSH_CHROOT_DIRECTORY_PATH}
-			chmod 711 ${SSH_CHROOT_DIRECTORY_PATH}
+			chown \
+				root:root \
+				"${SSH_CHROOT_DIRECTORY_PATH}"
+			chmod 711 \
+				"${SSH_CHROOT_DIRECTORY_PATH}"
 		else
 			# ChrootDirectory must be owned by root user
-			chown root:${OPTS_SSH_USER} ${SSH_CHROOT_DIRECTORY_PATH}
+			chown root:"${OPTS_SSH_USER}" \
+				"${SSH_CHROOT_DIRECTORY_PATH}"
 		fi
 
 		# Add group specific sshd configuration
@@ -602,23 +676,37 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	fi
 
 	# SSH require files
-	mkdir -m 700 ${OPTS_SSH_USER_HOME}/.ssh
-	touch ${OPTS_SSH_USER_HOME}/.ssh/authorized_keys
-	chown -R ${OPTS_SSH_USER}:${OPTS_SSH_USER} ${OPTS_SSH_USER_HOME}/.ssh
-	chmod 600 ${OPTS_SSH_USER_HOME}/.ssh/authorized_keys
+	mkdir -m 700 \
+		"${OPTS_SSH_USER_HOME}"/.ssh
+	touch \
+		"${OPTS_SSH_USER_HOME}"/.ssh/authorized_keys
+	chown -R \
+		"${OPTS_SSH_USER}":"${OPTS_SSH_USER}" \
+		"${OPTS_SSH_USER_HOME}"/.ssh
+	chmod 600 \
+		"${OPTS_SSH_USER_HOME}"/.ssh/authorized_keys
 
 	if ! is_valid_ssh_authorized_keys "${OPTS_SSH_AUTHORIZED_KEYS}"; then
 		printf -v SSH_KEY_FINGERPRINTS \
-			'ERROR: Public key validation failed.\nUnable to populate %s/.ssh/authorized_key\n' \
+			-- '%s\nUnable to populate %s/.ssh/authorized_key'
+			"ERROR: Public key validation failed." \
 			"${OPTS_SSH_USER_HOME}"
 	else
-		printf -- "%s" "${OPTS_SSH_AUTHORIZED_KEYS}" > ${OPTS_SSH_USER_HOME}/.ssh/authorized_keys
-		SSH_KEY_FINGERPRINTS="$(get_ssh_authorized_key_fingerprints)"
+		printf \
+			-- '%s' \
+			"${OPTS_SSH_AUTHORIZED_KEYS}" \
+			> "${OPTS_SSH_USER_HOME}"/.ssh/authorized_keys
+
+		SSH_KEY_FINGERPRINTS="$(
+			get_ssh_authorized_key_fingerprints
+		)"
 	fi
 
 	# Set sudo access for the wheel group only
-	if [[ ${DEFAULT_SSH_SUDO} != ${OPTS_SSH_SUDO} ]]; then
-		sed -i "s~^%wheel\\t.*$~%wheel\\t${OPTS_SSH_SUDO}~g" /etc/sudoers
+	if [[ ${DEFAULT_SSH_SUDO} != "${OPTS_SSH_SUDO}" ]]; then
+		sed -i \
+			-e "s~^%wheel\\t.*$~%wheel\\t${OPTS_SSH_SUDO}~g" \
+			/etc/sudoers
 	fi
 
 	tee -a /etc/sudoers > /dev/null <<-EOT
@@ -628,30 +716,32 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	EOT
 
 	# Wait for background processes
-	wait ${PIDS[0]} && \
-		SSH_HOST_KEY_FINGERPRINT_RSA="$(get_ssh_host_key_fingerprint rsa)"
+	wait ${PIDS[0]} && SSH_HOST_KEY_FINGERPRINT_RSA="$(
+		get_ssh_host_key_fingerprint rsa
+	)"
 	wait ${PIDS[1]}
 
 	# Never store the root password
-	SSH_ROOT_PASSWORD=${REDACTED_VALUE}
+	SSH_ROOT_PASSWORD="${REDACTED_VALUE}"
 
 	# Only show user password if auto-generated and password is required for sudo
-	if [[ -n ${SSH_USER_PASSWORD} ]] || is_sudo_no_password_all "${OPTS_SSH_SUDO}" \
+	if [[ -n ${SSH_USER_PASSWORD} ]] \
+		|| is_sudo_no_password_all "${OPTS_SSH_SUDO}" \
 		|| [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
-		OPTS_SSH_USER_PASSWORD=${REDACTED_VALUE}
-		SSH_USER_PASSWORD=${REDACTED_VALUE}
+		OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
+		SSH_USER_PASSWORD="${REDACTED_VALUE}"
 	fi
 
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
 		unset OPTS_SSH_SUDO
 	fi
 
-	TIMER_TOTAL=$(
+	TIMER_TOTAL="$(
 		echo - | awk "\
-		{ T1="${TIMER_START}" } \
-		{ T2="$(date +%s.%N)" } \
+		{ T1=\"${TIMER_START}\" } \
+		{ T2=\"$(date +%s.%N)\" } \
 		{ print T2 - T1; }"
-	)
+	)"
 
 	cat <<-EOT
 
