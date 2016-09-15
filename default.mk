@@ -2,7 +2,6 @@
 # Common parameters of create and run targets
 define DOCKER_CONTAINER_PARAMETERS
 --name $(DOCKER_NAME) \
---publish $(DOCKER_PORT_MAP_TCP_22):22 \
 --restart $(DOCKER_RESTART_POLICY) \
 --env "SSH_AUTHORIZED_KEYS=$(SSH_AUTHORIZED_KEYS)" \
 --env "SSH_AUTOSTART_SSHD=$(SSH_AUTOSTART_SSHD)" \
@@ -18,3 +17,7 @@ define DOCKER_CONTAINER_PARAMETERS
 --env "SSH_USER_PASSWORD_HASHED=$(SSH_USER_PASSWORD_HASHED)" \
 --env "SSH_USER_SHELL=$(SSH_USER_SHELL)"
 endef
+
+DOCKER_PUBLISH := $(shell \
+	if [[ $(DOCKER_PORT_MAP_TCP_22) != NULL ]]; then printf -- '--publish %s:22\n' $(DOCKER_PORT_MAP_TCP_22); fi; \
+)
