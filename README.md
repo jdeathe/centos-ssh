@@ -88,7 +88,7 @@ $ sftp -p 2021 -i id_rsa_insecure \
 
 ### Running
 
-To run the a docker container from this image you can use the standard docker commands. Alternatively, you can use the embedded (Service Container Manager Interface) [scmi](https://github.com/jdeathe/centos-ssh/blob/centos-7/usr/sbin/scmi) that is included in the image since `centos-6-1.7.0`|`centos-7-2.1.0` or, if you have a checkout of the [source repository](https://github.com/jdeathe/centos-ssh), and have make installed the Makefile provides targets to build, install, start, stop etc. where environment variables can be used to configure the container options and set custom docker run parameters.
+To run the a docker container from this image you can use the standard docker commands. Alternatively, you can use the embedded (Service Container Manager Interface) [scmi](https://github.com/jdeathe/centos-ssh/blob/centos-7/usr/sbin/scmi) that is included in the image since `centos-6-1.7.1`|`centos-7-2.1.1` or, if you have a checkout of the [source repository](https://github.com/jdeathe/centos-ssh), and have make installed the Makefile provides targets to build, install, start, stop etc. where environment variables can be used to configure the container options and set custom docker run parameters.
 
 #### SCMI Installation Examples
 
@@ -101,15 +101,15 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:centos-6-1.7.0 \
+  jdeathe/centos-ssh:centos-6-1.7.1 \
   /sbin/scmi install \
     --chroot=/media/root \
-    --tag=centos-6-1.7.0 \
+    --tag=centos-6-1.7.1 \
     --name=ssh.pool-1.1.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
 
-#### SCMI Uninstall
+##### SCMI Uninstall
 
 To uninstall the previous example simply run the same docker run command with the scmi `uninstall` command.
 
@@ -118,15 +118,15 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:centos-6-1.7.0 \
+  jdeathe/centos-ssh:centos-6-1.7.1 \
   /sbin/scmi uninstall \
     --chroot=/media/root \
-    --tag=centos-6-1.7.0 \
+    --tag=centos-6-1.7.1 \
     --name=ssh.pool-1.1.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
 
-#### SCMI Systemd Support
+##### SCMI Systemd Support
 
 If your docker host has systemd (and optionally etcd) installed then `scmi` provides a method to install the container as a systemd service unit. This provides some additional features for managing a group of instances on a single docker host and has the option to use an etcd backed service registry. Using a systemd unit file allows the System Administrator to use a Drop-In to override the settings of a unit-file template used to create service instances. To use the systemd method of installation use the `-m` or `--manager` option of `scmi` and to include the optional etcd register companion unit use the `--register` option.
 
@@ -135,10 +135,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:centos-6-1.7.0 \
+  jdeathe/centos-ssh:centos-6-1.7.1 \
   /sbin/scmi install \
     --chroot=/media/root \
-    --tag=centos-6-1.7.0 \
+    --tag=centos-6-1.7.1 \
     --name=ssh.pool-1.1.1 \
     --manager=systemd \
     --register \
@@ -147,13 +147,13 @@ $ docker run \
     --setopt='--volume {{NAME}}.config-ssh:/etc/ssh'
 ```
 
-#### SCMI Fleet Support
+##### SCMI Fleet Support
 
 If your docker host has systemd, fleetd (and optionally etcd) installed then `scmi` provides a method to schedule the container  to run on the cluster. This provides some additional features for managing a group of instances on a [fleet](https://github.com/coreos/fleet) cluster and has the option to use an etcd backed service registry. To use the fleet method of installation use the `-m` or `--manager` option of `scmi` and to include the optional etcd register companion unit use the `--register` option.
 
 ##### SCMI Image Information
 
-Since release tags `centos-6-1.7.0` and `centos-7-2.1.0` the install template has been added to the image metadata. Using docker inspect you can access `scmi` to simplify install/uninstall tasks.
+Since release tags `centos-6-1.7.1` and `centos-7-2.1.1` the install template has been added to the image metadata. Using docker inspect you can access `scmi` to simplify install/uninstall tasks.
 
 To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
 
@@ -161,7 +161,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:centos-6-1.7.0
+    jdeathe/centos-ssh:centos-6-1.7.1
   ) --info"
 ```
 
@@ -171,7 +171,7 @@ To perform an installation using the docker name `ssh.pool-1.2.1` simply use the
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:centos-6-1.7.0
+    jdeathe/centos-ssh:centos-6-1.7.1
   ) --name=ssh.pool-1.2.1"
 ```
 
@@ -181,7 +181,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.uninstall}}" \
-    jdeathe/centos-ssh:centos-6-1.7.0
+    jdeathe/centos-ssh:centos-6-1.7.1
   ) --name=ssh.pool-1.2.1"
 ```
 
@@ -194,7 +194,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:centos-6-1.7.0 \
+  jdeathe/centos-ssh:centos-6-1.7.1 \
   --info
 ```
 
@@ -203,14 +203,14 @@ To perform an installation using the docker name `ssh.pool-1.3.1` simply use the
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:centos-6-1.7.0
+  jdeathe/centos-ssh:centos-6-1.7.1
 ```
 
 Alternatively, you could use the `scmi` options `--name` or `-n` for naming the container.
 
 ```
 $ sudo -E atomic install \
-  jdeathe/centos-ssh:centos-6-1.7.0 \
+  jdeathe/centos-ssh:centos-6-1.7.1 \
   --name ssh.pool-1.3.1
 ```
 
@@ -219,7 +219,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 ```
 $ sudo -E atomic uninstall \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:centos-6-1.7.0
+  jdeathe/centos-ssh:centos-6-1.7.1
 ```
 
 #### Using environment variables
@@ -287,7 +287,7 @@ There are several environmental variables defined at runtime these allow the ope
 
 ##### SSH_AUTHORIZED_KEYS
 
-As detailed below the public key added for the SSH user is insecure by default. This is intentional and allows for access using a known private key. Using ```SSH_AUTHORIZED_KEYS``` you can replace the insecure public key with another one (or several). Further details on how to create your own private + public key pair are detailed below.
+As detailed below the public key added for the SSH user is insecure by default. This is intentional and allows for access using a known private key. Using `SSH_AUTHORIZED_KEYS` you can replace the insecure public key with another one (or several). Further details on how to create your own private + public key pair are detailed below.
 
 ```
 ...
@@ -300,7 +300,7 @@ ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJl
 
 ##### SSH_AUTOSTART_SSHD && SSH_AUTOSTART_SSHD_BOOTSTRAP
 
-It may be desirable to prevent the startup of the sshd daemon and/or sshd-bootstrap script. For example, when using an image built from this Dockerfile as the source for another Dockerfile you could disable both sshd and sshd-booststrap from startup by setting ```SSH_AUTOSTART_SSHD``` and ```SSH_AUTOSTART_SSHD_BOOTSTRAP``` to `false`. The benefit of this is to reduce the number of running processes in the final container.
+It may be desirable to prevent the startup of the sshd daemon and/or sshd-bootstrap script. For example, when using an image built from this Dockerfile as the source for another Dockerfile you could disable both sshd and sshd-booststrap from startup by setting `SSH_AUTOSTART_SSHD` and `SSH_AUTOSTART_SSHD_BOOTSTRAP` to `false`. The benefit of this is to reduce the number of running processes in the final container.
 
 ```
 ...
@@ -311,7 +311,7 @@ It may be desirable to prevent the startup of the sshd daemon and/or sshd-bootst
 
 ##### SSH_CHROOT_DIRECTORY
 
-This option is only applicable when ```SSH_USER_FORCE_SFTP``` is set to `true`. When using the using the SFTP option the user is jailed into the ChrootDirectory. The value can contain the placeholders `%h` and `%u` which will be replaced with the values of ```SSH_USER_HOME``` and ```SSH_USER``` respectively. The default value of `%h` is the best choice in most cases but the user requires a sub-directory in their HOME directory which they have write access to. If no volume is mounted into the path of the SSH user's HOME directory the a directory named `_data` is created automatically. If you need the user to be able to write to their HOME directory they use an alternative value such as `/chroot/%u` so that the user's HOME path, (relative to the ChrootDirectory), becomes `/chroot/app-admin/home/app-admin` by default.
+This option is only applicable when `SSH_USER_FORCE_SFTP` is set to `true`. When using the using the SFTP option the user is jailed into the ChrootDirectory. The value can contain the placeholders `%h` and `%u` which will be replaced with the values of `SSH_USER_HOME` and `SSH_USER` respectively. The default value of `%h` is the best choice in most cases but the user requires a sub-directory in their HOME directory which they have write access to. If no volume is mounted into the path of the SSH user's HOME directory the a directory named `_data` is created automatically. If you need the user to be able to write to their HOME directory they use an alternative value such as `/chroot/%u` so that the user's HOME path, (relative to the ChrootDirectory), becomes `/chroot/app-admin/home/app-admin` by default.
 
 ```
 ...
@@ -321,7 +321,7 @@ This option is only applicable when ```SSH_USER_FORCE_SFTP``` is set to `true`. 
 
 ##### SSH_INHERIT_ENVIRONMENT
 
-The SSH user's environment is reset by default meaning that the Docker environmental variables are not available. Use ```SSH_INHERIT_ENVIRONMENT``` to allow the Docker environment variables to be passed to the SSH user's environment. Note that some values are removed to prevent issues; such as SSH_USER_PASSWORD, HOME, HOSTNAME, PATH, TERM etc.
+The SSH user's environment is reset by default meaning that the Docker environmental variables are not available. Use `SSH_INHERIT_ENVIRONMENT` to allow the Docker environment variables to be passed to the SSH user's environment. Note that some values are removed to prevent issues; such as SSH_USER_PASSWORD, HOME, HOSTNAME, PATH, TERM etc.
 
 ```
 ...
@@ -331,7 +331,7 @@ The SSH user's environment is reset by default meaning that the Docker environme
 
 ##### SSH_SUDO
 
-On first run the SSH user is created with a the sudo rule ```ALL=(ALL)  ALL``` which allows the user to run all commands but a password is required. If you want to limit the access to specific commands or allow sudo without a password prompt ```SSH_SUDO``` can be used.
+On first run the SSH user is created with a the sudo rule `ALL=(ALL)  ALL` which allows the user to run all commands but a password is required. If you want to limit the access to specific commands or allow sudo without a password prompt `SSH_SUDO` can be used.
 
 ```
 ...
@@ -341,7 +341,7 @@ On first run the SSH user is created with a the sudo rule ```ALL=(ALL)  ALL``` w
 
 ##### SSH_USER
 
-On first run the SSH user is created with the default username of "app-admin". If you require an alternative username ```SSH_USER``` can be used when running the container.
+On first run the SSH user is created with the default username of "app-admin". If you require an alternative username `SSH_USER` can be used when running the container.
 
 ```
 ...
@@ -351,7 +351,7 @@ On first run the SSH user is created with the default username of "app-admin". I
 
 ##### SSH_USER_FORCE_SFTP
 
-To force the use of the internal-sftp command set ```SSH_USER_FORCE_SFTP``` to `true`. This will prevent shell access, remove the ability to use `sudo` and restrict the user to the ChrootDirectory set using ```SSH_SHROOT_DIRECTORY```. Using SFTP in combination with --volumes-from another running container can be used to allow write access to an applications data volume - for example using the ```SSH_USER_HOME``` value to `/var/www/` could be used to allow access to the data volume of an Apache container.
+To force the use of the internal-sftp command set `SSH_USER_FORCE_SFTP` to `true`. This will prevent shell access, remove the ability to use `sudo` and restrict the user to the ChrootDirectory set using `SSH_SHROOT_DIRECTORY`. Using SFTP in combination with --volumes-from another running container can be used to allow write access to an applications data volume - for example using the `SSH_USER_HOME` value to `/var/www/` could be used to allow access to the data volume of an Apache container.
 
 ```
 ...
@@ -361,7 +361,7 @@ To force the use of the internal-sftp command set ```SSH_USER_FORCE_SFTP``` to `
 
 ##### SSH_USER_HOME
 
-On first run the SSH user is created with the default HOME directory of `/home/%u` where `%u` is replaced with the value of ```SSH_USER```. If you require an alternative HOME directory ```SSH_USER_HOME``` can be used when running the container.
+On first run the SSH user is created with the default HOME directory of `/home/%u` where `%u` is replaced with the value of `SSH_USER`. If you require an alternative HOME directory `SSH_USER_HOME` can be used when running the container.
 
 ```
 ...
@@ -371,7 +371,7 @@ On first run the SSH user is created with the default HOME directory of `/home/%
 
 ##### SSH_USER_PASSWORD
 
-On first run the SSH user is created with a generated password. If you require a specific password ```SSH_USER_PASSWORD``` can be used when running the container. If set to an empty string then a password is auto-generated and, if ```SSH_SUDO``` is not set to allow no password for all commands, will be displayed in the docker logs.
+On first run the SSH user is created with a generated password. If you require a specific password `SSH_USER_PASSWORD` can be used when running the container. If set to an empty string then a password is auto-generated and, if `SSH_SUDO` is not set to allow no password for all commands, will be displayed in the docker logs.
 
 ```
 ...
@@ -381,7 +381,7 @@ On first run the SSH user is created with a generated password. If you require a
 
 ##### SSH_USER_PASSWORD_HASHED
 
-If setting a password for the SSH user you might not want to store the plain text password value in the ```SSH_USER_PASSWORD``` environment variable. Setting ```SSH_USER_PASSWORD_HASHED``` to `true` indicates that the value stored in ```SSH_USER_PASSWORD``` should be treated as a crypt SHA-512 salted password hash.
+If setting a password for the SSH user you might not want to store the plain text password value in the `SSH_USER_PASSWORD` environment variable. Setting `SSH_USER_PASSWORD_HASHED` to `true` indicates that the value stored in `SSH_USER_PASSWORD` should be treated as a crypt SHA-512 salted password hash.
 
 ```
 ...
@@ -406,7 +406,7 @@ The result should be the string: ```$6$pepper$g5/OhofGtHVo3wqRgVHFQrJDyK0mV9bDpF
 
 ##### SSH_USER_SHELL
 
-On first run the SSH user is created with a default shell of "/bin/bash". If you require a specific shell ```SSH_USER_SHELL``` can be used when running the container. You could use "/sbin/nologin" to prevent login with the user account.
+On first run the SSH user is created with a default shell of "/bin/bash". If you require a specific shell `SSH_USER_SHELL` can be used when running the container. You could use "/sbin/nologin" to prevent login with the user account.
 
 ```
 ...
@@ -416,7 +416,7 @@ On first run the SSH user is created with a default shell of "/bin/bash". If you
 
 ##### SSH_USER_ID
 
-Use ```SSH_USER_ID``` to set a specific UID:GID for the ```SSH_USER```. The values should be 500 or more - the default being 500:500. This may be useful when running an SFTP container and mounting data volumes from an existing container.
+Use `SSH_USER_ID` to set a specific UID:GID for the `SSH_USER`. The values should be 500 or more - the default being 500:500. This may be useful when running an SFTP container and mounting data volumes from an existing container.
 
 ```
 ...
@@ -433,7 +433,6 @@ $ mkdir -pm 700 ~/.ssh
 ```
 
 Get the [Vagrant](http://www.vagrantup.com/) insecure public key using curl (you could also use wget if you have that installed).
-
 
 ```
 $ curl -LsSO https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant && \
