@@ -88,7 +88,7 @@ $ sftp -p 2021 -i id_rsa_insecure \
 
 ### Running
 
-To run the a docker container from this image you can use the standard docker commands. Alternatively, you can use the embedded (Service Container Manager Interface) [scmi](https://github.com/jdeathe/centos-ssh/blob/centos-7/usr/sbin/scmi) that is included in the image since `centos-6-1.7.1`|`centos-7-2.1.1` or, if you have a checkout of the [source repository](https://github.com/jdeathe/centos-ssh), and have make installed the Makefile provides targets to build, install, start, stop etc. where environment variables can be used to configure the container options and set custom docker run parameters.
+To run the a docker container from this image you can use the standard docker commands. Alternatively, you can use the embedded (Service Container Manager Interface) [scmi](https://github.com/jdeathe/centos-ssh/blob/centos-7/usr/sbin/scmi) that is included in the image since `centos-6-1.7.2`|`centos-7-2.1.2` or, if you have a checkout of the [source repository](https://github.com/jdeathe/centos-ssh), and have make installed the Makefile provides targets to build, install, start, stop etc. where environment variables can be used to configure the container options and set custom docker run parameters.
 
 #### SCMI Installation Examples
 
@@ -101,10 +101,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:centos-7-2.1.1 \
+  jdeathe/centos-ssh:centos-7-2.1.2 \
   /sbin/scmi install \
     --chroot=/media/root \
-    --tag=centos-7-2.1.1 \
+    --tag=centos-7-2.1.2 \
     --name=ssh.pool-1.1.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
@@ -118,10 +118,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:centos-7-2.1.1 \
+  jdeathe/centos-ssh:centos-7-2.1.2 \
   /sbin/scmi uninstall \
     --chroot=/media/root \
-    --tag=centos-7-2.1.1 \
+    --tag=centos-7-2.1.2 \
     --name=ssh.pool-1.1.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
@@ -135,10 +135,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:centos-7-2.1.1 \
+  jdeathe/centos-ssh:centos-7-2.1.2 \
   /sbin/scmi install \
     --chroot=/media/root \
-    --tag=centos-7-2.1.1 \
+    --tag=centos-7-2.1.2 \
     --name=ssh.pool-1.1.1 \
     --manager=systemd \
     --register \
@@ -153,7 +153,7 @@ If your docker host has systemd, fleetd (and optionally etcd) installed then `sc
 
 ##### SCMI Image Information
 
-Since release `centos-7-2.1.1` the install template has been added to the image metadata. Using docker inspect you can access `scmi` to simplify install/uninstall tasks.
+Since release `centos-7-2.1.2` the install template has been added to the image metadata. Using docker inspect you can access `scmi` to simplify install/uninstall tasks.
 
 To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
 
@@ -161,7 +161,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:centos-7-2.1.1
+    jdeathe/centos-ssh:centos-7-2.1.2
   ) --info"
 ```
 
@@ -171,7 +171,7 @@ To perform an installation using the docker name `ssh.pool-1.2.1` simply use the
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:centos-7-2.1.1
+    jdeathe/centos-ssh:centos-7-2.1.2
   ) --name=ssh.pool-1.2.1"
 ```
 
@@ -181,7 +181,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.uninstall}}" \
-    jdeathe/centos-ssh:centos-7-2.1.1
+    jdeathe/centos-ssh:centos-7-2.1.2
   ) --name=ssh.pool-1.2.1"
 ```
 
@@ -194,7 +194,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:centos-7-2.1.1 \
+  jdeathe/centos-ssh:centos-7-2.1.2 \
   --info
 ```
 
@@ -203,14 +203,14 @@ To perform an installation using the docker name `ssh.pool-1.3.1` simply use the
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:centos-7-2.1.1
+  jdeathe/centos-ssh:centos-7-2.1.2
 ```
 
 Alternatively, you could use the `scmi` options `--name` or `-n` for naming the container.
 
 ```
 $ sudo -E atomic install \
-  jdeathe/centos-ssh:centos-7-2.1.1 \
+  jdeathe/centos-ssh:centos-7-2.1.2 \
   --name ssh.pool-1.3.1
 ```
 
@@ -219,7 +219,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 ```
 $ sudo -E atomic uninstall \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:centos-7-2.1.1
+  jdeathe/centos-ssh:centos-7-2.1.2
 ```
 
 #### Using environment variables
