@@ -126,13 +126,13 @@ RUN mkdir -p \
 		/etc/services-config/supervisor/supervisord.conf \
 		/etc/supervisord.conf \
 	&& ln -sf \
-		/etc/services-config/supervisor/supervisord.d/sshd.conf \
-		/etc/supervisord.d/sshd.conf \
+		/etc/services-config/supervisor/supervisord.d/sshd-wrapper.conf \
+		/etc/supervisord.d/sshd-wrapper.conf \
 	&& ln -sf \
 		/etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
 		/etc/supervisord.d/sshd-bootstrap.conf \
 	&& chmod 700 \
-		/usr/sbin/{scmi,sshd-bootstrap}
+		/usr/sbin/{scmi,sshd-{bootstrap,wrapper}}
 
 # -----------------------------------------------------------------------------
 # Purge
@@ -165,7 +165,7 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="1.7.1"
+ARG RELEASE_VERSION="1.7.2"
 LABEL \
 	install="docker run \
 --rm \
