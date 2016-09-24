@@ -1,6 +1,69 @@
 export SHELL := /usr/bin/env bash
 export PATH := ${PATH}
 
+define USAGE
+Usage: make [options] [target] ...
+Usage: VARIABLE="VALUE" make [options] -- [target] ...
+
+This Makefile allows you to build, operate and create release packages for the
+container image defined by the Dockerfile.
+
+Targets:
+  all                       Combines targets build images install start and ps.
+  build                     Runs the packer build job. This is the
+                            default target.
+  clean                     Clean up build artifacts.
+  create                    Execute the create container template.
+  dist                      Pull a release version from the registry and save a
+                            package suitable for offline distribution. Image is 
+                            saved as a tar archive, compressed with xz.
+  distclean                 Clean up distribution artifacts.
+  exec COMMAND [ARG...]     Run command in a the running container.
+  help                      Show this help.
+  install                   Terminate running container and run the docker 
+                            create template.
+  images                    Show container's image details.
+  load                      Loads from the distribution package. Requires 
+                            DOCKER_IMAGE_TAG variable.
+  logs                      Display log output from the running container.
+  logs-delayed              Display log output from the running container after
+                            backing off shortly. This can be necessary when 
+                            chaining make targets together.
+  pause                     Pause the running container.
+  pull                      Pull the release image from the registry. Requires 
+                            the DOCKER_IMAGE_TAG variable.
+  ps                        Display the details of the container process.
+  restart                   Restarts the container.
+  rm                        Force remove the container.
+  rmi                       Untag (remove) the image.
+  run                       Execute the run container template.
+  start                     Start the container in the created state.
+  stop                      Stop the container when in a running state.
+  terminate                 Unpause, stop and remove the container.
+  unpause                   Unpause the container when in a paused state.
+
+Variables:
+  - DOCKER_CONTAINER_PARAMETERS_APPEND
+                            Set optional docker parameters to append that will 
+                            be appended to the create and run templates.
+  - DOCKER_IMAGE_TAG        Defines the image tag name.
+  - DOCKER_NAME             Container name. The required format is as follows
+                            where <instance> and <node> are required numeric
+                            values and group is optional. 
+                            {<name>|<name>.[group]}.<instance>.<node>
+  - DOCKER_PORT_MAP_TCP_*   The port map variable is used to define the initial 
+                            port mapping to use for the docker host value where  
+                            "*" corresponds to an exposed port on the container.
+                            Setting this to an empty string will result in an 
+                            automatically assigned port.
+  - DOCKER_RESTART_POLICY   Defines the container restart policy. 
+  - DIST_PATH               Ouput directory path - where the release package 
+                            artifacts are placed.
+  - NO_CACHE                When true, no cache will be used while running the 
+                            build target.
+
+endef
+
 include environment.mk
 include default.mk
 
@@ -69,6 +132,7 @@ get-docker-info := $(shell \
 	_require-docker-image-tag \
 	_require-docker-release-tag \
 	_require-package-path \
+	_usage \
 	all \
 	build \
 	clean \
@@ -76,6 +140,7 @@ get-docker-info := $(shell \
 	dist \
 	distclean \
 	exec \
+	help \
 	install \
 	images \
 	load \
@@ -92,6 +157,97 @@ get-docker-info := $(shell \
 	stop \
 	terminate \
 	unpause
+
+_prerequisites:
+ifeq ($(docker),)
+	$(error "Please install the docker (docker-engine) package.")
+endif
+
+ifeq ($(xz),)
+	$(error "Please install the xz package.")
+endif
+
+ifeq ($(get-docker-info),)
+	$(error "Unable to connect to docker host.")
+endif
+
+_require-docker-container:
+	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container."; \
+			echo "$(PREFIX_SUB_STEP) Try installing it with: make install"; \
+			exit 1; \
+		fi
+
+_require-docker-container-not:
+	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container be removed (or renamed)."; \
+			echo "$(PREFIX_SUB_STEP) Try removing it with: make rm"; \
+			exit 1; \
+		fi
+
+_require-docker-container-not-status-paused:
+	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=paused") ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container to be unpaused."; \
+			echo "$(PREFIX_SUB_STEP) Try unpausing it with: make unpause"; \
+			exit 1; \
+		fi
+
+_require-docker-container-status-created:
+	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=created") ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container to be created."; \
+			echo "$(PREFIX_SUB_STEP) Try installing it with: make install"; \
+			exit 1; \
+		fi
+
+_require-docker-container-status-exited:
+	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=exited") ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container to be exited."; \
+			echo "$(PREFIX_SUB_STEP) Try stopping it with: make stop"; \
+			exit 1; \
+		fi
+
+_require-docker-container-status-paused:
+	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=paused") ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container to be paused."; \
+			echo "$(PREFIX_SUB_STEP) Try pausing it with: make pause"; \
+			exit 1; \
+		fi
+
+_require-docker-container-status-running:
+	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running") ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container to be running."; \
+			echo "$(PREFIX_SUB_STEP) Try starting it with: make start"; \
+			exit 1; \
+		fi
+
+_require-docker-image-tag:
+	@ if [[ -z $$(if [[ $(DOCKER_IMAGE_TAG) =~ $(DOCKER_IMAGE_TAG_PATTERN) ]]; then echo $(DOCKER_IMAGE_TAG); else echo ''; fi) ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) Invalid DOCKER_IMAGE_TAG value: $(DOCKER_IMAGE_TAG)"; \
+			exit 1; \
+		fi
+
+_require-docker-release-tag:
+	@ if [[ -z $$(if [[ $(DOCKER_IMAGE_TAG) =~ $(DOCKER_IMAGE_RELEASE_TAG_PATTERN) ]]; then echo $(DOCKER_IMAGE_TAG); else echo ''; fi) ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) Invalid DOCKER_IMAGE_TAG value: $(DOCKER_IMAGE_TAG)"; \
+			echo "$(PREFIX_SUB_STEP) A release tag is required for this operation."; \
+			exit 1; \
+		fi
+
+_require-package-path:
+	@ if [[ -n $(DIST_PATH) ]] && [[ ! -d $(DIST_PATH) ]]; then \
+			echo "$(PREFIX_STEP) Creating package directory"; \
+			mkdir -p $(DIST_PATH); \
+		fi; \
+		if [[ ! $${?} -eq 0 ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) Failed to make package path: $(DIST_PATH)"; \
+			exit 1; \
+		elif [[ -z $(DIST_PATH) ]]; then \
+			echo "$(PREFIX_STEP_NEGATIVE) Undefined DIST_PATH"; \
+			exit 1; \
+		fi
+
+_usage:
+	@: $(info $(USAGE))
 
 all: _prerequisites | build images install start ps
 
@@ -181,6 +337,8 @@ images: _prerequisites
 	@ $(docker) images \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG);
 
+help: _usage
+
 install: | _prerequisites terminate create
 
 logs: _prerequisites
@@ -212,19 +370,6 @@ pause: _prerequisites _require-docker-container-status-running
 	@ $(docker) pause $(DOCKER_NAME) 1> /dev/null
 	@ echo "$(PREFIX_SUB_STEP_POSITIVE) Container paused"
 
-_prerequisites:
-ifeq ($(docker),)
-	$(error "Please install the docker (docker-engine) package.")
-endif
-
-ifeq ($(xz),)
-	$(error "Please install the xz package.")
-endif
-
-ifeq ($(get-docker-info),)
-	$(error "Unable to connect to docker host.")
-endif
-
 pull: _prerequisites _require-docker-image-tag
 	@ echo "$(PREFIX_STEP) Pulling image from registry"
 	@ $(docker) pull \
@@ -239,81 +384,6 @@ pull: _prerequisites _require-docker-image-tag
 
 ps: _prerequisites _require-docker-container
 	@ $(docker) ps -as --filter "name=$(DOCKER_NAME)";
-
-_require-docker-container:
-	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container."; \
-			echo "$(PREFIX_SUB_STEP) Try installing it with: make install"; \
-			exit 1; \
-		fi
-
-_require-docker-container-not:
-	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container be removed (or renamed)."; \
-			echo "$(PREFIX_SUB_STEP) Try removing it with: make rm"; \
-			exit 1; \
-		fi
-
-_require-docker-container-not-status-paused:
-	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=paused") ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container to be unpaused."; \
-			echo "$(PREFIX_SUB_STEP) Try unpausing it with: make unpause"; \
-			exit 1; \
-		fi
-
-_require-docker-container-status-created:
-	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=created") ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container to be created."; \
-			echo "$(PREFIX_SUB_STEP) Try installing it with: make install"; \
-			exit 1; \
-		fi
-
-_require-docker-container-status-exited:
-	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=exited") ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container to be exited."; \
-			echo "$(PREFIX_SUB_STEP) Try stopping it with: make stop"; \
-			exit 1; \
-		fi
-
-_require-docker-container-status-paused:
-	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=paused") ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container to be paused."; \
-			echo "$(PREFIX_SUB_STEP) Try pausing it with: make pause"; \
-			exit 1; \
-		fi
-
-_require-docker-container-status-running:
-	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running") ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) This operation requires the $(DOCKER_NAME) docker container to be running."; \
-			echo "$(PREFIX_SUB_STEP) Try starting it with: make start"; \
-			exit 1; \
-		fi
-
-_require-docker-image-tag:
-	@ if [[ -z $$(if [[ $(DOCKER_IMAGE_TAG) =~ $(DOCKER_IMAGE_TAG_PATTERN) ]]; then echo $(DOCKER_IMAGE_TAG); else echo ''; fi) ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) Invalid DOCKER_IMAGE_TAG value: $(DOCKER_IMAGE_TAG)"; \
-			exit 1; \
-		fi
-
-_require-docker-release-tag:
-	@ if [[ -z $$(if [[ $(DOCKER_IMAGE_TAG) =~ $(DOCKER_IMAGE_RELEASE_TAG_PATTERN) ]]; then echo $(DOCKER_IMAGE_TAG); else echo ''; fi) ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) Invalid DOCKER_IMAGE_TAG value: $(DOCKER_IMAGE_TAG)"; \
-			echo "$(PREFIX_SUB_STEP) A release tag is required for this operation."; \
-			exit 1; \
-		fi
-
-_require-package-path:
-	@ if [[ -n $(DIST_PATH) ]] && [[ ! -d $(DIST_PATH) ]]; then \
-			echo "$(PREFIX_STEP) Creating package directory"; \
-			mkdir -p $(DIST_PATH); \
-		fi; \
-		if [[ ! $${?} -eq 0 ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) Failed to make package path: $(DIST_PATH)"; \
-			exit 1; \
-		elif [[ -z $(DIST_PATH) ]]; then \
-			echo "$(PREFIX_STEP_NEGATIVE) Undefined DIST_PATH"; \
-			exit 1; \
-		fi
 
 restart: _prerequisites _require-docker-container _require-docker-container-not-status-paused
 	@ echo "$(PREFIX_STEP) Restarting container"
