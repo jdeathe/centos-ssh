@@ -102,7 +102,7 @@ $ docker run \
   --privileged \
   --volume /:/media/root \
   jdeathe/centos-ssh:centos-6-1.7.2 \
-  /sbin/scmi install \
+  /usr/sbin/scmi install \
     --chroot=/media/root \
     --tag=centos-6-1.7.2 \
     --name=ssh.pool-1.1.1 \
@@ -119,7 +119,7 @@ $ docker run \
   --privileged \
   --volume /:/media/root \
   jdeathe/centos-ssh:centos-6-1.7.2 \
-  /sbin/scmi uninstall \
+  /usr/sbin/scmi uninstall \
     --chroot=/media/root \
     --tag=centos-6-1.7.2 \
     --name=ssh.pool-1.1.1 \
@@ -136,7 +136,7 @@ $ docker run \
   --privileged \
   --volume /:/media/root \
   jdeathe/centos-ssh:centos-6-1.7.2 \
-  /sbin/scmi install \
+  /usr/sbin/scmi install \
     --chroot=/media/root \
     --tag=centos-6-1.7.2 \
     --name=ssh.pool-1.1.1 \
