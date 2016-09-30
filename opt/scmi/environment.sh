@@ -23,7 +23,7 @@ DOCKER_RESTART_POLICY="${DOCKER_RESTART_POLICY:-always}"
 NO_CACHE="${NO_CACHE:-false}"
 
 # Directory path for release packages
-PACKAGE_PATH="${PACKAGE_PATH:-./packages/jdeathe}"
+DIST_PATH="${DIST_PATH:-./dist}"
 
 # ETCD register service settings
 REGISTER_ETCD_PARAMETERS="${REGISTER_ETCD_PARAMETERS:-}"
