@@ -257,9 +257,9 @@ function scmi ()
 			fi
 
 			printf -v \
-				DOCKER_CONTAINER_PARAMETERS_APPEND \
+				DOCKER_CONTAINER_OPTS \
 				-- '%s %s' \
-				"${DOCKER_CONTAINER_PARAMETERS_APPEND}" \
+				"${DOCKER_CONTAINER_OPTS}" \
 				"$(
 					sed \
 						-e "s~{{NAME}}~${DOCKER_NAME}~g" \
@@ -372,7 +372,7 @@ function scmi_docker_get_create_template ()
 		'%s create %s %s %s/%s:%s' \
 		"${docker}" \
 		"${DOCKER_CONTAINER_PARAMETERS}" \
-		"${DOCKER_CONTAINER_PARAMETERS_APPEND}" \
+		"${DOCKER_CONTAINER_OPTS}" \
 		"${DOCKER_USER}" \
 		"${DOCKER_IMAGE_NAME}" \
 		"${DOCKER_IMAGE_TAG}"
