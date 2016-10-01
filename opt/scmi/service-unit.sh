@@ -2,7 +2,7 @@
 # Constants
 # -----------------------------------------------------------------------------
 SERVICE_UNIT_ENVIRONMENT_KEYS="
- DOCKER_CONTAINER_PARAMETERS_APPEND
+ DOCKER_CONTAINER_OPTS
  DOCKER_IMAGE_PACKAGE_PATH
  DOCKER_IMAGE_TAG
  DOCKER_PORT_MAP_TCP_22
