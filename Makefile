@@ -43,8 +43,7 @@ Targets:
   unpause                   Unpause the container when in a paused state.
 
 Variables:
-  - DOCKER_CONTAINER_PARAMETERS_APPEND
-                            Set optional docker parameters to append that will 
+  - DOCKER_CONTAINER_OPTS   Set optional docker parameters to append that will 
                             be appended to the create and run templates.
   - DOCKER_IMAGE_TAG        Defines the image tag name.
   - DOCKER_NAME             Container name. The required format is as follows
@@ -276,7 +275,7 @@ create: _prerequisites _require-docker-container-not
 		$(docker) create \
 			$(DOCKER_CONTAINER_PARAMETERS) \
 			$(DOCKER_PUBLISH) \
-			$(DOCKER_CONTAINER_PARAMETERS_APPEND) \
+			$(DOCKER_CONTAINER_OPTS) \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null;
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=created") ]]; then \
 			echo "$(PREFIX_SUB_STEP) $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=created")"; \
@@ -427,7 +426,7 @@ run: _prerequisites _require-docker-image-tag
 			--detach \
 			$(DOCKER_CONTAINER_PARAMETERS) \
 			$(DOCKER_PUBLISH) \
-			$(DOCKER_CONTAINER_PARAMETERS_APPEND) \
+			$(DOCKER_CONTAINER_OPTS) \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) 1> /dev/null;
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running") ]]; then \
 			echo "$(PREFIX_SUB_STEP) $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" --filter "status=running")"; \
