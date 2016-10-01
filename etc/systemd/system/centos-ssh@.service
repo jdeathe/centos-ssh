@@ -49,7 +49,7 @@ RestartSec=30
 TimeoutStartSec=1200
 Environment="DOCKER_USER=jdeathe"
 Environment="DOCKER_IMAGE_NAME=centos-ssh"
-Environment="DOCKER_CONTAINER_PARAMETERS_APPEND="
+Environment="DOCKER_CONTAINER_OPTS="
 Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/opt/scmi/packages"
 Environment="DOCKER_IMAGE_TAG=centos-6-1.7.2"
 Environment="DOCKER_PORT_MAP_TCP_22=2020"
@@ -120,7 +120,7 @@ ExecStart=/bin/bash -c \
         fi; \
       fi; \
     ) \
-    ${DOCKER_CONTAINER_PARAMETERS_APPEND} \
+    ${DOCKER_CONTAINER_OPTS} \
     ${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   "
 

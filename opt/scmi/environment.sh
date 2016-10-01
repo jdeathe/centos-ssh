@@ -13,7 +13,7 @@ DOCKER_IMAGE_RELEASE_TAG_PATTERN='^centos-(6-1|7-2).[0-9]+.[0-9]+$'
 # -----------------------------------------------------------------------------
 
 # Docker image/container settings
-DOCKER_CONTAINER_PARAMETERS_APPEND="${DOCKER_CONTAINER_PARAMETERS_APPEND:-}"
+DOCKER_CONTAINER_OPTS="${DOCKER_CONTAINER_OPTS:-}"
 DOCKER_IMAGE_TAG="${DOCKER_IMAGE_TAG:-latest}"
 DOCKER_NAME="${DOCKER_NAME:-ssh.pool-1.1.1}"
 DOCKER_PORT_MAP_TCP_22="${DOCKER_PORT_MAP_TCP_22:-2020}"
