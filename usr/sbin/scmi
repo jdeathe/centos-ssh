@@ -1672,15 +1672,6 @@ function scmi_systemd_get_template_unit_file_content ()
 			KEYS="SERVICE_UNIT_ENVIRONMENT_KEYS"
 			SOURCE_UNIT_FILE_NAME="${DOCKER_IMAGE_NAME}@.service"
 
-			# Replace placehoder values
-			if [[ -n ${SERVICE_UNIT_INSTANCE_LOCAL} ]]; then
-				printf -v \
-					SED_COMMAND_LIST \
-					-- '%s -e %s' \
-					"${SED_COMMAND_LIST}" \
-					"\"s~{{SERVICE_UNIT_INSTANCE_LOCAL}}~${SERVICE_UNIT_INSTANCE_LOCAL}~g\""
-			fi
-
 			# Only modify the template directly for fleet manager.
 			# Drop-In override method is used for systemd.
 			if [[ ${SCMI_MANAGER_TYPE} == fleet ]]; then
