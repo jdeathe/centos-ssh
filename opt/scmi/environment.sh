@@ -13,7 +13,7 @@ DOCKER_IMAGE_RELEASE_TAG_PATTERN='^centos-(6-1|7-2).[0-9]+.[0-9]+$'
 # -----------------------------------------------------------------------------
 
 # Docker image/container settings
-DOCKER_CONTAINER_PARAMETERS_APPEND="${DOCKER_CONTAINER_PARAMETERS_APPEND:-}"
+DOCKER_CONTAINER_OPTS="${DOCKER_CONTAINER_OPTS:-}"
 DOCKER_IMAGE_TAG="${DOCKER_IMAGE_TAG:-latest}"
 DOCKER_NAME="${DOCKER_NAME:-ssh.pool-1.1.1}"
 DOCKER_PORT_MAP_TCP_22="${DOCKER_PORT_MAP_TCP_22:-2020}"
@@ -23,7 +23,7 @@ DOCKER_RESTART_POLICY="${DOCKER_RESTART_POLICY:-always}"
 NO_CACHE="${NO_CACHE:-false}"
 
 # Directory path for release packages
-PACKAGE_PATH="${PACKAGE_PATH:-./packages/jdeathe}"
+DIST_PATH="${DIST_PATH:-./dist}"
 
 # ETCD register service settings
 REGISTER_ETCD_PARAMETERS="${REGISTER_ETCD_PARAMETERS:-}"
