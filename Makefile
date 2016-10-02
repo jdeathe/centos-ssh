@@ -10,8 +10,7 @@ container image defined by the Dockerfile.
 
 Targets:
   all                       Combines targets build images install start and ps.
-  build                     Runs the packer build job. This is the
-                            default target.
+  build                     Builds the image. This is the default target.
   clean                     Clean up build artifacts.
   create                    Execute the create container template.
   dist                      Pull a release version from the registry and save a
