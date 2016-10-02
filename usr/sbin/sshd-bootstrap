@@ -166,9 +166,15 @@ function get_ssh_authorized_keys ()
 {
 	local DEFAULT_PATH="${1:-/etc/services-config/ssh/authorized_keys}"
 	local VALUE="${SSH_AUTHORIZED_KEYS:-}"
+	local PATTERN_BASE64='^[A-Za-z0-9/+=]*$'
 
 	if [[ -z ${VALUE} ]] && [[ -s ${DEFAULT_PATH} ]]; then
 		VALUE="$(< "${DEFAULT_PATH}")"
+	elif [[ -n ${VALUE} ]] \
+		&& [[ ${VALUE} =~ ${PATTERN_BASE64} ]]; then
+		VALUE="$(
+			base64 -d -i <<< "${VALUE}"
+		)"
 	fi
 
 	printf -- "%s" "${VALUE}"

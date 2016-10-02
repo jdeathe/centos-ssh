@@ -287,7 +287,7 @@ There are several environmental variables defined at runtime these allow the ope
 
 ##### SSH_AUTHORIZED_KEYS
 
-As detailed below the public key added for the SSH user is insecure by default. This is intentional and allows for access using a known private key. Using `SSH_AUTHORIZED_KEYS` you can replace the insecure public key with another one (or several). Further details on how to create your own private + public key pair are detailed below.
+As detailed below the public key added for the SSH user is insecure by default. This is intentional and allows for access using a known private key. Using `SSH_AUTHORIZED_KEYS` you can replace the insecure public key with another one (or several). Further details on how to create your own private + public key pair are provided below. If adding more than one key it is recommended to base64 encode the value.
 
 ```
 ...
@@ -298,7 +298,17 @@ ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJl
 ...
 ```
 
-##### SSH_AUTOSTART_SSHD && SSH_AUTOSTART_SSHD_BOOTSTRAP
+*Note:* The `base64` command on Mac OSX will encode a file without line breaks by default but if using the command on Linux you need to include use the `-w` option to prevent wrapping lines at 80 characters. i.e. `base64 -w 0 -i {key-path}`.
+
+```
+...
+  --env "SSH_AUTHORIZED_KEYS=$(
+    cat ${HOME}/.ssh/id_rsa.pub ${HOME}/.ssh/another_id_rsa.pub | base64 -i -
+  )" \
+...
+```
+
+##### SSH_AUTOSTART_SSHD & SSH_AUTOSTART_SSHD_BOOTSTRAP
 
 It may be desirable to prevent the startup of the sshd daemon and/or sshd-bootstrap script. For example, when using an image built from this Dockerfile as the source for another Dockerfile you could disable both sshd and sshd-booststrap from startup by setting `SSH_AUTOSTART_SSHD` and `SSH_AUTOSTART_SSHD_BOOTSTRAP` to `false`. The benefit of this is to reduce the number of running processes in the final container.
 
