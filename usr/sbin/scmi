@@ -1648,11 +1648,13 @@ function scmi_systemd_get_template_unit_file_content ()
 			KEYS="SERVICE_UNIT_REGISTER_ENVIRONMENT_KEYS"
 
 			# Replace placehoder values
-			printf -v \
-				SED_COMMAND_LIST \
-				-- '%s -e %s' \
-				"${SED_COMMAND_LIST}" \
-				"\"s~{{SERVICE_UNIT_NAME}}~${SERVICE_UNIT_NAME}~g\""
+			if [[ -n ${SERVICE_UNIT_NAME} ]]; then
+				printf -v \
+					SED_COMMAND_LIST \
+					-- '%s -e %s' \
+					"${SED_COMMAND_LIST}" \
+					"\"s~{{SERVICE_UNIT_NAME}}~${SERVICE_UNIT_NAME}~g\""
+			fi
 
 			# Modify bound unit to allow fleetd to start|stop it directly.
 			if [[ ${SCMI_MANAGER_TYPE} == fleet ]]; then
@@ -1671,6 +1673,15 @@ function scmi_systemd_get_template_unit_file_content ()
 			# Only modify the template directly for fleet manager.
 			# Drop-In override method is used for systemd.
 			if [[ ${SCMI_MANAGER_TYPE} == fleet ]]; then
+				# Replace placehoder values
+				if [[ -n ${SERVICE_UNIT_INSTANCE_LOCAL} ]]; then
+					printf -v \
+						SED_COMMAND_LIST \
+						-- '%s -e %s' \
+						"${SED_COMMAND_LIST}" \
+						"\"s~{{SERVICE_UNIT_INSTANCE_LOCAL}}~${SERVICE_UNIT_INSTANCE_LOCAL}~g\""
+				fi
+
 				# Set the restart policy if defined
 				if [[ -n ${SCMI_RESTART} ]]; then
 					UNIT_FILE_KEY="Restart"
@@ -2030,6 +2041,16 @@ function scmi_systemd_set_service_unit_names ()
 		expr \
 			"${DOCKER_NAME}" : \
 			'.*\.\([0-9][0-9]*\.[0-9][0-9]*\)'
+	)
+	SERVICE_UNIT_INSTANCE_LOCAL=$(
+		expr \
+			"${DOCKER_NAME}" : \
+			'.*\.\([0-9][0-9]*\)\.[0-9][0-9]*'
+	)
+	SERVICE_UNIT_INSTANCE_GLOBAL=$(
+		expr \
+			"${DOCKER_NAME}" : \
+			'.*\.[0-9][0-9]*\.\([0-9][0-9]*\)'
 	)
 
 	printf -v \

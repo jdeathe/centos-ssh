@@ -132,4 +132,4 @@ DefaultInstance=1.1
 WantedBy=multi-user.target
 
 [X-Fleet]
-Conflicts=%p@*.%i.service
+Conflicts=%p@{{SERVICE_UNIT_INSTANCE_LOCAL}}.*.service
