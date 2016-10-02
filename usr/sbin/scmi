@@ -7,22 +7,24 @@ cd -- "$(
 
 function scmi ()
 {
-	# Default settings
-	local SCMI_COMMAND=""
-	local SCMI_CHROOT_PATH="/"
-	declare -a local SCMI_ENV
-	local SCMI_IMAGE_PACKAGE_PATH="/var/opt/scmi/packages"
+	# Constants
 	local readonly SCMI_INCLUDE_FILES="
 	 environment.sh
 	 default.sh
 	 service-unit.sh
 	"
-	local SCMI_INFO=false
-	local SCMI_MANAGER_TYPE="docker"
 	local readonly SCMI_MANAGER_TYPE_PATTERN='^(docker|fleet|systemd)$'
-	local SCMI_NAME=""
 	local readonly SCMI_NAME_FORMAT='{<name>|<name>.[group]}.<instance>.<node>'
 	local readonly SCMI_PACKAGE_NAME="scmi"
+
+	# Default settings
+	local SCMI_COMMAND=""
+	local SCMI_CHROOT_PATH="/"
+	declare -a local SCMI_ENV
+	local SCMI_IMAGE_PACKAGE_PATH="/var/opt/scmi/packages"
+	local SCMI_INFO=false
+	local SCMI_MANAGER_TYPE="docker"
+	local SCMI_NAME=""
 	local SCMI_QUIET=false
 	local SCMI_REGISTER_ENABLED=false
 	local SCMI_RESTART=""
