@@ -52,8 +52,9 @@ Variables:
   - DOCKER_PORT_MAP_TCP_*   The port map variable is used to define the initial 
                             port mapping to use for the docker host value where  
                             "*" corresponds to an exposed port on the container.
-                            Setting this to an empty string will result in an 
-                            automatically assigned port.
+                            Setting this to an empty string or 0 will result in 
+                            an automatically assigned port and setting to NULL 
+                            will prevent the port from being published.
   - DOCKER_RESTART_POLICY   Defines the container restart policy. 
   - DIST_PATH               Ouput directory path - where the release package 
                             artifacts are placed.
