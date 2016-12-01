@@ -9,19 +9,15 @@ FROM centos:centos7.2.1511
 MAINTAINER James Deathe <james.deathe@gmail.com>
 
 # -----------------------------------------------------------------------------
-# Import the RPM GPG keys for Repositories
+# Base Install + Import the RPM GPG keys for Repositories
 # -----------------------------------------------------------------------------
-RUN rpm --import \
+RUN rpm --rebuilddb \
+	&& rpm --import \
 		http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-7 \
 	&& rpm --import \
 		https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 \
 	&& rpm --import \
-		https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY
-
-# -----------------------------------------------------------------------------
-# Base Install
-# -----------------------------------------------------------------------------
-RUN rpm --rebuilddb \
+		https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY \
 	&& yum -y install \
 		centos-release-scl \
 		centos-release-scl-rh \
@@ -44,8 +40,12 @@ RUN rpm --rebuilddb \
 		openssh-clients \
 		python-setuptools \
 		yum-plugin-versionlock \
-	&& rm -rf /var/cache/yum/* \
-	&& yum clean all
+	&& yum clean all \
+	&& rm -rf /etc/ld.so.cache \
+	&& rm -rf /sbin/sln \
+	&& rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,cracklib,i18n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
+	&& rm -rf /{root,tmp,var/cache/{ldconfig,yum}}/* \
+	&& > /etc/sysconfig/i18n
 
 # -----------------------------------------------------------------------------
 # Install supervisord (required to run more than a single process in a container)
@@ -128,15 +128,6 @@ RUN mkdir -p \
 		/etc/supervisord.d/sshd-bootstrap.conf \
 	&& chmod 700 \
 		/usr/sbin/{scmi,sshd-{bootstrap,wrapper}}
-
-# -----------------------------------------------------------------------------
-# Purge
-# -----------------------------------------------------------------------------
-RUN rm -rf /etc/ld.so.cache \
-	; rm -rf /sbin/sln \
-	; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,cracklib,i18n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
-	; rm -rf /{root,tmp,var/cache/{ldconfig,yum}}/* \
-	; > /etc/sysconfig/i18n
 
 EXPOSE 22
 
