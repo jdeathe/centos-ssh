@@ -9,19 +9,15 @@ FROM centos:centos7.2.1511
 MAINTAINER James Deathe <james.deathe@gmail.com>
 
 # -----------------------------------------------------------------------------
-# Import the RPM GPG keys for Repositories
+# Base Install + Import the RPM GPG keys for Repositories
 # -----------------------------------------------------------------------------
-RUN rpm --import \
+RUN rpm --rebuilddb \
+	&& rpm --import \
 		http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-7 \
 	&& rpm --import \
 		https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7 \
 	&& rpm --import \
-		https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY
-
-# -----------------------------------------------------------------------------
-# Base Install
-# -----------------------------------------------------------------------------
-RUN rpm --rebuilddb \
+		https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY \
 	&& yum -y install \
 		centos-release-scl \
 		centos-release-scl-rh \
@@ -44,8 +40,12 @@ RUN rpm --rebuilddb \
 		openssh-clients \
 		python-setuptools \
 		yum-plugin-versionlock \
-	&& rm -rf /var/cache/yum/* \
-	&& yum clean all
+	&& yum clean all \
+	&& rm -rf /etc/ld.so.cache \
+	&& rm -rf /sbin/sln \
+	&& rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,cracklib,i18n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
+	&& rm -rf /{root,tmp,var/cache/{ldconfig,yum}}/* \
+	&& > /etc/sysconfig/i18n
 
 # -----------------------------------------------------------------------------
 # Install supervisord (required to run more than a single process in a container)
@@ -129,15 +129,6 @@ RUN mkdir -p \
 	&& chmod 700 \
 		/usr/sbin/{scmi,sshd-{bootstrap,wrapper}}
 
-# -----------------------------------------------------------------------------
-# Purge
-# -----------------------------------------------------------------------------
-RUN rm -rf /etc/ld.so.cache \
-	; rm -rf /sbin/sln \
-	; rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,cracklib,i18n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
-	; rm -rf /{root,tmp,var/cache/{ldconfig,yum}}/* \
-	; > /etc/sysconfig/i18n
-
 EXPOSE 22
 
 # -----------------------------------------------------------------------------
@@ -160,31 +151,31 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="2.1.3"
+ARG RELEASE_VERSION="2.1.4"
 LABEL \
 	install="docker run \
 --rm \
 --privileged \
 --volume /:/media/root \
-jdeathe/centos-ssh:centos-7-${RELEASE_VERSION} \
+jdeathe/centos-ssh:${RELEASE_VERSION} \
 /usr/sbin/scmi install \
 --chroot=/media/root \
 --name=\${NAME} \
---tag=centos-7-${RELEASE_VERSION} \
+--tag=${RELEASE_VERSION} \
 --setopt='--volume {{NAME}}.config-ssh:/etc/ssh'" \
 	uninstall="docker run \
 --rm \
 --privileged \
 --volume /:/media/root \
-jdeathe/centos-ssh:centos-7-${RELEASE_VERSION} \
+jdeathe/centos-ssh:${RELEASE_VERSION} \
 /usr/sbin/scmi uninstall \
 --chroot=/media/root \
 --name=\${NAME} \
---tag=centos-7-${RELEASE_VERSION} \
+--tag=${RELEASE_VERSION} \
 --setopt='--volume {{NAME}}.config-ssh:/etc/ssh'" \
 	org.deathe.name="centos-ssh" \
 	org.deathe.version="${RELEASE_VERSION}" \
-	org.deathe.release="jdeathe/centos-ssh:centos-7-${RELEASE_VERSION}" \
+	org.deathe.release="jdeathe/centos-ssh:${RELEASE_VERSION}" \
 	org.deathe.license="MIT" \
 	org.deathe.vendor="jdeathe" \
 	org.deathe.url="https://github.com/jdeathe/centos-ssh" \
