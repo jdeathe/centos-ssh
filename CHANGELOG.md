@@ -4,6 +4,16 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.7.4 - 2016-12-04
+
+- Adds correct Makefile usage instructions for 'build' target.
+- Adds info regarding NULL port values in Makefile help.
+- Removes requirement for `gawk` in the port handling functions for SCMI and the systemd template unit-file.
+- Adds reduced number of build steps to image which helps reduce final image size.
+- Adds `-u` parameter to `sshd` options to help reduce time spent doing DNS lookups during authentication.
+- Adds a change log (`CHANGELOG.md`).
+- Adds support for semantic version numbered tags.
+
 ### 1.7.3 - 2016-10-02
 
 - Adds Makefile help target with usage instructions.
