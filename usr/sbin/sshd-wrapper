@@ -6,6 +6,7 @@ SSHD=/usr/sbin/sshd
 SSHD_OPTIONS="
  -D
  -e
+ -u 0
 "
 
 while true; do

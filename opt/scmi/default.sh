@@ -1,18 +1,20 @@
 
-# If gawk is available handle incrementing the docker host port for instances
+# Handle incrementing the docker host port for instances unless a port range is defined.
 DOCKER_PUBLISH=
 if [[ ${DOCKER_PORT_MAP_TCP_22} != NULL ]]; then
-	if command -v gawk &> /dev/null \
-		&& [[ -n $(gawk 'match($0, /^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[2]; }' <<< "${DOCKER_PORT_MAP_TCP_22}") ]]; then
+	if grep -qE '^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:)?[0-9]*$' <<< "${DOCKER_PORT_MAP_TCP_22}" \
+		&& grep -qE '^.+\.([0-9]+)\.([0-9]+)$' <<< "${DOCKER_NAME}"; then
 		printf -v \
 			DOCKER_PUBLISH \
-			-- '--publish %s%s:22' \
-			"$(gawk 'match($0, /^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[1]; }' <<< "${DOCKER_PORT_MAP_TCP_22}")" \
-			"$(( $(gawk 'match($0, /^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:)?([0-9]+)$/, matches) { print matches[2]; }' <<< "${DOCKER_PORT_MAP_TCP_22}") + $(gawk 'match($0, /^.+\.([0-9]+)\.([0-9]+)$/, matches) { print matches[1]; }' <<< "${DOCKER_NAME}") - 1 ))"
+			-- '%s --publish %s%s:22' \
+			"${DOCKER_PUBLISH}" \
+			"$(grep -o '^[0-9\.]*:' <<< "${DOCKER_PORT_MAP_TCP_22}")" \
+			"$(( $(grep -o '[0-9]*$' <<< "${DOCKER_PORT_MAP_TCP_22}") + $(sed 's~\.[0-9]*$~~' <<< "${DOCKER_NAME}" | awk -F. '{ print $NF; }') - 1 ))"
 	else
 		printf -v \
 			DOCKER_PUBLISH \
-			-- '--publish %s:22' \
+			-- '%s --publish %s:22' \
+			"${DOCKER_PUBLISH}" \
 			"${DOCKER_PORT_MAP_TCP_22}"
 	fi
 fi
