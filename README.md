@@ -155,7 +155,7 @@ If your docker host has systemd, fleetd (and optionally etcd) installed then `sc
 
 ##### SCMI Image Information
 
-Since releases `1.7.2` / `2.1.2` the install template has been added to the image metadata. Using docker inspect you can access `scmi` to simplify install/uninstall tasks.
+Since release tags `1.7.2` / `2.1.2` the install template has been added to the image metadata. Using docker inspect you can access `scmi` to simplify install/uninstall tasks.
 
 To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
 

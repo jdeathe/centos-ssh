@@ -171,7 +171,7 @@ jdeathe/centos-ssh:${RELEASE_VERSION} \
 /usr/sbin/scmi uninstall \
 --chroot=/media/root \
 --name=\${NAME} \
---tag=centos-7-${RELEASE_VERSION} \
+--tag=${RELEASE_VERSION} \
 --setopt='--volume {{NAME}}.config-ssh:/etc/ssh'" \
 	org.deathe.name="centos-ssh" \
 	org.deathe.version="${RELEASE_VERSION}" \
