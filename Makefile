@@ -39,6 +39,7 @@ Targets:
   start                     Start the container in the created state.
   stop                      Stop the container when in a running state.
   terminate                 Unpause, stop and remove the container.
+  test                      Run all test cases.
   unpause                   Unpause the container when in a paused state.
 
 Variables:
@@ -108,10 +109,15 @@ PREFIX_SUB_STEP_POSITIVE := $(shell \
 
 # Package prerequisites
 docker := $(shell \
-	type -p docker \
+	command -v docker \
 )
 xz := $(shell \
-	type -p xz \
+	command -v xz \
+)
+
+# Testing prerequisites
+shpec := $(shell \
+	command -v shpec \
 )
 
 # Used to test docker host is accessible
@@ -131,6 +137,7 @@ get-docker-info := $(shell \
 	_require-docker-image-tag \
 	_require-docker-release-tag \
 	_require-package-path \
+	_test-prerequisites \
 	_usage \
 	all \
 	build \
@@ -155,6 +162,7 @@ get-docker-info := $(shell \
 	start \
 	stop \
 	terminate \
+	test \
 	unpause
 
 _prerequisites:
@@ -244,6 +252,11 @@ _require-package-path:
 			echo "$(PREFIX_STEP_NEGATIVE) Undefined DIST_PATH"; \
 			exit 1; \
 		fi
+
+_test-prerequisites:
+ifeq ($(shpec),)
+	$(error "Please install shpec.")
+endif
 
 _usage:
 	@: $(info $(USAGE))
@@ -485,6 +498,13 @@ terminate: _prerequisites
 				exit 1; \
 			fi; \
 		fi
+
+test: _test-prerequisites
+	@ if [[ -z $$( if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):latest) ]]; then echo $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):latest); else echo $$($(docker) images -q docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):latest); fi; ) ]]; then \
+			$(MAKE) build; \
+		fi;
+	@ echo "$(PREFIX_STEP) Functional test";
+	@ env SHPEC_ROOT=$(SHPEC_ROOT) $(shpec);
 
 unpause: _prerequisites _require-docker-container-status-paused
 	@ echo "$(PREFIX_STEP) Unpausing container"
