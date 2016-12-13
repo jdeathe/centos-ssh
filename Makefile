@@ -501,10 +501,10 @@ terminate: _prerequisites
 
 test: _test-prerequisites
 	@ if [[ -z $$( if [[ -n $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):latest) ]]; then echo $$($(docker) images -q $(DOCKER_USER)/$(DOCKER_IMAGE_NAME):latest); else echo $$($(docker) images -q docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):latest); fi; ) ]]; then \
-		$(MAKE) build; \
+			$(MAKE) build; \
 		fi;
 	@ echo "$(PREFIX_STEP) Functional test";
-	@ $(shpec) $(SHPEC_ROOT)/operation_shpec.sh;
+	@ env SHPEC_ROOT=$(SHPEC_ROOT) $(shpec);
 
 unpause: _prerequisites _require-docker-container-status-paused
 	@ echo "$(PREFIX_STEP) Unpausing container"
