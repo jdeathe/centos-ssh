@@ -46,7 +46,7 @@ if [[ ! -d ${TEST_DIRECTORY} ]]; then
 	exit 1
 fi
 
-describe "jdeathe/centos-ssh"
+describe "jdeathe/centos-ssh:latest"
 	test_setup
 
 	describe "Basic SSH operations"
