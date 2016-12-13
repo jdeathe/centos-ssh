@@ -25,7 +25,7 @@ RUN rpm --rebuilddb \
 		https://centos6.iuscommunity.org/ius-release.rpm \
 		vim-minimal-7.4.629-5.el6 \
 		xz-4.999.9-0.5.beta.20091007git.el6.x86_64 \
-		sudo-1.8.6p3-24.el6 \
+		sudo-1.8.6p3-25.el6_8 \
 		openssh-5.3p1-118.1.el6_8 \
 		openssh-server-5.3p1-118.1.el6_8 \
 		openssh-clients-5.3p1-118.1.el6_8 \
