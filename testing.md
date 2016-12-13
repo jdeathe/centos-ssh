@@ -17,5 +17,5 @@ $ bash -c "$(curl -L https://raw.github.com/rylnd/shpec/master/install.sh)"
 To manually run the test cases, from the project root:
 
 ```
-$ shpec test/shpec/operation.sh
+$ shpec test/shpec/operation_shpec.sh
 ```
