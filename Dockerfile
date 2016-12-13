@@ -24,8 +24,8 @@ RUN rpm --rebuilddb \
 		epel-release \
 		https://centos7.iuscommunity.org/ius-release.rpm \
 		vim-minimal-7.4.160-1.el7 \
-		xz-5.1.2-12alpha.el7.x86_64 \
-		sudo-1.8.6p7-20.el7 \
+		xz-5.2.2-1.el7 \
+		sudo-1.8.6p7-21.el7_3 \
 		openssh-6.6.1p1-31.el7 \
 		openssh-server-6.6.1p1-31.el7 \
 		openssh-clients-6.6.1p1-31.el7 \
