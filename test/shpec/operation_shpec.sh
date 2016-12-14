@@ -182,10 +182,10 @@ describe "jdeathe/centos-ssh:latest"
 			local status_sftp_connection=""
 
 			sftp -q \
-				-P ${container_port_22} \
 				-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
 				-o StrictHostKeyChecking=no \
 				-o LogLevel=error \
+				-o Port=${container_port_22} \
 				app-admin@${DOCKER_HOSTNAME} \
 				<<< "version" \
 				&> /dev/null
@@ -198,10 +198,10 @@ describe "jdeathe/centos-ssh:latest"
 				local status_sftp_connection=""
 
 				sftp -q \
-					-P ${container_port_22} \
 					-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
 					-o StrictHostKeyChecking=no \
 					-o LogLevel=error \
+					-o Port=${container_port_22} \
 					app-admin@${DOCKER_HOSTNAME}:_data \
 					<<< "put ${TEST_DIRECTORY}/fixture/test_file" \
 					&> /dev/null
@@ -218,10 +218,10 @@ describe "jdeathe/centos-ssh:latest"
 					touch /home/app-admin/root_test
 
 				sftp -q \
-					-P ${container_port_22} \
 					-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
 					-o StrictHostKeyChecking=no \
 					-o LogLevel=error \
+					-o Port=${container_port_22} \
 					app-admin@${DOCKER_HOSTNAME} \
 					<<< "ls /root_test" \
 					| grep -q "^/root_test"
@@ -851,10 +851,10 @@ describe "jdeathe/centos-ssh:latest"
 				chown app-admin:app-admin /chroot/app-admin/home/app-admin/root_test
 
 			sftp -q \
-				-P ${container_port_22} \
 				-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
 				-o StrictHostKeyChecking=no \
 				-o LogLevel=error \
+				-o Port=${container_port_22} \
 				app-admin@${DOCKER_HOSTNAME} \
 				<<< "ls /home/app-admin/root_test" \
 				| grep -q "^/home/app-admin/root_test"
@@ -901,10 +901,10 @@ describe "jdeathe/centos-ssh:latest"
 				local status_sftp_connection=""
 
 				sftp -q \
-					-P ${container_port_22} \
 					-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
 					-o StrictHostKeyChecking=no \
 					-o LogLevel=error \
+					-o Port=${container_port_22} \
 					app-admin@${DOCKER_HOSTNAME} \
 					<<< "put ${TEST_DIRECTORY}/fixture/test_file" \
 					&> /dev/null
@@ -957,10 +957,10 @@ describe "jdeathe/centos-ssh:latest"
 			sleep ${BOOTSTRAP_BACKOFF_TIME}
 
 			sftp -q \
-				-P ${container_port_22} \
 				-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
 				-o StrictHostKeyChecking=no \
 				-o LogLevel=error \
+				-o Port=${container_port_22} \
 				app-admin@${DOCKER_HOSTNAME} \
 				<<< "ls test/public_html/index.html" \
 				| grep -q "^test/public_html/index.html"
