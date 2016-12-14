@@ -406,17 +406,13 @@ If setting a password for the SSH user you might not want to store the plain tex
 
 ###### Generating a crypt SHA-512 password hash
 
-To generate a new hashed password string you can use the following method - given a password of "Passw0rd!" and a salt of "pepper".
+To generate a hashed password string for the password `Passw0rd!`, use the following method.
 
 ```
-$ docker exec -it ssh.pool-1.1.1 \
-  env \
-  PASSWORD=Passw0rd! \
-  PASSWORD_SALT=pepper \
-  python -c "import crypt,os; print crypt.crypt(os.environ.get('PASSWORD'), '\$6\$' + os.environ.get('PASSWORD_SALT') + '\$')"
+$ docker run --rm jdeathe/centos-ssh \
+  env PASSWORD=Passw0rd! \
+  python -c "import crypt,os; print crypt.crypt(os.environ.get('PASSWORD'))"
 ```
-
-The result should be the string: ```$6$pepper$g5/OhofGtHVo3wqRgVHFQrJDyK0mV9bDpF5HP964wuIkQ7MXuYq1KRTmShaUmTQW3ZRsjw2MjC1LNPh5HMcrY0```
 
 ##### SSH_USER_SHELL
 
