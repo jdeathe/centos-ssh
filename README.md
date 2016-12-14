@@ -82,7 +82,9 @@ $ docker run -d \
 Connect using the `sftp` command line client with the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant).
 
 ```
-$ sftp -p 2021 -i id_rsa_insecure \
+$ sftp -i id_rsa_insecure \
+  -o Port=2021 \
+  -o StrictHostKeyChecking=no \
   app-admin@{docker-host-ip}
 ```
 
