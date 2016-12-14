@@ -406,7 +406,7 @@ rm: _prerequisites _require-docker-container-not-status-paused
 	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; then \
 			echo "$(PREFIX_STEP)Container removal skipped"; \
 		else \
-		  echo "$(PREFIX_STEP)Removing container"; \
+			echo "$(PREFIX_STEP)Removing container"; \
 			$(docker) rm -f $(DOCKER_NAME); \
 			if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; then \
 					echo "$(PREFIX_SUB_STEP_POSITIVE)Container removed"; \
