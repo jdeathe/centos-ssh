@@ -504,7 +504,7 @@ test: _test-prerequisites
 			$(MAKE) build; \
 		fi;
 	@ echo "$(PREFIX_STEP) Functional test";
-	@ env SHPEC_ROOT=$(SHPEC_ROOT) $(shpec);
+	@ SHPEC_ROOT=$(SHPEC_ROOT) $(shpec);
 
 unpause: _prerequisites _require-docker-container-status-paused
 	@ echo "$(PREFIX_STEP) Unpausing container"
