@@ -932,8 +932,8 @@ describe "jdeathe/centos-ssh:latest"
 			sleep ${BOOTSTRAP_BACKOFF_TIME}
 
 			docker cp \
-				test/fixture/test_directory/var/www \
-				www-data.pool-1.1.1:/var/
+				test/fixture/test_directory/var/www/. \
+				www-data.pool-1.1.1:/var/www
 			docker exec www-data.pool-1.1.1 \
 				chown -R app-admin:app-admin /var/www/test
 
