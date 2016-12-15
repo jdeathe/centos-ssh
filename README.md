@@ -7,12 +7,12 @@ Includes public key authentication, Automated password generation and supports c
 
 ## Overview & links
 
-The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag - the convention is `centos-6-1.7.4` OR `1.7.4` for the [1.7.4](https://github.com/jdeathe/centos-ssh/tree/1.7.4) release tag and `centos-7-2.1.4` OR `2.1.4` for the [2.1.4](https://github.com/jdeathe/centos-ssh/tree/2.1.4) release tag.
+The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag - the convention is `centos-6-1.7.5` OR `1.7.5` for the [1.7.5](https://github.com/jdeathe/centos-ssh/tree/1.7.5) release tag and `centos-7-2.1.5` OR `2.1.5` for the [2.1.5](https://github.com/jdeathe/centos-ssh/tree/2.1.5) release tag.
 
 ### Tags and respective `Dockerfile` links
 
-- `centos-7`,`centos-7-2.1.4`,`2.1.4` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
-- `centos-6`,`centos-6-1.7.4`,`1.7.4` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
+- `centos-7`,`centos-7-2.1.5`,`2.1.5` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
+- `centos-6`,`centos-6-1.7.5`,`1.7.5` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
 
 The Dockerfile can be used to build a base image that is the bases for several other docker images.
 
@@ -82,7 +82,9 @@ $ docker run -d \
 Connect using the `sftp` command line client with the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant).
 
 ```
-$ sftp -p 2021 -i id_rsa_insecure \
+$ sftp -i id_rsa_insecure \
+  -o Port=2021 \
+  -o StrictHostKeyChecking=no \
   app-admin@{docker-host-ip}
 ```
 
@@ -103,10 +105,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:1.7.4 \
+  jdeathe/centos-ssh:1.7.5 \
   /usr/sbin/scmi install \
     --chroot=/media/root \
-    --tag=1.7.4 \
+    --tag=1.7.5 \
     --name=ssh.pool-1.1.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
@@ -120,10 +122,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:1.7.4 \
+  jdeathe/centos-ssh:1.7.5 \
   /usr/sbin/scmi uninstall \
     --chroot=/media/root \
-    --tag=1.7.4 \
+    --tag=1.7.5 \
     --name=ssh.pool-1.1.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
@@ -137,10 +139,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:1.7.4 \
+  jdeathe/centos-ssh:1.7.5 \
   /usr/sbin/scmi install \
     --chroot=/media/root \
-    --tag=1.7.4 \
+    --tag=1.7.5 \
     --name=ssh.pool-1.1.1 \
     --manager=systemd \
     --register \
@@ -163,7 +165,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:1.7.4
+    jdeathe/centos-ssh:1.7.5
   ) --info"
 ```
 
@@ -173,7 +175,7 @@ To perform an installation using the docker name `ssh.pool-1.2.1` simply use the
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:1.7.4
+    jdeathe/centos-ssh:1.7.5
   ) --name=ssh.pool-1.2.1"
 ```
 
@@ -183,7 +185,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.uninstall}}" \
-    jdeathe/centos-ssh:1.7.4
+    jdeathe/centos-ssh:1.7.5
   ) --name=ssh.pool-1.2.1"
 ```
 
@@ -196,7 +198,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:1.7.4 \
+  jdeathe/centos-ssh:1.7.5 \
   --info
 ```
 
@@ -205,14 +207,14 @@ To perform an installation using the docker name `ssh.pool-1.3.1` simply use the
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:1.7.4
+  jdeathe/centos-ssh:1.7.5
 ```
 
 Alternatively, you could use the `scmi` options `--name` or `-n` for naming the container.
 
 ```
 $ sudo -E atomic install \
-  jdeathe/centos-ssh:1.7.4 \
+  jdeathe/centos-ssh:1.7.5 \
   --name ssh.pool-1.3.1
 ```
 
@@ -221,7 +223,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 ```
 $ sudo -E atomic uninstall \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:1.7.4
+  jdeathe/centos-ssh:1.7.5
 ```
 
 #### Using environment variables
@@ -323,7 +325,7 @@ It may be desirable to prevent the startup of the sshd daemon and/or sshd-bootst
 
 ##### SSH_CHROOT_DIRECTORY
 
-This option is only applicable when `SSH_USER_FORCE_SFTP` is set to `true`. When using the using the SFTP option the user is jailed into the ChrootDirectory. The value can contain the placeholders `%h` and `%u` which will be replaced with the values of `SSH_USER_HOME` and `SSH_USER` respectively. The default value of `%h` is the best choice in most cases but the user requires a sub-directory in their HOME directory which they have write access to. If no volume is mounted into the path of the SSH user's HOME directory the a directory named `_data` is created automatically. If you need the user to be able to write to their HOME directory they use an alternative value such as `/chroot/%u` so that the user's HOME path, (relative to the ChrootDirectory), becomes `/chroot/app-admin/home/app-admin` by default.
+This option is only applicable when `SSH_USER_FORCE_SFTP` is set to `true`. When using the SFTP option the user is jailed into the ChrootDirectory. The value can contain the placeholders `%h` and `%u` which will be replaced with the values of `SSH_USER_HOME` and `SSH_USER` respectively. The default value of `%h` is the best choice in most cases but the user requires a sub-directory in their HOME directory which they have write access to. If no volume is mounted into the path of the SSH user's HOME directory then a directory named `_data` is created automatically. If you need the user to be able to write to their HOME directory then use an alternative value such as `/chroot/%u` so that the user's HOME path, (relative to the ChrootDirectory), becomes `/chroot/app-admin/home/app-admin` by default.
 
 ```
 ...
@@ -404,17 +406,13 @@ If setting a password for the SSH user you might not want to store the plain tex
 
 ###### Generating a crypt SHA-512 password hash
 
-To generate a new hashed password string you can use the following method - given a password of "Passw0rd!" and a salt of "pepper".
+To generate a hashed password string for the password `Passw0rd!`, use the following method.
 
 ```
-$ docker exec -it ssh.pool-1.1.1 \
-  env \
-  PASSWORD=Passw0rd! \
-  PASSWORD_SALT=pepper \
-  python -c "import crypt,os; print crypt.crypt(os.environ.get('PASSWORD'), '\$6\$' + os.environ.get('PASSWORD_SALT') + '\$')"
+$ docker run --rm jdeathe/centos-ssh \
+  env PASSWORD=Passw0rd! \
+  python -c "import crypt,os; print crypt.crypt(os.environ.get('PASSWORD'))"
 ```
-
-The result should be the string: ```$6$pepper$g5/OhofGtHVo3wqRgVHFQrJDyK0mV9bDpF5HP964wuIkQ7MXuYq1KRTmShaUmTQW3ZRsjw2MjC1LNPh5HMcrY0```
 
 ##### SSH_USER_SHELL
 
