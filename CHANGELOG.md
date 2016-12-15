@@ -4,6 +4,20 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.7.5 - 2016-12-15
+
+- Adds updated `sudo` package.
+- Adds functional tests using [shpec](https://github.com/rylnd/shpec). To run all tests, [install `shpec`](https://github.com/rylnd/shpec#installation) and run with `make test`.
+- Adds support for running tests on Ubuntu. _Note: May require some additional setup prevent warnings about locale._
+
+  ```
+  sudo locale-gen en_US.UTF-8; sudo dpkg-reconfigure locales
+  export LANG=en_US.UTF-8; unset LANGUAGE LC_ALL LC_CTYPE
+  ```
+- Adds correction to examples and test usage of the `sftp` command.
+- Adds a "better practices" example of password hash generation in the `README.md`.
+- Adds minor code style changes to the `Makefile`.
+
 ### 1.7.4 - 2016-12-04
 
 - Adds correct Makefile usage instructions for 'build' target.
