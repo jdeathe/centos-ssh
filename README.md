@@ -7,12 +7,12 @@ Includes public key authentication, Automated password generation and supports c
 
 ## Overview & links
 
-The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag - the convention is `centos-6-1.7.4` OR `1.7.4` for the [1.7.4](https://github.com/jdeathe/centos-ssh/tree/1.7.4) release tag and `centos-7-2.1.4` OR `2.1.4` for the [2.1.4](https://github.com/jdeathe/centos-ssh/tree/2.1.4) release tag.
+The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag - the convention is `centos-6-1.7.5` OR `1.7.5` for the [1.7.5](https://github.com/jdeathe/centos-ssh/tree/1.7.5) release tag and `centos-7-2.1.5` OR `2.1.5` for the [2.1.5](https://github.com/jdeathe/centos-ssh/tree/2.1.5) release tag.
 
 ### Tags and respective `Dockerfile` links
 
-- `centos-7`,`centos-7-2.1.4`,`2.1.4` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
-- `centos-6`,`centos-6-1.7.4`,`1.7.4` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
+- `centos-7`,`centos-7-2.1.5`,`2.1.5` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
+- `centos-6`,`centos-6-1.7.5`,`1.7.5` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
 
 The Dockerfile can be used to build a base image that is the bases for several other docker images.
 
@@ -105,10 +105,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:2.1.4 \
+  jdeathe/centos-ssh:2.1.5 \
   /usr/sbin/scmi install \
     --chroot=/media/root \
-    --tag=2.1.4 \
+    --tag=2.1.5 \
     --name=ssh.pool-1.1.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
@@ -122,10 +122,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:2.1.4 \
+  jdeathe/centos-ssh:2.1.5 \
   /usr/sbin/scmi uninstall \
     --chroot=/media/root \
-    --tag=2.1.4 \
+    --tag=2.1.5 \
     --name=ssh.pool-1.1.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
@@ -139,10 +139,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:2.1.4 \
+  jdeathe/centos-ssh:2.1.5 \
   /usr/sbin/scmi install \
     --chroot=/media/root \
-    --tag=2.1.4 \
+    --tag=2.1.5 \
     --name=ssh.pool-1.1.1 \
     --manager=systemd \
     --register \
@@ -165,7 +165,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:2.1.4
+    jdeathe/centos-ssh:2.1.5
   ) --info"
 ```
 
@@ -175,7 +175,7 @@ To perform an installation using the docker name `ssh.pool-1.2.1` simply use the
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:2.1.4
+    jdeathe/centos-ssh:2.1.5
   ) --name=ssh.pool-1.2.1"
 ```
 
@@ -185,7 +185,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.uninstall}}" \
-    jdeathe/centos-ssh:2.1.4
+    jdeathe/centos-ssh:2.1.5
   ) --name=ssh.pool-1.2.1"
 ```
 
@@ -198,7 +198,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:2.1.4 \
+  jdeathe/centos-ssh:2.1.5 \
   --info
 ```
 
@@ -207,14 +207,14 @@ To perform an installation using the docker name `ssh.pool-1.3.1` simply use the
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:2.1.4
+  jdeathe/centos-ssh:2.1.5
 ```
 
 Alternatively, you could use the `scmi` options `--name` or `-n` for naming the container.
 
 ```
 $ sudo -E atomic install \
-  jdeathe/centos-ssh:2.1.4 \
+  jdeathe/centos-ssh:2.1.5 \
   --name ssh.pool-1.3.1
 ```
 
@@ -223,7 +223,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 ```
 $ sudo -E atomic uninstall \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:2.1.4
+  jdeathe/centos-ssh:2.1.5
 ```
 
 #### Using environment variables
