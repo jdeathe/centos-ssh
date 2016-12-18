@@ -4,7 +4,7 @@
 # CentOS-7 7.2.1511 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
 # 
 # =============================================================================
-FROM centos:centos7.2.1511
+FROM centos:7.3.1611
 
 MAINTAINER James Deathe <james.deathe@gmail.com>
 
