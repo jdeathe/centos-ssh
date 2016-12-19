@@ -4,6 +4,10 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
+### 2.2.0 - 2016-12-19
+
+- Adds CentOS 7.3.1611 source tag.
+
 ### 2.1.5 - 2016-12-15
 
 - Adds updated `sudo`, `openssh`, `yum-plugin-versionlock` and `xz` packages.
