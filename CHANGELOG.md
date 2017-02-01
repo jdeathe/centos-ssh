@@ -4,6 +4,12 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.7.6 - Unreleased
+
+- Adds updated CentOS-7 version in `README.md` since updating to `7.3.1611`.
+- Updates the `vim` package.
+- Fixes `shpec` test definition to allow `make test` to be interruptible.
+
 ### 1.7.5 - 2016-12-15
 
 - Adds updated `sudo` package.
