@@ -23,12 +23,12 @@ RUN rpm --rebuilddb \
 		centos-release-scl-rh \
 		epel-release \
 		https://centos7.iuscommunity.org/ius-release.rpm \
-		vim-minimal-7.4.160-1.el7 \
+		vim-minimal-7.4.160-1.el7_3.1 \
 		xz-5.2.2-1.el7 \
 		sudo-1.8.6p7-21.el7_3 \
-		openssh-6.6.1p1-31.el7 \
-		openssh-server-6.6.1p1-31.el7 \
-		openssh-clients-6.6.1p1-31.el7 \
+		openssh-6.6.1p1-33.el7_3 \
+		openssh-server-6.6.1p1-33.el7_3 \
+		openssh-clients-6.6.1p1-33.el7_3 \
 		python-setuptools-0.9.8-4.el7 \
 		yum-plugin-versionlock-1.1.31-40.el7 \
 	&& yum versionlock add \
