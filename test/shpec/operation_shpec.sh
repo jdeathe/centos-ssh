@@ -50,7 +50,7 @@ describe "jdeathe/centos-ssh:latest"
 	test_setup
 
 	describe "Basic SSH operations"
-		trap "docker_terminate_container ssh.pool-1.1.1 &> /dev/null" \
+		trap "docker_terminate_container ssh.pool-1.1.1 &> /dev/null; exit 1" \
 			INT TERM EXIT
 
 		docker_terminate_container ssh.pool-1.1.1 &> /dev/null
@@ -147,7 +147,7 @@ describe "jdeathe/centos-ssh:latest"
 	end
 	
 	describe "Basic SFTP operations"
-		trap "docker_terminate_container sftp.pool-1.1.1 &> /dev/null" \
+		trap "docker_terminate_container sftp.pool-1.1.1 &> /dev/null; exit 1" \
 			INT TERM EXIT
 
 		docker_terminate_container sftp.pool-1.1.1 &> /dev/null
@@ -238,7 +238,7 @@ describe "jdeathe/centos-ssh:latest"
 	end
 
 	describe "Customised SSH configuration"
-		trap "docker_terminate_container ssh.pool-1.1.1 &> /dev/null" \
+		trap "docker_terminate_container ssh.pool-1.1.1 &> /dev/null; exit 1" \
 			INT TERM EXIT
 
 		it "Allows configuration of passwordless sudo."
@@ -819,7 +819,7 @@ describe "jdeathe/centos-ssh:latest"
 	end
 
 	describe "Customised SFTP configuration"
-		trap "docker_terminate_container sftp.pool-1.1.1 &> /dev/null; docker_terminate_container www-data.pool-1.1.1 &> /dev/null; docker volume rm www-data.pool-1.1.1 &> /dev/null" \
+		trap "docker_terminate_container sftp.pool-1.1.1 &> /dev/null; docker_terminate_container www-data.pool-1.1.1 &> /dev/null; docker volume rm www-data.pool-1.1.1 &> /dev/null; exit 1" \
 			INT TERM EXIT
 
 		docker_terminate_container sftp.pool-1.1.1 &> /dev/null
