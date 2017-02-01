@@ -7,6 +7,7 @@ Summary of release changes for Version 2 - CentOS-7
 ### 2.2.1 - Unreleased
 
 - Updates `vim` and `openssh` packages and the `epel-release`.
+- Fixes `shpec` test definition to allow `make test` to be interruptible.
 
 ### 2.2.0 - 2016-12-19
 
