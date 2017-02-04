@@ -146,7 +146,7 @@ $ docker run \
     --name=ssh.pool-1.1.1 \
     --manager=systemd \
     --register \
-    --env='SSH_SUDO="ALL=(ALL) NOPASSWD:ALL"' \
+    --env='SSH_SUDO=ALL=(ALL) NOPASSWD:ALL' \
     --env='SSH_USER="centos"' \
     --setopt='--volume {{NAME}}.config-ssh:/etc/ssh'
 ```
