@@ -4,6 +4,13 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
+### 2.2.1 - 2017-02-21
+
+- Updates `vim` and `openssh` packages and the `epel-release`.
+- Fixes `shpec` test definition to allow `make test` to be interruptible.
+- Adds the `openssl` package (and it's dependency, `make`).
+- Adds `README.md` instruction to use `docker pull` before `docker inspect` on an image.
+
 ### 2.2.0 - 2016-12-19
 
 - Adds CentOS 7.3.1611 source tag.
