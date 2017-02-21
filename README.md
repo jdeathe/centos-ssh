@@ -159,6 +159,12 @@ If your docker host has systemd, fleetd (and optionally etcd) installed then `sc
 
 Since release tags `1.7.2` / `2.1.2` the install template has been added to the image metadata. Using docker inspect you can access `scmi` to simplify install/uninstall tasks.
 
+_NOTE:_ A prerequisite of the following examples is that the image has been pulled (or loaded from the release package).
+
+```
+$ docker pull jdeathe/centos-ssh:1.7.5
+```
+
 To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
 
 ```
