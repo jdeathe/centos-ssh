@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
-### 1.7.6 - Unreleased
+### 1.7.6 - 2017-02-21
 
 - Adds updated CentOS-7 version in `README.md` since updating to `7.3.1611`.
 - Updates the `vim` package.
