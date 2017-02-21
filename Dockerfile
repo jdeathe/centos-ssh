@@ -31,6 +31,7 @@ RUN rpm --rebuilddb \
 		openssh-clients-6.6.1p1-33.el7_3 \
 		python-setuptools-0.9.8-4.el7 \
 		yum-plugin-versionlock-1.1.31-40.el7 \
+		openssl-1.0.1e-60.el7 \
 	&& yum versionlock add \
 		vim-minimal \
 		xz \
