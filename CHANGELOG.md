@@ -10,6 +10,7 @@ Summary of release changes for Version 1 - CentOS-6
 - Updates the `vim` package.
 - Fixes `shpec` test definition to allow `make test` to be interruptible.
 - Updates the `openssl` and `libxml2` packages that contain high risk security vulnerabilities.
+- Adds `README.md` instruction to use `docker pull` before `docker inspect` on an image.
 
 ### 1.7.5 - 2016-12-15
 
