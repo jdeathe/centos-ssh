@@ -7,6 +7,7 @@ Summary of release changes for Version 2 - CentOS-7
 ### 2.2.2 - Unreleased
 
 - Updates `openssh` package 6.6.1p1-35.el7_3.
+- Replaces deprecated Dockerfile `MAINTAINER` with a `LABEL`.
 
 ### 2.2.1 - 2017-02-21
 
