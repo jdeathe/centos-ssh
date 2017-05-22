@@ -89,19 +89,19 @@ RUN sed -i \
 # -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
-ADD usr/sbin \
+ADD src/usr/sbin \
 	/usr/sbin/
-ADD opt/scmi \
+ADD src/opt/scmi \
 	/opt/scmi/
-ADD etc/systemd/system \
+ADD src/etc/systemd/system \
 	/etc/systemd/system/
-ADD etc/services-config/ssh/authorized_keys \
-	etc/services-config/ssh/sshd-bootstrap.conf \
-	etc/services-config/ssh/sshd-bootstrap.env \
+ADD src/etc/services-config/ssh/authorized_keys \
+	src/etc/services-config/ssh/sshd-bootstrap.conf \
+	src/etc/services-config/ssh/sshd-bootstrap.env \
 	/etc/services-config/ssh/
-ADD etc/services-config/supervisor/supervisord.conf \
+ADD src/etc/services-config/supervisor/supervisord.conf \
 	/etc/services-config/supervisor/
-ADD etc/services-config/supervisor/supervisord.d \
+ADD src/etc/services-config/supervisor/supervisord.d \
 	/etc/services-config/supervisor/supervisord.d/
 
 RUN mkdir -p \
