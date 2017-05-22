@@ -28,6 +28,7 @@ RUN rpm --rebuilddb \
 		openssh-5.3p1-122.el6 \
 		openssh-clients-5.3p1-122.el6 \
 		openssh-server-5.3p1-122.el6 \
+		openssl-1.0.1e-48.el6_8.3 \
 		python-setuptools-0.6.10-3.el6 \
 		sudo-1.8.6p3-27.el6 \
 		vim-minimal-7.4.629-5.el6_8.1 \
