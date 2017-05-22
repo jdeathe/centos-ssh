@@ -4,6 +4,10 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.8.0 - Unreleased
+
+- Update source to CentOS-6 6.9.
+
 ### 1.7.6 - 2017-02-21
 
 - Adds updated CentOS-7 version in `README.md` since updating to `7.3.1611`.
