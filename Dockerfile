@@ -6,8 +6,6 @@
 # =============================================================================
 FROM centos:centos6.9
 
-MAINTAINER James Deathe <james.deathe@gmail.com>
-
 # -----------------------------------------------------------------------------
 # Base Install + Import the RPM GPG keys for Repositories
 # -----------------------------------------------------------------------------
@@ -167,6 +165,7 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 ARG RELEASE_VERSION="1.7.6"
 LABEL \
+	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \
 --rm \
 --privileged \
