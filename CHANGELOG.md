@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
-### 2.2.2 - Unlimited
+### 2.2.2 - Unreleased
 
 - Updates `openssh` package 6.6.1p1-35.el7_3.
 
