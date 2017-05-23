@@ -9,6 +9,7 @@ Summary of release changes for Version 1 - CentOS-6
 - Update source to CentOS-6 6.9.
 - Replaces deprecated Dockerfile `MAINTAINER` with a `LABEL`.
 - Adds a `src` directory for the image root files.
+- Adds wrapper functions to functional test cases.
 
 ### 1.7.6 - 2017-02-21
 
