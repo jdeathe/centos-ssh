@@ -12,48 +12,69 @@ readonly PUBLIC_KEY_ID_RSA_TEST_COMBINED_BASE64="c3NoLXJzYSBBQUFBQjNOemFDMXljMkV
 # need to allow for an alternative.
 DOCKER_PORT_MAP_TCP_22="${DOCKER_PORT_MAP_TCP_22:-2020}"
 
-function docker_terminate_container ()
+function __destroy ()
 {
-	local CONTAINER="${1}"
-
-	if docker ps -aq \
-		--filter "name=${CONTAINER}" \
-		--filter "status=paused" &> /dev/null; then
-		docker unpause ${CONTAINER} &> /dev/null
-	fi
-
-	if docker ps -aq \
-		--filter "name=${CONTAINER}" \
-		--filter "status=running" &> /dev/null; then
-		docker stop ${CONTAINER} &> /dev/null
-	fi
-
-	if docker ps -aq \
-		--filter "name=${CONTAINER}" &> /dev/null; then
-		docker rm -vf ${CONTAINER} &> /dev/null
-	fi
+	:
 }
 
-function test_setup ()
+function __setup ()
 {
-	chmod 600 ${TEST_DIRECTORY}/fixture/{id_rsa_insecure,id_rsa_test_1,id_rsa_test_2}
+	chmod 600 \
+		${TEST_DIRECTORY}/fixture/{id_rsa_insecure,id_rsa_test_1,id_rsa_test_2}
 }
 
-if [[ ! -d ${TEST_DIRECTORY} ]]; then
+# Custom shpec matcher
+# Match a string with an Extended Regular Expression pattern.
+function __shpec_matcher_egrep ()
+{
+	local pattern="${2:-}"
+	local string="${1:-}"
+
 	printf -- \
-		"ERROR: Please run from the project root.\n" \
-		>&2
-	exit 1
-fi
+		'%s' \
+		"${string}" \
+	| grep -qE -- \
+		"${pattern}" \
+		-
 
-describe "jdeathe/centos-ssh:latest"
-	test_setup
+	assert equal \
+		"${?}" \
+		0
+}
 
+function __terminate_container ()
+{
+	local container="${1}"
+
+	if docker ps -aq \
+		--filter "name=${container}" \
+		--filter "status=paused" &> /dev/null; then
+		docker unpause ${container} &> /dev/null
+	fi
+
+	if docker ps -aq \
+		--filter "name=${container}" \
+		--filter "status=running" &> /dev/null; then
+		docker stop ${container} &> /dev/null
+	fi
+
+	if docker ps -aq \
+		--filter "name=${container}" &> /dev/null; then
+		docker rm -vf ${container} &> /dev/null
+	fi
+}
+
+function test_basic_operations ()
+{
 	describe "Basic SSH operations"
-		trap "docker_terminate_container ssh.pool-1.1.1 &> /dev/null; exit 1" \
+		trap "__terminate_container ssh.pool-1.1.1 &> /dev/null; \
+			__destroy; \
+			exit 1" \
 			INT TERM EXIT
 
-		docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+		__terminate_container \
+			ssh.pool-1.1.1 \
+		&> /dev/null
 
 		it "Runs an SSH container named ssh.pool-1.1.1 on port ${DOCKER_PORT_MAP_TCP_22}."
 			local container_port_22=""
@@ -61,7 +82,8 @@ describe "jdeathe/centos-ssh:latest"
 			docker run -d \
 				--name ssh.pool-1.1.1 \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			container_port_22="$(
 				docker port \
@@ -72,9 +94,13 @@ describe "jdeathe/centos-ssh:latest"
 
 			if [[ ${DOCKER_PORT_MAP_TCP_22} == 0 ]] \
 				|| [[ -z ${DOCKER_PORT_MAP_TCP_22} ]]; then
-				assert gt "${container_port_22}" "30000"
+				assert gt \
+					"${container_port_22}" \
+					"30000"
 			else
-				assert equal "${container_port_22}" "${DOCKER_PORT_MAP_TCP_22}"
+				assert equal \
+					"${container_port_22}" \
+					"${DOCKER_PORT_MAP_TCP_22}"
 			fi
 		end
 
@@ -88,10 +114,14 @@ describe "jdeathe/centos-ssh:latest"
 				| awk '/^password :.*$/ { print $3 }'
 			)"
 
-			assert unequal "${password}" ""
+			assert unequal \
+				"${password}" \
+				""
 
 			it "Displays the password in plain text."
-				assert unequal "${password}" "${REDACTED_VALUE}"
+				assert unequal \
+					"${password}" \
+					"${REDACTED_VALUE}"
 			end
 		end
 
@@ -116,7 +146,9 @@ describe "jdeathe/centos-ssh:latest"
 
 			status_ssh_connection=${?}
 
-			assert equal "${status_ssh_connection}" 0
+			assert equal \
+				"${status_ssh_connection}" \
+				0
 
 			it "Requires a password for sudo commands."
 				user_home="$(
@@ -133,7 +165,9 @@ describe "jdeathe/centos-ssh:latest"
 								"\${HOME}"
 				)"
 
-				assert equal "${user_home}" "/home/app-admin"
+				assert equal \
+					"${user_home}" \
+					"/home/app-admin"
 			end
 
 			# Reset sudo configuration
@@ -141,16 +175,23 @@ describe "jdeathe/centos-ssh:latest"
 				bash -c 'rm -f /etc/sudoers.d/no_lecture'
 		end
 
-		docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+		__terminate_container \
+			ssh.pool-1.1.1 \
+		&> /dev/null
+
 		trap - \
 			INT TERM EXIT
 	end
 	
 	describe "Basic SFTP operations"
-		trap "docker_terminate_container sftp.pool-1.1.1 &> /dev/null; exit 1" \
+		trap "__terminate_container sftp.pool-1.1.1 &> /dev/null; \
+			__destroy; \
+			exit 1" \
 			INT TERM EXIT
 
-		docker_terminate_container sftp.pool-1.1.1 &> /dev/null
+		__terminate_container \
+			sftp.pool-1.1.1 \
+		&> /dev/null
 
 		it "Runs an SFTP container named sftp.pool-1.1.1 on port ${DOCKER_PORT_MAP_TCP_22}."
 			local container_port_22=""
@@ -159,7 +200,8 @@ describe "jdeathe/centos-ssh:latest"
 				--name sftp.pool-1.1.1 \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				--env SSH_USER_FORCE_SFTP=true \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			container_port_22="$(
 				docker port \
@@ -170,9 +212,13 @@ describe "jdeathe/centos-ssh:latest"
 
 			if [[ ${DOCKER_PORT_MAP_TCP_22} == 0 ]] \
 				|| [[ -z ${DOCKER_PORT_MAP_TCP_22} ]]; then
-				assert gt "${container_port_22}" "30000"
+				assert gt \
+					"${container_port_22}" \
+					"30000"
 			else
-				assert equal "${container_port_22}" "${DOCKER_PORT_MAP_TCP_22}"
+				assert equal \
+					"${container_port_22}" \
+					"${DOCKER_PORT_MAP_TCP_22}"
 			fi
 		end
 
@@ -192,7 +238,9 @@ describe "jdeathe/centos-ssh:latest"
 
 			status_sftp_connection=${?}
 
-			assert equal "${status_sftp_connection}" 0
+			assert equal \
+				"${status_sftp_connection}" \
+				0
 
 			it "Allows the user to upload a file to their _data directory."
 				local status_sftp_connection=""
@@ -208,7 +256,9 @@ describe "jdeathe/centos-ssh:latest"
 
 				status_sftp_connection=${?}
 
-				assert equal "${status_sftp_connection}" 0
+				assert equal \
+					"${status_sftp_connection}" \
+					0
 			end
 
 			it "Jails the user into a chroot directory."
@@ -228,30 +278,43 @@ describe "jdeathe/centos-ssh:latest"
 
 				status_sftp_connection=${?}
 
-				assert equal "${status_sftp_connection}" 0
+				assert equal \
+					"${status_sftp_connection}" \
+					0
 			end
+
+			__terminate_container \
+				sftp.pool-1.1.1 \
+			&> /dev/null
+
+			trap - \
+				INT TERM EXIT
 		end
-
-		docker_terminate_container sftp.pool-1.1.1 &> /dev/null
-		trap - \
-			INT TERM EXIT
 	end
+}
 
+function test_custom_configuration ()
+{
 	describe "Customised SSH configuration"
-		trap "docker_terminate_container ssh.pool-1.1.1 &> /dev/null; exit 1" \
+		trap "__terminate_container ssh.pool-1.1.1 &> /dev/null; \
+			__destroy; \
+			exit 1" \
 			INT TERM EXIT
 
 		it "Allows configuration of passwordless sudo."
 			local container_port_22=""
 			local user_home=""
 
-			docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
 
 			docker run -d \
 				--name ssh.pool-1.1.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			container_port_22="$(
 				docker port \
@@ -275,7 +338,9 @@ describe "jdeathe/centos-ssh:latest"
 						"\${HOME}"
 			)"
 
-			assert equal "${user_home}" "/home/app-admin"
+			assert equal \
+				"${user_home}" \
+				"/home/app-admin"
 
 			it "Displays the sudo settings in the logs output summary."
 				local user_sudo=""
@@ -285,7 +350,9 @@ describe "jdeathe/centos-ssh:latest"
 					| awk '/^sudo :.*$/ { print $0; }'
 				)"
 
-				assert equal "${user_sudo/sudo : /}" "ALL=(ALL) NOPASSWD:ALL"
+				assert equal \
+					"${user_sudo/sudo : /}" \
+					"ALL=(ALL) NOPASSWD:ALL"
 			end
 		end
 
@@ -293,14 +360,17 @@ describe "jdeathe/centos-ssh:latest"
 			local container_port_22=""
 			local user_home=""
 
-			docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
 
 			docker run -d \
 				--name ssh.pool-1.1.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--env "SSH_USER=centos" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			container_port_22="$(
 				docker port \
@@ -323,7 +393,9 @@ describe "jdeathe/centos-ssh:latest"
 					"\${HOME}"
 			)"
 
-			assert equal "${user_home}" "/home/centos"
+			assert equal \
+				"${user_home}" \
+				"/home/centos"
 
 			it "Displays the user in the logs output summary."
 				local user=""
@@ -332,7 +404,9 @@ describe "jdeathe/centos-ssh:latest"
 					| awk '/^user :.*$/ { print $0; }'
 				)"
 
-				assert equal "${user/user : /}" "centos"
+				assert equal \
+					"${user/user : /}" \
+					"centos"
 			end
 		end
 
@@ -340,14 +414,17 @@ describe "jdeathe/centos-ssh:latest"
 			local container_port_22=""
 			local user_home=""
 
-			docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
 
 			docker run -d \
 				--name ssh.pool-1.1.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--env "SSH_AUTHORIZED_KEYS=${PUBLIC_KEY_ID_RSA_TEST_1}" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			container_port_22="$(
 				docker port \
@@ -370,7 +447,9 @@ describe "jdeathe/centos-ssh:latest"
 					"\${HOME}"
 			)"
 
-			assert equal "${user_home}" "/home/app-admin"
+			assert equal \
+				"${user_home}" \
+				"/home/app-admin"
 
 			it "Displays the key's signature in the logs output summary."
 				local user_key_signature=""
@@ -380,21 +459,26 @@ describe "jdeathe/centos-ssh:latest"
 					| awk '/^45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65$/ { print $1; }'
 				)"
 
-				assert equal "${user_key_signature}" "${PUBLIC_KEY_ID_RSA_TEST_1_SIGNATURE}"
+				assert equal \
+					"${user_key_signature}" \
+					"${PUBLIC_KEY_ID_RSA_TEST_1_SIGNATURE}"
 			end
 
 			it "Allows multiple keys to be added as a base64 encoded string."
 				local container_port_22=""
 				local user_key=""
 
-				docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+				__terminate_container \
+					ssh.pool-1.1.1 \
+				&> /dev/null
 
 				docker run -d \
 					--name ssh.pool-1.1.1 \
 					--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 					--env "SSH_AUTHORIZED_KEYS=${PUBLIC_KEY_ID_RSA_TEST_COMBINED_BASE64}" \
 					--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-					jdeathe/centos-ssh:latest &> /dev/null
+					jdeathe/centos-ssh:latest \
+				&> /dev/null
 
 				container_port_22="$(
 					docker port \
@@ -430,7 +514,9 @@ describe "jdeathe/centos-ssh:latest"
 						"\${HOME}"
 				)"
 
-				assert equal "${user_home}" "/home/app-admin:/home/app-admin"
+				assert equal \
+					"${user_home}" \
+					"/home/app-admin:/home/app-admin"
 
 				it "Displays the key's signatures in the logs output summary."
 					local user_key_signature=""
@@ -447,7 +533,8 @@ describe "jdeathe/centos-ssh:latest"
 						| awk '/^b3:2e:5d:8c:76:d3:c7:24:13:a3:4f:6f:4d:a2:31:9c$/ { print $1; }'
 					)"
 
-					assert equal "${user_key_signature}" \
+					assert equal \
+						"${user_key_signature}" \
 						"${PUBLIC_KEY_ID_RSA_TEST_1_SIGNATURE} ${PUBLIC_KEY_ID_RSA_TEST_2_SIGNATURE}"
 				end
 			end
@@ -457,7 +544,9 @@ describe "jdeathe/centos-ssh:latest"
 			local container_port_22=""
 			local user_home=""
 
-			docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
 
 			docker run -d \
 				--name ssh.pool-1.1.1 \
@@ -465,7 +554,8 @@ describe "jdeathe/centos-ssh:latest"
 				--env "SSH_USER=app-1" \
 				--env "SSH_USER_HOME=/var/www/%u" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			container_port_22="$(
 				docker port \
@@ -488,7 +578,9 @@ describe "jdeathe/centos-ssh:latest"
 					"\${HOME}"
 			)"
 
-			assert equal "${user_home}" "/var/www/app-1"
+			assert equal \
+				"${user_home}" \
+				"/var/www/app-1"
 
 			it "Displays the user's home directory in the logs output summary."
 				local home=""
@@ -498,7 +590,9 @@ describe "jdeathe/centos-ssh:latest"
 					| awk '/^home :.*$/ { print $0; }'
 				)"
 
-				assert equal "${home/home : /}" "/var/www/app-1"
+				assert equal \
+					"${home/home : /}" \
+					"/var/www/app-1"
 			end
 		end
 
@@ -506,14 +600,17 @@ describe "jdeathe/centos-ssh:latest"
 			local container_port_22=""
 			local user_id=""
 
-			docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
 
 			docker run -d \
 				--name ssh.pool-1.1.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--env "SSH_USER_ID=1000:502" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			container_port_22="$(
 				docker port \
@@ -537,7 +634,9 @@ describe "jdeathe/centos-ssh:latest"
 					"\$(id --group app-admin)"
 			)"
 
-			assert equal "${user_id}" "1000:502"
+			assert equal \
+				"${user_id}" \
+				"1000:502"
 
 			it "Displays the user's uid:gid in the logs output summary."
 				local user_id=""
@@ -547,7 +646,9 @@ describe "jdeathe/centos-ssh:latest"
 					| awk '/^id :.*$/ { print $0; }'
 				)"
 
-				assert equal "${user_id/id : /}" "1000:502"
+				assert equal \
+					"${user_id/id : /}" \
+					"1000:502"
 			end
 		end
 
@@ -555,14 +656,17 @@ describe "jdeathe/centos-ssh:latest"
 			local container_port_22=""
 			local user_shell=""
 
-			docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
 
 			docker run -d \
 				--name ssh.pool-1.1.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--env "SSH_USER_SHELL=/bin/sh" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			container_port_22="$(
 				docker port \
@@ -587,7 +691,9 @@ describe "jdeathe/centos-ssh:latest"
 					)"
 			)"
 
-			assert equal "${user_shell}" "/bin/sh"
+			assert equal \
+				"${user_shell}" \
+				"/bin/sh"
 
 			it "Displays the user's shell in the logs output summary."
 				local user_shell=""
@@ -597,7 +703,9 @@ describe "jdeathe/centos-ssh:latest"
 					| awk '/^shell :.*$/ { print $0; }'
 				)"
 
-				assert equal "${user_shell/shell : /}" "/bin/sh"
+				assert equal \
+					"${user_shell/shell : /}" \
+					"/bin/sh"
 			end
 		end
 
@@ -605,14 +713,17 @@ describe "jdeathe/centos-ssh:latest"
 			local container_port_22=""
 			local user_env_value=""
 
-			docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
 
 			docker run -d \
 				--name ssh.pool-1.1.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--env "SSH_INHERIT_ENVIRONMENT=true" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			container_port_22="$(
 				docker port \
@@ -635,20 +746,25 @@ describe "jdeathe/centos-ssh:latest"
 					"\$(env | grep SSH_INHERIT_ENVIRONMENT=true)"
 			)"
 
-			assert equal "${user_env_value}" "SSH_INHERIT_ENVIRONMENT=true"
+			assert equal \
+				"${user_env_value}" \
+				"SSH_INHERIT_ENVIRONMENT=true"
 		end
 
 		it "Allows configuration of a plain text password."
 			local container_port_22=""
 			local user_home=""
 
-			docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
 
 			docker run -d \
 				--name ssh.pool-1.1.1 \
 				--env "SSH_USER_PASSWORD=Insecure_Passw0rd£" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			container_port_22="$(
 				docker port \
@@ -677,7 +793,9 @@ describe "jdeathe/centos-ssh:latest"
 							"\${HOME}"
 			)"
 
-			assert equal "${user_home}" "/home/app-admin"
+			assert equal \
+				"${user_home}" \
+				"/home/app-admin"
 
 			it "Will redact the SSH_USER_PASSWORD environment variable after bootstrap."
 				# TODO
@@ -699,7 +817,9 @@ describe "jdeathe/centos-ssh:latest"
 					| awk '/^password :.*$/ { print $0; }'
 				)"
 
-				assert equal "${password/password : /}" "${REDACTED_VALUE}"
+				assert equal \
+					"${password/password : /}" \
+					"${REDACTED_VALUE}"
 			end
 		end
 
@@ -707,14 +827,17 @@ describe "jdeathe/centos-ssh:latest"
 			local container_port_22=""
 			local user_home=""
 
-			docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
 
 			docker run -d \
 				--name ssh.pool-1.1.1 \
 				--env 'SSH_USER_PASSWORD=$6$pepper$g5/OhofGtHVo3wqRgVHFQrJDyK0mV9bDpF5HP964wuIkQ7MXuYq1KRTmShaUmTQW3ZRsjw2MjC1LNPh5HMcrY0' \
 				--env "SSH_USER_PASSWORD_HASHED=true" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			container_port_22="$(
 				docker port \
@@ -743,7 +866,9 @@ describe "jdeathe/centos-ssh:latest"
 							"\${HOME}"
 			)"
 
-			assert equal "${user_home}" "/home/app-admin"
+			assert equal \
+				"${user_home}" \
+				"/home/app-admin"
 
 			# TODO
 			# it "Will redact the SSH_USER_PASSWORD environment variable after bootstrap."
@@ -765,7 +890,9 @@ describe "jdeathe/centos-ssh:latest"
 					| awk '/^password :.*$/ { print $0; }'
 				)"
 
-				assert equal "${password/password : /}" "${REDACTED_VALUE}"
+				assert equal \
+					"${password/password : /}" \
+					"${REDACTED_VALUE}"
 			end
 		end
 
@@ -773,13 +900,16 @@ describe "jdeathe/centos-ssh:latest"
 			local container_port_22=""
 			local sshd_bootstrap_info=""
 
-			docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
 
 			docker run -d \
 				--name ssh.pool-1.1.1 \
 				--env "SSH_AUTOSTART_SSHD_BOOTSTRAP=false" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			sleep ${BOOTSTRAP_BACKOFF_TIME}
 
@@ -788,20 +918,25 @@ describe "jdeathe/centos-ssh:latest"
 				| awk '/INFO success: sshd-bootstrap entered RUNNING state/ { print $0; }'
 			)"
 
-			assert equal "${sshd_bootstrap_info}" ""
+			assert equal \
+				"${sshd_bootstrap_info}" \
+				""
 		end
 
 		it "Allows preventing the startup of the sshd daemon."
 			local container_port_22=""
 			local docker_top=""
 
-			docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
 
 			docker run -d \
 				--name ssh.pool-1.1.1 \
 				--env "SSH_AUTOSTART_SSHD=false" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest &> /dev/null
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
 
 			sleep ${BOOTSTRAP_BACKOFF_TIME}
 
@@ -810,19 +945,30 @@ describe "jdeathe/centos-ssh:latest"
 				| awk '/\/usr\/sbin\/sshd -/ { print $0; }'
 			)"
 
-			assert equal "${docker_top}" ""
+			assert equal \
+				"${docker_top}" \
+				""
 		end
 
-		docker_terminate_container ssh.pool-1.1.1 &> /dev/null
+		__terminate_container \
+			ssh.pool-1.1.1 \
+		&> /dev/null
+
 		trap - \
 			INT TERM EXIT
 	end
 
 	describe "Customised SFTP configuration"
-		trap "docker_terminate_container sftp.pool-1.1.1 &> /dev/null; docker_terminate_container www-data.pool-1.1.1 &> /dev/null; docker volume rm www-data.pool-1.1.1 &> /dev/null; exit 1" \
+		trap "__terminate_container sftp.pool-1.1.1 &> /dev/null; \
+			__terminate_container www-data.pool-1.1.1 &> /dev/null; \
+			docker volume rm www-data.pool-1.1.1 &> /dev/null; \
+			__destroy; \
+			exit 1" \
 			INT TERM EXIT
 
-		docker_terminate_container sftp.pool-1.1.1 &> /dev/null
+		__terminate_container \
+			sftp.pool-1.1.1 \
+		&> /dev/null
 
 		it "Allows configuration of the user's ChrootDirectory where %u is replaced with the username in the path."
 			local container_port_22=""
@@ -861,7 +1007,9 @@ describe "jdeathe/centos-ssh:latest"
 
 			status_sftp_connection=${?}
 
-			assert equal "${status_sftp_connection}" 0
+			assert equal \
+				"${status_sftp_connection}" \
+				0
 
 			it "Displays the chroot path in the logs output summary."
 				local chroot_path=""
@@ -871,7 +1019,9 @@ describe "jdeathe/centos-ssh:latest"
 					| awk '/^chroot path :.*$/ { print $0; }'
 				)"
 
-				assert equal "${chroot_path/chroot path : /}" "/chroot/app-admin"
+				assert equal \
+					"${chroot_path/chroot path : /}" \
+					"/chroot/app-admin"
 			end
 
 			it "Configures the user with the /sbin/nologin shell."
@@ -883,7 +1033,9 @@ describe "jdeathe/centos-ssh:latest"
 						| cut -d: -f7
 				)"
 
-				assert equal "${user_shell}" "/sbin/nologin"
+				assert equal \
+					"${user_shell}" \
+					"/sbin/nologin"
 			
 				it "Displays the user's shell in the logs output summary."
 					local user_shell=""
@@ -893,7 +1045,9 @@ describe "jdeathe/centos-ssh:latest"
 						| awk '/^shell :.*$/ { print $0; }'
 					)"
 
-					assert equal "${user_shell/shell : /}" "/sbin/nologin"
+					assert equal \
+						"${user_shell/shell : /}" \
+						"/sbin/nologin"
 				end
 			end
 
@@ -911,7 +1065,9 @@ describe "jdeathe/centos-ssh:latest"
 
 				status_sftp_connection=${?}
 
-				assert equal "${status_sftp_connection}" 0
+				assert equal \
+					"${status_sftp_connection}" \
+					0
 			end
 		end
 
@@ -919,9 +1075,18 @@ describe "jdeathe/centos-ssh:latest"
 			local container_port_22=""
 			local status_sftp_connection=""
 
-			docker_terminate_container sftp.pool-1.1.1 &> /dev/null
-			docker_terminate_container www-data.pool-1.1.1 &> /dev/null
-			docker volume rm www-data.pool-1.1.1 &> /dev/null
+			__terminate_container \
+				sftp.pool-1.1.1 \
+			&> /dev/null
+
+			__terminate_container \
+				www-data.pool-1.1.1 \
+			&> /dev/null
+
+			docker volume \
+				rm \
+				www-data.pool-1.1.1 \
+			&> /dev/null
 
 			docker run -d \
 				--name www-data.pool-1.1.1 \
@@ -967,13 +1132,40 @@ describe "jdeathe/centos-ssh:latest"
 
 			status_sftp_connection=${?}
 
-			assert equal "${status_sftp_connection}" 0
+			assert equal \
+				"${status_sftp_connection}" \
+				0
 		end
 
-		docker_terminate_container sftp.pool-1.1.1 &> /dev/null
-		docker_terminate_container www-data.pool-1.1.1 &> /dev/null
-		docker volume rm www-data.pool-1.1.1 &> /dev/null
+		__terminate_container \
+			sftp.pool-1.1.1 \
+		&> /dev/null
+
+		__terminate_container \
+			www-data.pool-1.1.1 \
+		&> /dev/null
+
+		docker volume \
+			rm \
+			www-data.pool-1.1.1 \
+		&> /dev/null
+
 		trap - \
 			INT TERM EXIT
 	end
+}
+
+if [[ ! -d ${TEST_DIRECTORY} ]]; then
+	printf -- \
+		"ERROR: Please run from the project root.\n" \
+		>&2
+	exit 1
+fi
+
+describe "jdeathe/centos-ssh:latest"
+	__destroy
+	__setup
+	test_basic_operations
+	test_custom_configuration
+	__destroy
 end
