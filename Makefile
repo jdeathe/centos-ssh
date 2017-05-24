@@ -26,8 +26,8 @@ Targets:
                             DOCKER_IMAGE_TAG variable.
   logs                      Display log output from the running container.
   logs-delayed              Display log output from the running container after
-                            backing off shortly. This can be necessary when 
-                            chaining make targets together.
+                            backing off for STARTUP_TIME seconds. This can be 
+                            necessary when chaining make targets together.
   pause                     Pause the running container.
   pull                      Pull the release image from the registry. Requires 
                             the DOCKER_IMAGE_TAG variable.
@@ -61,6 +61,9 @@ Variables:
                             artifacts are placed.
   - NO_CACHE                When true, no cache will be used while running the 
                             build target.
+  - STARTUP_TIME            Defines the number of seconds expected to complete 
+                            the startup process, including the bootstrap where 
+                            applicable.
 
 endef
 
@@ -357,7 +360,7 @@ logs: _prerequisites
 	@ $(docker) logs $(DOCKER_NAME)
 
 logs-delayed: _prerequisites
-	@ sleep 2
+	@ sleep $(STARTUP_TIME)
 	@ $(MAKE) logs
 
 load: _prerequisites _require-docker-release-tag _require-package-path

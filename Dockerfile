@@ -6,8 +6,6 @@
 # =============================================================================
 FROM centos:7.3.1611
 
-MAINTAINER James Deathe <james.deathe@gmail.com>
-
 # -----------------------------------------------------------------------------
 # Base Install + Import the RPM GPG keys for Repositories
 # -----------------------------------------------------------------------------
@@ -19,28 +17,30 @@ RUN rpm --rebuilddb \
 	&& rpm --import \
 		https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY \
 	&& yum -y install \
+			--setopt=tsflags=nodocs \
+			--disableplugin=fastestmirror \
 		centos-release-scl \
 		centos-release-scl-rh \
 		epel-release \
 		https://centos7.iuscommunity.org/ius-release.rpm \
-		vim-minimal-7.4.160-1.el7_3.1 \
-		xz-5.2.2-1.el7 \
-		sudo-1.8.6p7-21.el7_3 \
-		openssh-6.6.1p1-33.el7_3 \
-		openssh-server-6.6.1p1-33.el7_3 \
-		openssh-clients-6.6.1p1-33.el7_3 \
-		python-setuptools-0.9.8-4.el7 \
-		yum-plugin-versionlock-1.1.31-40.el7 \
+		openssh-6.6.1p1-35.el7_3 \
+		openssh-server-6.6.1p1-35.el7_3 \
+		openssh-clients-6.6.1p1-35.el7_3 \
 		openssl-1.0.1e-60.el7 \
+		python-setuptools-0.9.8-4.el7 \
+		sudo-1.8.6p7-21.el7_3 \
+		vim-minimal-7.4.160-1.el7_3.1 \
+		yum-plugin-versionlock-1.1.31-40.el7 \
+		xz-5.2.2-1.el7 \
 	&& yum versionlock add \
-		vim-minimal \
-		xz \
-		sudo \
 		openssh \
 		openssh-server \
 		openssh-clients \
 		python-setuptools \
+		sudo \
+		vim-minimal \
 		yum-plugin-versionlock \
+		xz \
 	&& yum clean all \
 	&& rm -rf /etc/ld.so.cache \
 	&& rm -rf /sbin/sln \
@@ -89,19 +89,19 @@ RUN sed -i \
 # -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
-ADD usr/sbin \
+ADD src/usr/sbin \
 	/usr/sbin/
-ADD opt/scmi \
+ADD src/opt/scmi \
 	/opt/scmi/
-ADD etc/systemd/system \
+ADD src/etc/systemd/system \
 	/etc/systemd/system/
-ADD etc/services-config/ssh/authorized_keys \
-	etc/services-config/ssh/sshd-bootstrap.conf \
-	etc/services-config/ssh/sshd-bootstrap.env \
+ADD src/etc/services-config/ssh/authorized_keys \
+	src/etc/services-config/ssh/sshd-bootstrap.conf \
+	src/etc/services-config/ssh/sshd-bootstrap.env \
 	/etc/services-config/ssh/
-ADD etc/services-config/supervisor/supervisord.conf \
+ADD src/etc/services-config/supervisor/supervisord.conf \
 	/etc/services-config/supervisor/
-ADD etc/services-config/supervisor/supervisord.d \
+ADD src/etc/services-config/supervisor/supervisord.d \
 	/etc/services-config/supervisor/supervisord.d/
 
 RUN mkdir -p \
@@ -152,8 +152,9 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="2.2.1"
+ARG RELEASE_VERSION="2.2.2"
 LABEL \
+	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \
 --rm \
 --privileged \
