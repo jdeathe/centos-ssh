@@ -30,6 +30,9 @@ REGISTER_ETCD_PARAMETERS="${REGISTER_ETCD_PARAMETERS:-}"
 REGISTER_TTL="${REGISTER_TTL:-60}"
 REGISTER_UPDATE_INTERVAL="${REGISTER_UPDATE_INTERVAL:-55}"
 
+# Number of seconds expected to complete container startup including bootstrap.
+STARTUP_TIME="${STARTUP_TIME:-2}"
+
 # Application container configuration
 SSH_AUTHORIZED_KEYS="${SSH_AUTHORIZED_KEYS:-}"
 SSH_AUTOSTART_SSHD="${SSH_AUTOSTART_SSHD:-true}"
