@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
-### 1.8.0 - Unreleased
+### 1.8.0 - 2017-05-24
 
 - Update source to CentOS-6 6.9.
 - Replaces deprecated Dockerfile `MAINTAINER` with a `LABEL`.
