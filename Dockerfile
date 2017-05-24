@@ -1,12 +1,10 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-6 6.8 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
+# CentOS-6 6.9 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
 # 
 # =============================================================================
-FROM centos:centos6.8
-
-MAINTAINER James Deathe <james.deathe@gmail.com>
+FROM centos:centos6.9
 
 # -----------------------------------------------------------------------------
 # Base Install + Import the RPM GPG keys for Repositories
@@ -19,39 +17,33 @@ RUN rpm --rebuilddb \
 	&& rpm --import \
 		https://dl.iuscommunity.org/pub/ius/IUS-COMMUNITY-GPG-KEY \
 	&& yum -y install \
+			--setopt=tsflags=nodocs \
+			--disableplugin=fastestmirror \
 		centos-release-scl \
 		centos-release-scl-rh \
 		epel-release \
 		https://centos6.iuscommunity.org/ius-release.rpm \
-		vim-minimal-7.4.629-5.el6_8.1 \
-		xz-4.999.9-0.5.beta.20091007git.el6.x86_64 \
-		sudo-1.8.6p3-25.el6_8 \
-		openssh-5.3p1-118.1.el6_8 \
-		openssh-server-5.3p1-118.1.el6_8 \
-		openssh-clients-5.3p1-118.1.el6_8 \
-		python-setuptools-0.6.10-3.el6 \
-		yum-plugin-versionlock-1.1.30-37.el6 \
-		libxml2-2.7.6-21.el6_8.1 \
+		openssh-5.3p1-122.el6 \
+		openssh-clients-5.3p1-122.el6 \
+		openssh-server-5.3p1-122.el6 \
 		openssl-1.0.1e-48.el6_8.3 \
+		python-setuptools-0.6.10-3.el6 \
+		sudo-1.8.6p3-27.el6 \
+		vim-minimal-7.4.629-5.el6_8.1 \
+		yum-plugin-versionlock-1.1.30-40.el6 \
+		xz-4.999.9-0.5.beta.20091007git.el6.x86_64 \
 	&& yum versionlock add \
-		vim-minimal \
-		xz \
-		sudo \
 		openssh \
-		openssh-server \
 		openssh-clients \
+		openssh-server \
 		python-setuptools \
+		sudo \
+		vim-minimal \
 		yum-plugin-versionlock \
+		xz \
 	&& rpm -e --nodeps \
-		dracut \
-		dracut-kernel \
-		grubby \
 		hwdata \
 		iptables \
-		kbd \
-		kbd-misc \
-		kernel \
-		kernel-firmware \
 		plymouth \
 		policycoreutils \
 		sysvinit-tools \
@@ -108,19 +100,19 @@ RUN sed -i \
 # -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
-ADD usr/sbin \
+ADD src/usr/sbin \
 	/usr/sbin/
-ADD opt/scmi \
+ADD src/opt/scmi \
 	/opt/scmi/
-ADD etc/systemd/system \
+ADD src/etc/systemd/system \
 	/etc/systemd/system/
-ADD etc/services-config/ssh/authorized_keys \
-	etc/services-config/ssh/sshd-bootstrap.conf \
-	etc/services-config/ssh/sshd-bootstrap.env \
+ADD src/etc/services-config/ssh/authorized_keys \
+	src/etc/services-config/ssh/sshd-bootstrap.conf \
+	src/etc/services-config/ssh/sshd-bootstrap.env \
 	/etc/services-config/ssh/
-ADD etc/services-config/supervisor/supervisord.conf \
+ADD src/etc/services-config/supervisor/supervisord.conf \
 	/etc/services-config/supervisor/
-ADD etc/services-config/supervisor/supervisord.d \
+ADD src/etc/services-config/supervisor/supervisord.d \
 	/etc/services-config/supervisor/supervisord.d/
 
 RUN mkdir -p \
@@ -171,8 +163,9 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="1.7.6"
+ARG RELEASE_VERSION="1.8.0"
 LABEL \
+	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \
 --rm \
 --privileged \
@@ -199,6 +192,6 @@ jdeathe/centos-ssh:${RELEASE_VERSION} \
 	org.deathe.license="MIT" \
 	org.deathe.vendor="jdeathe" \
 	org.deathe.url="https://github.com/jdeathe/centos-ssh" \
-	org.deathe.description="CentOS-6 6.8 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
+	org.deathe.description="CentOS-6 6.9 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
