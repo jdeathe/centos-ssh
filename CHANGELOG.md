@@ -10,6 +10,7 @@ Summary of release changes for Version 1 - CentOS-6
 - Replaces deprecated Dockerfile `MAINTAINER` with a `LABEL`.
 - Adds a `src` directory for the image root files.
 - Adds wrapper functions to functional test cases.
+- Adds `STARTUP_TIME` variable for the `logs-delayed` Makefile target.
 
 ### 1.7.6 - 2017-02-21
 
