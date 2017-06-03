@@ -17,6 +17,33 @@ function __destroy ()
 	:
 }
 
+function __is_container_ready ()
+{
+	local container="${1:-}"
+	local process_pattern="${2:-}"
+	local counter=$((
+		2 * 30
+	))
+
+	until (( counter == 0 )); do
+		sleep 0.1
+
+		if docker exec ${container} \
+			bash -c "ps x" \
+			| grep -qE "${process_pattern}"; then
+			break
+		fi
+
+		(( counter -= 1 ))
+	done
+
+	if (( counter == 0 )); then
+		return 1
+	fi
+
+	return 0
+}
+
 function __setup ()
 {
 	chmod 600 \
@@ -64,8 +91,13 @@ function __terminate_container ()
 	fi
 }
 
-function test_basic_operations ()
+function test_basic_ssh_operations ()
 {
+	local container_port_22=""
+	local password=""
+	local status_ssh_connection=""
+	local user_home=""
+
 	describe "Basic SSH operations"
 		trap "__terminate_container ssh.pool-1.1.1 &> /dev/null; \
 			__destroy; \
@@ -76,79 +108,86 @@ function test_basic_operations ()
 			ssh.pool-1.1.1 \
 		&> /dev/null
 
-		it "Runs an SSH container named ssh.pool-1.1.1 on port ${DOCKER_PORT_MAP_TCP_22}."
-			local container_port_22=""
+		describe "Runs named container"
 
-			docker run -d \
+			docker run \
+				--detach \
 				--name ssh.pool-1.1.1 \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
-			container_port_22="$(
-				docker port \
-				ssh.pool-1.1.1 \
-				22/tcp
-			)"
-			container_port_22=${container_port_22##*:}
+			it "Can publish container port 22 to host port ${DOCKER_PORT_MAP_TCP_22}."
+				container_port_22="$(
+					docker port \
+					ssh.pool-1.1.1 \
+					22/tcp
+				)"
+				container_port_22=${container_port_22##*:}
 
-			if [[ ${DOCKER_PORT_MAP_TCP_22} == 0 ]] \
-				|| [[ -z ${DOCKER_PORT_MAP_TCP_22} ]]; then
-				assert gt \
-					"${container_port_22}" \
-					"30000"
-			else
-				assert equal \
-					"${container_port_22}" \
-					"${DOCKER_PORT_MAP_TCP_22}"
-			fi
+				if [[ ${DOCKER_PORT_MAP_TCP_22} == 0 ]] \
+					|| [[ -z ${DOCKER_PORT_MAP_TCP_22} ]]; then
+					assert gt \
+						"${container_port_22}" \
+						"30000"
+				else
+					assert equal \
+						"${container_port_22}" \
+						"${DOCKER_PORT_MAP_TCP_22}"
+				fi
+			end
 		end
 
-		sleep ${BOOTSTRAP_BACKOFF_TIME}
+		if ! __is_container_ready \
+			ssh.pool-1.1.1 \
+			"/usr/sbin/sshd -D"; then
+			exit 1
+		fi
 
-		it "Generates a password that can be retrieved from the log."
-			local password=""
-
+		describe "SSH user's password"
 			password="$(
-				docker logs ssh.pool-1.1.1 \
+				docker logs \
+					ssh.pool-1.1.1 \
 				| awk '/^password :.*$/ { print $3 }'
 			)"
 
-			assert unequal \
-				"${password}" \
-				""
+			it "Can be retrieved from the log."
+				assert unequal \
+					"${password}" \
+					""
+			end
 
-			it "Displays the password in plain text."
+			it "Displays in plain text."
 				assert unequal \
 					"${password}" \
 					"${REDACTED_VALUE}"
 			end
 		end
 
-		it "Allows the user to connect using SSH + private key authentication."
-			local status_ssh_connection=""
-			local user_home=""
+		describe "SSH connection"
 
 			# Prevent sudo lecture output when testing the sudo password
 			docker exec ssh.pool-1.1.1 \
 				bash -c 'echo "Defaults lecture_file = /dev/null" > /etc/sudoers.d/no_lecture'
 
-			ssh -q \
-				-p ${container_port_22} \
-				-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
-				-o StrictHostKeyChecking=no \
-				-o LogLevel=error \
-				app-admin@${DOCKER_HOSTNAME} \
-				-- printf \
-					'%s\\n' \
-					"\${HOME}" \
-				&> /dev/null
+			it "Can connect using private key authentication."
+				ssh -q \
+					-p ${container_port_22} \
+					-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
+					-o StrictHostKeyChecking=no \
+					-o LogLevel=error \
+					app-admin@${DOCKER_HOSTNAME} \
+					-- printf \
+						'%s\\n' \
+						"\${HOME}" \
+					&> /dev/null
 
-			status_ssh_connection=${?}
+				status_ssh_connection=${?}
 
-			assert equal \
-				"${status_ssh_connection}" \
-				0
+				assert equal \
+					"${status_ssh_connection}" \
+					0
+			end
 
 			it "Requires a password for sudo commands."
 				user_home="$(
@@ -182,7 +221,13 @@ function test_basic_operations ()
 		trap - \
 			INT TERM EXIT
 	end
-	
+}
+
+function test_basic_sftp_operations ()
+{
+	local container_port_22=""
+	local status_sftp_connection=""
+
 	describe "Basic SFTP operations"
 		trap "__terminate_container sftp.pool-1.1.1 &> /dev/null; \
 			__destroy; \
@@ -193,58 +238,64 @@ function test_basic_operations ()
 			sftp.pool-1.1.1 \
 		&> /dev/null
 
-		it "Runs an SFTP container named sftp.pool-1.1.1 on port ${DOCKER_PORT_MAP_TCP_22}."
-			local container_port_22=""
+		# it "Runs an SFTP container named sftp.pool-1.1.1 on port ${DOCKER_PORT_MAP_TCP_22}."
+		describe "Runs named container"
 
-			docker run -d \
+			docker run \
+				--detach \
 				--name sftp.pool-1.1.1 \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				--env SSH_USER_FORCE_SFTP=true \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
-			container_port_22="$(
-				docker port \
-				sftp.pool-1.1.1 \
-				22/tcp
-			)"
-			container_port_22=${container_port_22##*:}
+			it "Can publish container port 22 to host port ${DOCKER_PORT_MAP_TCP_22}."
+				container_port_22="$(
+					docker port \
+					sftp.pool-1.1.1 \
+					22/tcp
+				)"
+				container_port_22=${container_port_22##*:}
 
-			if [[ ${DOCKER_PORT_MAP_TCP_22} == 0 ]] \
-				|| [[ -z ${DOCKER_PORT_MAP_TCP_22} ]]; then
-				assert gt \
-					"${container_port_22}" \
-					"30000"
-			else
-				assert equal \
-					"${container_port_22}" \
-					"${DOCKER_PORT_MAP_TCP_22}"
-			fi
+				if [[ ${DOCKER_PORT_MAP_TCP_22} == 0 ]] \
+					|| [[ -z ${DOCKER_PORT_MAP_TCP_22} ]]; then
+					assert gt \
+						"${container_port_22}" \
+						"30000"
+				else
+					assert equal \
+						"${container_port_22}" \
+						"${DOCKER_PORT_MAP_TCP_22}"
+				fi
+			end
 		end
 
-		sleep ${BOOTSTRAP_BACKOFF_TIME}
+		if ! __is_container_ready \
+			sftp.pool-1.1.1 \
+			"/usr/sbin/sshd -D"; then
+			exit 1
+		fi
 
-		it "Allows the user to connect using SFTP + private key authentication."
-			local status_sftp_connection=""
+		describe "SFTP Connection"
 
-			sftp -q \
-				-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
-				-o StrictHostKeyChecking=no \
-				-o LogLevel=error \
-				-o Port=${container_port_22} \
-				app-admin@${DOCKER_HOSTNAME} \
-				<<< "version" \
-				&> /dev/null
+			it "Can connect using private key authentication."
+				sftp -q \
+					-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
+					-o StrictHostKeyChecking=no \
+					-o LogLevel=error \
+					-o Port=${container_port_22} \
+					app-admin@${DOCKER_HOSTNAME} \
+					<<< "version" \
+					&> /dev/null
 
-			status_sftp_connection=${?}
+				status_sftp_connection=${?}
 
-			assert equal \
-				"${status_sftp_connection}" \
-				0
+				assert equal \
+					"${status_sftp_connection}" \
+					0
+			end
 
-			it "Allows the user to upload a file to their _data directory."
-				local status_sftp_connection=""
-
+			it "Can write to the user's _data directory."
 				sftp -q \
 					-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
 					-o StrictHostKeyChecking=no \
@@ -262,8 +313,6 @@ function test_basic_operations ()
 			end
 
 			it "Jails the user into a chroot directory."
-				local status_sftp_connection=""
-
 				docker exec sftp.pool-1.1.1 \
 					touch /home/app-admin/root_test
 
@@ -283,13 +332,12 @@ function test_basic_operations ()
 					0
 			end
 
-			__terminate_container \
-				sftp.pool-1.1.1 \
-			&> /dev/null
+		__terminate_container \
+			sftp.pool-1.1.1 \
+		&> /dev/null
 
-			trap - \
-				INT TERM EXIT
-		end
+		trap - \
+			INT TERM EXIT
 	end
 }
 
@@ -1165,7 +1213,8 @@ fi
 describe "jdeathe/centos-ssh:latest"
 	__destroy
 	__setup
-	test_basic_operations
+	test_basic_ssh_operations
+	test_basic_sftp_operations
 	test_custom_configuration
 	__destroy
 end
