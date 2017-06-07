@@ -29,7 +29,7 @@ function __is_container_ready ()
 		sleep 0.1
 
 		if docker exec ${container} \
-			bash -c "ps -axo command" \
+			bash -c "ps axo command" \
 			| grep -qE "${process_pattern}" \
 			> /dev/null 2>&1; then
 			break
