@@ -17,6 +17,24 @@ function __destroy ()
 	:
 }
 
+function __get_container_port ()
+{
+	local container="${1:-}"
+	local port="${2:-}"
+	local value=""
+
+	value="$(
+		docker port \
+			${container} \
+			${port}
+	)"
+	value=${value##*:}
+
+	printf -- \
+		'%s' \
+		"${value}"
+}
+
 function __is_container_ready ()
 {
 	local container="${1:-}"
@@ -119,11 +137,10 @@ function test_basic_ssh_operations ()
 
 			it "Can publish container port 22 to host port ${DOCKER_PORT_MAP_TCP_22}."
 				container_port_22="$(
-					docker port \
-					ssh.pool-1.1.1 \
-					22/tcp
+					__get_container_port \
+						ssh.pool-1.1.1 \
+						22/tcp
 				)"
-				container_port_22=${container_port_22##*:}
 
 				if [[ ${DOCKER_PORT_MAP_TCP_22} == 0 ]] \
 					|| [[ -z ${DOCKER_PORT_MAP_TCP_22} ]]; then
@@ -249,11 +266,10 @@ function test_basic_sftp_operations ()
 
 			it "Can publish container port 22 to host port ${DOCKER_PORT_MAP_TCP_22}."
 				container_port_22="$(
-					docker port \
-					sftp.pool-1.1.1 \
-					22/tcp
+					__get_container_port \
+						sftp.pool-1.1.1 \
+						22/tcp
 				)"
-				container_port_22=${container_port_22##*:}
 
 				if [[ ${DOCKER_PORT_MAP_TCP_22} == 0 ]] \
 					|| [[ -z ${DOCKER_PORT_MAP_TCP_22} ]]; then
@@ -384,11 +400,10 @@ function test_custom_ssh_configuration ()
 			&> /dev/null
 
 			container_port_22="$(
-				docker port \
-				ssh.pool-1.1.1 \
-				22/tcp
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
 			)"
-			container_port_22=${container_port_22##*:}
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
@@ -442,11 +457,10 @@ function test_custom_ssh_configuration ()
 			&> /dev/null
 
 			container_port_22="$(
-				docker port \
+				__get_container_port \
 					ssh.pool-1.1.1 \
 					22/tcp
 			)"
-			container_port_22=${container_port_22##*:}
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
@@ -499,11 +513,10 @@ function test_custom_ssh_configuration ()
 			&> /dev/null
 
 			container_port_22="$(
-				docker port \
-				ssh.pool-1.1.1 \
-				22/tcp
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
 			)"
-			container_port_22=${container_port_22##*:}
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
@@ -556,11 +569,10 @@ function test_custom_ssh_configuration ()
 			&> /dev/null
 
 			container_port_22="$(
-				docker port \
-				ssh.pool-1.1.1 \
-				22/tcp
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
 			)"
-			container_port_22=${container_port_22##*:}
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
@@ -635,11 +647,10 @@ function test_custom_ssh_configuration ()
 			&> /dev/null
 
 			container_port_22="$(
-				docker port \
-				ssh.pool-1.1.1 \
-				22/tcp
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
 			)"
-			container_port_22=${container_port_22##*:}
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
@@ -692,11 +703,10 @@ function test_custom_ssh_configuration ()
 			&> /dev/null
 
 			container_port_22="$(
-				docker port \
-				ssh.pool-1.1.1 \
-				22/tcp
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
 			)"
-			container_port_22=${container_port_22##*:}
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
@@ -750,11 +760,10 @@ function test_custom_ssh_configuration ()
 			&> /dev/null
 
 			container_port_22="$(
-				docker port \
-				ssh.pool-1.1.1 \
-				22/tcp
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
 			)"
-			container_port_22=${container_port_22##*:}
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
@@ -809,11 +818,10 @@ function test_custom_ssh_configuration ()
 			&> /dev/null
 
 			container_port_22="$(
-				docker port \
-				ssh.pool-1.1.1 \
-				22/tcp
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
 			)"
-			container_port_22=${container_port_22##*:}
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
@@ -858,11 +866,10 @@ function test_custom_ssh_configuration ()
 				bash -c 'echo "Defaults lecture_file = /dev/null" > /etc/sudoers.d/no_lecture'
 
 			container_port_22="$(
-				docker port \
-				ssh.pool-1.1.1 \
-				22/tcp
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
 			)"
-			container_port_22=${container_port_22##*:}
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
@@ -937,11 +944,10 @@ function test_custom_ssh_configuration ()
 				bash -c 'echo "Defaults lecture_file = /dev/null" > /etc/sudoers.d/no_lecture'
 
 			container_port_22="$(
-				docker port \
-				ssh.pool-1.1.1 \
-				22/tcp
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
 			)"
-			container_port_22=${container_port_22##*:}
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
@@ -1084,11 +1090,10 @@ function test_custom_sftp_configuration ()
 			&> /dev/null
 
 			container_port_22="$(
-				docker port \
-				sftp.pool-1.1.1 \
-				22/tcp
+				__get_container_port \
+					sftp.pool-1.1.1 \
+					22/tcp
 			)"
-			container_port_22=${container_port_22##*:}
 
 			if ! __is_container_ready \
 				sftp.pool-1.1.1 \
@@ -1190,11 +1195,10 @@ function test_custom_sftp_configuration ()
 			&> /dev/null
 
 			container_port_22="$(
-				docker port \
-				sftp.pool-1.1.1 \
-				22/tcp
+				__get_container_port \
+					sftp.pool-1.1.1 \
+					22/tcp
 			)"
-			container_port_22=${container_port_22##*:}
 
 			if ! __is_container_ready \
 				sftp.pool-1.1.1 \
