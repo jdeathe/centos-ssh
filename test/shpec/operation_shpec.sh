@@ -114,7 +114,6 @@ function test_basic_ssh_operations ()
 {
 	local container_port_22=""
 	local password=""
-	local status_ssh_connection=""
 	local user_home=""
 
 	describe "Basic SSH operations"
@@ -198,10 +197,8 @@ function test_basic_ssh_operations ()
 						"\${HOME}" \
 					&> /dev/null
 
-				status_ssh_connection=${?}
-
 				assert equal \
-					"${status_ssh_connection}" \
+					"${?}" \
 					0
 			end
 
@@ -242,7 +239,6 @@ function test_basic_ssh_operations ()
 function test_basic_sftp_operations ()
 {
 	local container_port_22=""
-	local status_sftp_connection=""
 	local user_shell=""
 
 	describe "Basic SFTP operations"
@@ -301,10 +297,8 @@ function test_basic_sftp_operations ()
 					<<< "version" \
 					&> /dev/null
 
-				status_sftp_connection=${?}
-
 				assert equal \
-					"${status_sftp_connection}" \
+					"${?}" \
 					0
 			end
 
@@ -318,10 +312,8 @@ function test_basic_sftp_operations ()
 					<<< "put ${TEST_DIRECTORY}/fixture/test_file" \
 					&> /dev/null
 
-				status_sftp_connection=${?}
-
 				assert equal \
-					"${status_sftp_connection}" \
+					"${?}" \
 					0
 			end
 
@@ -338,10 +330,8 @@ function test_basic_sftp_operations ()
 					<<< "ls /root_test" \
 					| grep -q "^/root_test"
 
-				status_sftp_connection=${?}
-
 				assert equal \
-					"${status_sftp_connection}" \
+					"${?}" \
 					0
 			end
 
@@ -1064,7 +1054,6 @@ function test_custom_sftp_configuration ()
 {
 	local container_port_22=""
 	local chroot_path=""
-	local status_sftp_connection=""
 	local user_shell=""
 
 	describe "Customised SFTP configuration"
@@ -1116,10 +1105,8 @@ function test_custom_sftp_configuration ()
 					<<< "ls /home/app-admin/root_test" \
 					| grep -q "^/home/app-admin/root_test"
 
-				status_sftp_connection=${?}
-
 				assert equal \
-					"${status_sftp_connection}" \
+					"${?}" \
 					0
 			end
 
@@ -1144,10 +1131,8 @@ function test_custom_sftp_configuration ()
 					<<< "put ${TEST_DIRECTORY}/fixture/test_file" \
 					&> /dev/null
 
-				status_sftp_connection=${?}
-
 				assert equal \
-					"${status_sftp_connection}" \
+					"${?}" \
 					0
 			end
 		end
@@ -1216,10 +1201,8 @@ function test_custom_sftp_configuration ()
 					<<< "ls test/public_html/index.html" \
 					| grep -q "^test/public_html/index.html"
 
-				status_sftp_connection=${?}
-
 				assert equal \
-					"${status_sftp_connection}" \
+					"${?}" \
 					0
 			end
 
