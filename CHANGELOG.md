@@ -4,6 +4,10 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
+### 2.2.3 - Unreleased
+
+- Adds clearer, improved [shpec](https://github.com/rylnd/shpec) test case output.
+
 ### 2.2.2 - 2017-05-24
 
 - Updates `openssh` package 6.6.1p1-35.el7_3.
