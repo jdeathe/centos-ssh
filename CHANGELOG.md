@@ -8,6 +8,7 @@ Summary of release changes for Version 2 - CentOS-7
 
 - Adds clearer, improved [shpec](https://github.com/rylnd/shpec) test case output.
 - Updates [supervisor](http://supervisord.org/changes.html) to version 3.3.2.
+- Adds use of `/var/lock/subsys/` (subsystem lock directory) for bootstrap lock files.
 
 ### 2.2.2 - 2017-05-24
 

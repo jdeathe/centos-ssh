@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-NICE=/bin/nice
-NICENESS="${SSH_NICENESS:-10}"
-SSHD=/usr/sbin/sshd
-SSHD_OPTIONS="
+readonly NICE=/bin/nice
+readonly NICENESS="${SSH_NICENESS:-10}"
+readonly SSHD=/usr/sbin/sshd
+readonly SSHD_OPTIONS="
  -D
  -e
  -u 0
@@ -11,7 +11,7 @@ SSHD_OPTIONS="
 
 while true; do
 	sleep 0.1
-	[[ -e /tmp/sshd-bootstrap.lock ]] || break
+	[[ -e /var/lock/subsys/sshd-bootstrap ]] || break
 done
 
 exec ${NICE} \
