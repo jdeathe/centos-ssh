@@ -7,6 +7,7 @@ Summary of release changes for Version 2 - CentOS-7
 ### 2.2.3 - Unreleased
 
 - Adds clearer, improved [shpec](https://github.com/rylnd/shpec) test case output.
+- Updates [supervisor](http://supervisord.org/changes.html) to version 3.3.2.
 
 ### 2.2.2 - 2017-05-24
 
