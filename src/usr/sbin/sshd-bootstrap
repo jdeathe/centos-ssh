@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Create lock file
-touch /tmp/sshd-bootstrap.lock
+touch /var/lock/subsys/sshd-bootstrap
 
 TIMER_START="$(
 	date +%s.%N
@@ -772,6 +772,6 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 fi
 
 # Release lock file
-rm -f /tmp/sshd-bootstrap.lock
+rm -f /var/lock/subsys/sshd-bootstrap
 
 exit 0
