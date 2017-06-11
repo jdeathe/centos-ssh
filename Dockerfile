@@ -185,6 +185,10 @@ jdeathe/centos-ssh:${RELEASE_VERSION} \
 	org.deathe.url="https://github.com/jdeathe/centos-ssh" \
 	org.deathe.description="CentOS-7 7.3.1611 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
 
-HEALTHCHECK CMD ["/usr/bin/healthcheck"]
+HEALTHCHECK \
+	--interval=0.5s \
+	--timeout=1s \
+	--retries=5 \
+	CMD ["/usr/bin/healthcheck"]
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]
