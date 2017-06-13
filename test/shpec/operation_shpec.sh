@@ -1259,7 +1259,7 @@ function test_healthcheck ()
 
 				assert __shpec_matcher_egrep \
 					"${health_status}" \
-					"\"(?:starting|healthy|unhealthy)\""
+					"\"(starting|healthy|unhealthy)\""
 			end
 
 			sleep $(
@@ -1298,7 +1298,7 @@ function test_healthcheck ()
 					awk \
 						-v interval_seconds="${interval_seconds}" \
 						-v retries="${retries}" \
-						'BEGIN { print interval_seconds * retries; }'
+						'BEGIN { print 1 + interval_seconds * retries; }'
 				)
 
 				health_status="$(
@@ -1334,7 +1334,7 @@ function test_healthcheck ()
 
 				assert __shpec_matcher_egrep \
 					"${health_status}" \
-					"\"(?:starting|healthy|unhealthy)\""
+					"\"(starting|healthy|unhealthy)\""
 			end
 
 			sleep $(
@@ -1368,7 +1368,7 @@ function test_healthcheck ()
 					awk \
 						-v interval_seconds="${interval_seconds}" \
 						-v retries="${retries}" \
-						'BEGIN { print interval_seconds * retries; }'
+						'BEGIN { print 1 + interval_seconds * retries; }'
 				)
 
 				health_status="$(
