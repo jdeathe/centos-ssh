@@ -100,6 +100,8 @@ RUN sed -i \
 # -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
+ADD src/usr/bin \
+	/usr/bin/
 ADD src/usr/sbin \
 	/usr/sbin/
 ADD src/opt/scmi \
@@ -193,5 +195,11 @@ jdeathe/centos-ssh:${RELEASE_VERSION} \
 	org.deathe.vendor="jdeathe" \
 	org.deathe.url="https://github.com/jdeathe/centos-ssh" \
 	org.deathe.description="CentOS-6 6.9 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
+
+HEALTHCHECK \
+	--interval=0.5s \
+	--timeout=1s \
+	--retries=5 \
+	CMD ["/usr/bin/healthcheck"]
 
 CMD ["/usr/bin/supervisord", "--configuration=/etc/supervisord.conf"]

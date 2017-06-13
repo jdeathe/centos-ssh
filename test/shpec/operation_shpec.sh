@@ -39,9 +39,11 @@ function __is_container_ready ()
 {
 	local container="${1:-}"
 	local process_pattern="${2:-}"
-	local counter=$((
-		2 * 30
-	))
+	local counter=$(
+		awk \
+			-v seconds="${3:-10}" \
+			'BEGIN { print 10 * seconds; }'
+	)
 
 	until (( counter == 0 )); do
 		sleep 0.1
@@ -1225,6 +1227,171 @@ function test_custom_sftp_configuration ()
 	end
 }
 
+function test_healthcheck ()
+{
+	local -r interval_seconds=0.5
+	local -r retries=5
+	local health_status=""
+
+	describe "Healthcheck"
+		trap "__terminate_container ssh.pool-1.1.1 &> /dev/null; \
+			__destroy; \
+			exit 1" \
+			INT TERM EXIT
+
+		describe "Default configuration"
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.pool-1.1.1 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			it "Returns a valid status on starting."
+				health_status="$(
+					docker inspect \
+						--format='{{json .State.Health.Status}}' \
+						ssh.pool-1.1.1
+				)"
+
+				assert __shpec_matcher_egrep \
+					"${health_status}" \
+					"\"(starting|healthy|unhealthy)\""
+			end
+
+			sleep $(
+				awk \
+					-v interval_seconds="${interval_seconds}" \
+					-v startup_time="${STARTUP_TIME}" \
+					'BEGIN { print interval_seconds + startup_time; }'
+			)
+
+			it "Returns healthy after startup."
+				health_status="$(
+					docker inspect \
+						--format='{{json .State.Health.Status}}' \
+						ssh.pool-1.1.1
+				)"
+
+				assert equal \
+					"${health_status}" \
+					"\"healthy\""
+			end
+
+			it "Returns unhealthy on failure."
+				# sshd-wrapper failure
+				docker exec -t \
+					ssh.pool-1.1.1 \
+					bash -c "mv \
+						/usr/sbin/sshd \
+						/usr/sbin/sshd2" \
+				&& docker exec -t \
+					ssh.pool-1.1.1 \
+					bash -c "if [[ -n \$(pgrep -f '^/usr/sbin/sshd -D') ]]; then \
+						kill -9 \$(pgrep -f '^/usr/sbin/sshd -D'); \
+					fi"
+
+				sleep $(
+					awk \
+						-v interval_seconds="${interval_seconds}" \
+						-v retries="${retries}" \
+						'BEGIN { print 1 + interval_seconds * retries; }'
+				)
+
+				health_status="$(
+					docker inspect \
+						--format='{{json .State.Health.Status}}' \
+						ssh.pool-1.1.1
+				)"
+
+				assert equal \
+					"${health_status}" \
+					"\"unhealthy\""
+			end
+		end
+
+		describe "Autostart false"
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.pool-1.1.1 \
+				--env SSH_AUTOSTART_SSHD=false \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			it "Returns a valid status on starting."
+				health_status="$(
+					docker inspect \
+						--format='{{json .State.Health.Status}}' \
+						ssh.pool-1.1.1
+				)"
+
+				assert __shpec_matcher_egrep \
+					"${health_status}" \
+					"\"(starting|healthy|unhealthy)\""
+			end
+
+			sleep $(
+				awk \
+					-v interval_seconds="${interval_seconds}" \
+					-v startup_time="${STARTUP_TIME}" \
+					'BEGIN { print interval_seconds + startup_time; }'
+			)
+
+			it "Returns healthy after startup."
+				health_status="$(
+					docker inspect \
+						--format='{{json .State.Health.Status}}' \
+						ssh.pool-1.1.1
+				)"
+
+				assert equal \
+					"${health_status}" \
+					"\"healthy\""
+			end
+
+			it "Returns unhealthy on failure."
+				# sshd-bootstrap failure
+				docker exec -t \
+					ssh.pool-1.1.1 \
+					bash -c "sed -i \
+						-e 's~# app-admin~~' \
+						/etc/sudoers"
+
+				sleep $(
+					awk \
+						-v interval_seconds="${interval_seconds}" \
+						-v retries="${retries}" \
+						'BEGIN { print 1 + interval_seconds * retries; }'
+				)
+
+				health_status="$(
+					docker inspect \
+						--format='{{json .State.Health.Status}}' \
+						ssh.pool-1.1.1
+				)"
+
+				assert equal \
+					"${health_status}" \
+					"\"unhealthy\""
+			end
+		end
+
+		__terminate_container \
+			ssh.pool-1.1.1 \
+		&> /dev/null
+
+		trap - \
+			INT TERM EXIT
+	end
+}
+
 if [[ ! -d ${TEST_DIRECTORY} ]]; then
 	printf -- \
 		"ERROR: Please run from the project root.\n" \
@@ -1239,5 +1406,6 @@ describe "jdeathe/centos-ssh:latest"
 	test_basic_sftp_operations
 	test_custom_ssh_configuration
 	test_custom_sftp_configuration
+	test_healthcheck
 	__destroy
 end
