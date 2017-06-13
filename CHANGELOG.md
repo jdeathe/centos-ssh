@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
-### 1.8.1 - Unreleased
+### 1.8.1 - 2017-06-14
 
 - Adds clearer, improved [shpec](https://github.com/rylnd/shpec) test case output.
 - Updates [supervisor](http://supervisord.org/changes.html) to version 3.3.2.
