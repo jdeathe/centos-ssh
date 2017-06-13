@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -e
+
+source /etc/sshd-bootstrap.conf
+
+# sshd-bootstrap
+if [[ ${SSH_AUTOSTART_SSHD_BOOTSTRAP} == true ]]; then
+	[[ -e /var/lock/subsys/sshd-bootstrap ]] && exit 1
+	grep -qE "^# ${SSH_USER}" /etc/sudoers || exit 1
+fi
+
+# sshd-wrapper
+if [[ ${SSH_AUTOSTART_SSHD} == true ]]; then
+	ps axo command \
+	| grep -qE '^/usr/sbin/sshd -D' || exit 1
+fi
+
+exit 0
