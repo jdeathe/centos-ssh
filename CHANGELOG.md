@@ -4,6 +4,13 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
+### 2.2.3 - 2017-06-14
+
+- Adds clearer, improved [shpec](https://github.com/rylnd/shpec) test case output.
+- Updates [supervisor](http://supervisord.org/changes.html) to version 3.3.2.
+- Adds use of `/var/lock/subsys/` (subsystem lock directory) for bootstrap lock files.
+- Adds a Docker healthcheck.
+
 ### 2.2.2 - 2017-05-24
 
 - Updates `openssh` package 6.6.1p1-35.el7_3.
