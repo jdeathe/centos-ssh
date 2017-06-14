@@ -4,6 +4,13 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.8.1 - 2017-06-14
+
+- Adds clearer, improved [shpec](https://github.com/rylnd/shpec) test case output.
+- Updates [supervisor](http://supervisord.org/changes.html) to version 3.3.2.
+- Adds use of `/var/lock/subsys/` (subsystem lock directory) for bootstrap lock files.
+- Adds a Docker healthcheck.
+
 ### 1.8.0 - 2017-05-24
 
 - Update source to CentOS-6 6.9.
