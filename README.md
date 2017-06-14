@@ -7,12 +7,12 @@ Includes public key authentication, Automated password generation and supports c
 
 ## Overview & links
 
-The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag - the convention is `centos-6-1.8.0` OR `1.8.0` for the [1.8.0](https://github.com/jdeathe/centos-ssh/tree/1.8.0) release tag and `centos-7-2.2.2` OR `2.2.2` for the [2.2.2](https://github.com/jdeathe/centos-ssh/tree/2.2.2) release tag.
+The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag - the convention is `centos-6-1.8.1` OR `1.8.1` for the [1.8.1](https://github.com/jdeathe/centos-ssh/tree/1.8.1) release tag and `centos-7-2.2.3` OR `2.2.3` for the [2.2.3](https://github.com/jdeathe/centos-ssh/tree/2.2.3) release tag.
 
 ### Tags and respective `Dockerfile` links
 
-- `centos-7`,`centos-7-2.2.2`,`2.2.2` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
-- `centos-6`,`centos-6-1.8.0`,`1.8.0` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
+- `centos-7`,`centos-7-2.2.3`,`2.2.3` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
+- `centos-6`,`centos-6-1.8.1`,`1.8.1` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
 
 The Dockerfile can be used to build a base image that is the bases for several other docker images.
 
@@ -105,10 +105,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:2.2.2 \
+  jdeathe/centos-ssh:2.2.3 \
   /usr/sbin/scmi install \
     --chroot=/media/root \
-    --tag=2.2.2 \
+    --tag=2.2.3 \
     --name=ssh.pool-1.1.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
@@ -122,10 +122,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:2.2.2 \
+  jdeathe/centos-ssh:2.2.3 \
   /usr/sbin/scmi uninstall \
     --chroot=/media/root \
-    --tag=2.2.2 \
+    --tag=2.2.3 \
     --name=ssh.pool-1.1.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
@@ -139,10 +139,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:2.2.2 \
+  jdeathe/centos-ssh:2.2.3 \
   /usr/sbin/scmi install \
     --chroot=/media/root \
-    --tag=2.2.2 \
+    --tag=2.2.3 \
     --name=ssh.pool-1.1.1 \
     --manager=systemd \
     --register \
@@ -162,7 +162,7 @@ Since release tags `1.7.2` / `2.1.2` the install template has been added to the 
 _NOTE:_ A prerequisite of the following examples is that the image has been pulled (or loaded from the release package).
 
 ```
-$ docker pull jdeathe/centos-ssh:2.2.2
+$ docker pull jdeathe/centos-ssh:2.2.3
 ```
 
 To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
@@ -171,7 +171,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:2.2.2
+    jdeathe/centos-ssh:2.2.3
   ) --info"
 ```
 
@@ -181,7 +181,7 @@ To perform an installation using the docker name `ssh.pool-1.2.1` simply use the
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:2.2.2
+    jdeathe/centos-ssh:2.2.3
   ) --name=ssh.pool-1.2.1"
 ```
 
@@ -191,7 +191,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.uninstall}}" \
-    jdeathe/centos-ssh:2.2.2
+    jdeathe/centos-ssh:2.2.3
   ) --name=ssh.pool-1.2.1"
 ```
 
@@ -204,7 +204,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:2.2.2 \
+  jdeathe/centos-ssh:2.2.3 \
   --info
 ```
 
@@ -213,14 +213,14 @@ To perform an installation using the docker name `ssh.pool-1.3.1` simply use the
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:2.2.2
+  jdeathe/centos-ssh:2.2.3
 ```
 
 Alternatively, you could use the `scmi` options `--name` or `-n` for naming the container.
 
 ```
 $ sudo -E atomic install \
-  jdeathe/centos-ssh:2.2.2 \
+  jdeathe/centos-ssh:2.2.3 \
   --name ssh.pool-1.3.1
 ```
 
@@ -229,7 +229,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 ```
 $ sudo -E atomic uninstall \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:2.2.2
+  jdeathe/centos-ssh:2.2.3
 ```
 
 #### Using environment variables
