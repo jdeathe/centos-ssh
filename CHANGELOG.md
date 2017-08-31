@@ -8,6 +8,7 @@ Summary of release changes for Version 2 - CentOS-7
 
 - Updates [supervisor](http://supervisord.org/changes.html) to version 3.3.3.
 - Updates `sudo` package to sudo-1.8.6p7-23.el7_3.
+- Adds permissions to restrict access to the healthcheck script.
 
 ### 2.2.3 - 2017-06-14
 
