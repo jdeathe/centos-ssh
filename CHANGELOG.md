@@ -8,6 +8,7 @@ Summary of release changes for Version 1 - CentOS-6
 
 - Updates [supervisor](http://supervisord.org/changes.html) to version 3.3.3.
 - Updates openssh and sudo to latest versions and remove openssl as upstream has latest.
+- Adds permissions to restrict access to the healthcheck script.
 
 ### 1.8.1 - 2017-06-14
 
