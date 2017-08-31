@@ -23,12 +23,11 @@ RUN rpm --rebuilddb \
 		centos-release-scl-rh \
 		epel-release \
 		https://centos6.iuscommunity.org/ius-release.rpm \
-		openssh-5.3p1-122.el6 \
-		openssh-clients-5.3p1-122.el6 \
-		openssh-server-5.3p1-122.el6 \
-		openssl-1.0.1e-48.el6_8.3 \
+		openssh-5.3p1-123.el6_9 \
+		openssh-clients-5.3p1-123.el6_9 \
+		openssh-server-5.3p1-123.el6_9 \
 		python-setuptools-0.6.10-3.el6 \
-		sudo-1.8.6p3-27.el6 \
+		sudo-1.8.6p3-29.el6_9 \
 		vim-minimal-7.4.629-5.el6_8.1 \
 		yum-plugin-versionlock-1.1.30-40.el6 \
 		xz-4.999.9-0.5.beta.20091007git.el6.x86_64 \
