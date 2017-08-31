@@ -140,7 +140,7 @@ RUN mkdir -p \
 		/etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
 		/etc/supervisord.d/sshd-bootstrap.conf \
 	&& chmod 700 \
-		/usr/sbin/{scmi,sshd-{bootstrap,wrapper}}
+		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper}}}
 
 EXPOSE 22
 
