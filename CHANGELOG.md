@@ -7,6 +7,7 @@ Summary of release changes for Version 2 - CentOS-7
 ### 2.2.4 - Unreleased
 
 - Updates [supervisor](http://supervisord.org/changes.html) to version 3.3.3.
+- Updates `sudo` package to sudo-1.8.6p7-23.el7_3.
 
 ### 2.2.3 - 2017-06-14
 

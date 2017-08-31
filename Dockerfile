@@ -28,7 +28,7 @@ RUN rpm --rebuilddb \
 		openssh-clients-6.6.1p1-35.el7_3 \
 		openssl-1.0.1e-60.el7 \
 		python-setuptools-0.9.8-4.el7 \
-		sudo-1.8.6p7-21.el7_3 \
+		sudo-1.8.6p7-23.el7_3 \
 		vim-minimal-7.4.160-1.el7_3.1 \
 		yum-plugin-versionlock-1.1.31-40.el7 \
 		xz-5.2.2-1.el7 \
