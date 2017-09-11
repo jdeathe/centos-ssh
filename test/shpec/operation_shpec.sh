@@ -35,23 +35,30 @@ function __get_container_port ()
 		"${value}"
 }
 
+# container - Docker container name.
+# counter - Timeout counter in seconds.
+# process_pattern - Regular expression pattern used to match running process.
+# ready_test - Command used to test if the service is ready.
 function __is_container_ready ()
 {
 	local container="${1:-}"
-	local process_pattern="${2:-}"
 	local counter=$(
 		awk \
-			-v seconds="${3:-10}" \
+			-v seconds="${2:-10}" \
 			'BEGIN { print 10 * seconds; }'
 	)
+	local process_pattern="${3:-}"
+	local ready_test="${4:-true}"
 
 	until (( counter == 0 )); do
 		sleep 0.1
 
 		if docker exec ${container} \
-			bash -c "ps axo command" \
-			| grep -qE "${process_pattern}" \
-			> /dev/null 2>&1; then
+			bash -c "ps axo command \
+				| grep -qE \"${process_pattern}\" \
+				&& eval \"${ready_test}\"" \
+			&> /dev/null
+		then
 			break
 		fi
 
@@ -158,7 +165,12 @@ function test_basic_ssh_operations ()
 
 		if ! __is_container_ready \
 			ssh.pool-1.1.1 \
-			"/usr/sbin/sshd -D"; then
+			${STARTUP_TIME} \
+			"/usr/sbin/sshd " \
+			"grep \
+				'^Server listening on 0\.0\.0\.0 port 22\.' \
+				/var/log/secure"
+		then
 			exit 1
 		fi
 
@@ -284,7 +296,12 @@ function test_basic_sftp_operations ()
 
 		if ! __is_container_ready \
 			sftp.pool-1.1.1 \
-			"/usr/sbin/sshd -D"; then
+			${STARTUP_TIME} \
+			"/usr/sbin/sshd " \
+			"grep \
+				'^Server listening on 0\.0\.0\.0 port 22\.' \
+				/var/log/secure"
+		then
 			exit 1
 		fi
 
@@ -399,7 +416,12 @@ function test_custom_ssh_configuration ()
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
@@ -456,7 +478,12 @@ function test_custom_ssh_configuration ()
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
@@ -512,7 +539,12 @@ function test_custom_ssh_configuration ()
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
@@ -568,7 +600,12 @@ function test_custom_ssh_configuration ()
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
@@ -646,7 +683,12 @@ function test_custom_ssh_configuration ()
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
@@ -702,7 +744,12 @@ function test_custom_ssh_configuration ()
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
@@ -759,7 +806,12 @@ function test_custom_ssh_configuration ()
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
@@ -817,7 +869,12 @@ function test_custom_ssh_configuration ()
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
@@ -865,7 +922,12 @@ function test_custom_ssh_configuration ()
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
@@ -943,7 +1005,12 @@ function test_custom_ssh_configuration ()
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
@@ -1006,7 +1073,12 @@ function test_custom_ssh_configuration ()
 
 			if ! __is_container_ready \
 				ssh.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
@@ -1088,7 +1160,12 @@ function test_custom_sftp_configuration ()
 
 			if ! __is_container_ready \
 				sftp.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
@@ -1189,7 +1266,12 @@ function test_custom_sftp_configuration ()
 
 			if ! __is_container_ready \
 				sftp.pool-1.1.1 \
-				"/usr/sbin/sshd -D"; then
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
 				exit 1
 			fi
 
