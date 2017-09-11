@@ -1348,7 +1348,7 @@ function test_healthcheck ()
 				awk \
 					-v interval_seconds="${interval_seconds}" \
 					-v startup_time="${STARTUP_TIME}" \
-					'BEGIN { print interval_seconds + startup_time; }'
+					'BEGIN { print 1 + interval_seconds + startup_time; }'
 			)
 
 			it "Returns healthy after startup."
@@ -1423,7 +1423,7 @@ function test_healthcheck ()
 				awk \
 					-v interval_seconds="${interval_seconds}" \
 					-v startup_time="${STARTUP_TIME}" \
-					'BEGIN { print interval_seconds + startup_time; }'
+					'BEGIN { print 1 + interval_seconds + startup_time; }'
 			)
 
 			it "Returns healthy after startup."
