@@ -699,7 +699,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 			"${OPTS_SSH_USER_HOME}"
 	else
 		printf \
-			-- '%s' \
+			-- '%s\n' \
 			"${OPTS_SSH_AUTHORIZED_KEYS}" \
 			> "${OPTS_SSH_USER_HOME}"/.ssh/authorized_keys
 

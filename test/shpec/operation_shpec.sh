@@ -378,6 +378,7 @@ function test_basic_sftp_operations ()
 
 function test_custom_ssh_configuration ()
 {
+	local append_line=""
 	local container_port_22=""
 	local user=""
 	local user_env_value=""
@@ -575,6 +576,21 @@ function test_custom_ssh_configuration ()
 				assert equal \
 					"${user_key_signature}" \
 					"${PUBLIC_KEY_ID_RSA_TEST_1_SIGNATURE}"
+			end
+
+			it "Can append to key"
+				append_line="$(docker exec -t \
+					ssh.pool-1.1.1 \
+					bash -c "printf -- '#\n' \
+						>> /home/app-admin/.ssh/authorized_keys \
+						&& tail -n 1 \
+						< /home/app-admin/.ssh/authorized_keys \
+						| tr -d '\n'"
+				)"
+
+				assert equal \
+					"${append_line}" \
+					"#"
 			end
 		end
 
