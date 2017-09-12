@@ -10,6 +10,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Updates `sudo` package to sudo-1.8.6p7-23.el7_3.
 - Adds permissions to restrict access to the healthcheck script.
 - Fixes declaration of local readonly and array bash variables in SCMI scripts.
+- Fixes missing trailing newline in source vagrant insecure public key.
 
 ### 2.2.3 - 2017-06-14
 
