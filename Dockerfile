@@ -23,12 +23,11 @@ RUN rpm --rebuilddb \
 		centos-release-scl-rh \
 		epel-release \
 		https://centos6.iuscommunity.org/ius-release.rpm \
-		openssh-5.3p1-122.el6 \
-		openssh-clients-5.3p1-122.el6 \
-		openssh-server-5.3p1-122.el6 \
-		openssl-1.0.1e-48.el6_8.3 \
+		openssh-5.3p1-123.el6_9 \
+		openssh-clients-5.3p1-123.el6_9 \
+		openssh-server-5.3p1-123.el6_9 \
 		python-setuptools-0.6.10-3.el6 \
-		sudo-1.8.6p3-27.el6 \
+		sudo-1.8.6p3-29.el6_9 \
 		vim-minimal-7.4.629-5.el6_8.1 \
 		yum-plugin-versionlock-1.1.30-40.el6 \
 		xz-4.999.9-0.5.beta.20091007git.el6.x86_64 \
@@ -66,7 +65,7 @@ RUN rpm --rebuilddb \
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
 RUN easy_install \
-		'supervisor == 3.3.2' \
+		'supervisor == 3.3.3' \
 		'supervisor-stdout == 0.1.1' \
 	&& mkdir -p \
 		/var/log/supervisor/
@@ -141,7 +140,7 @@ RUN mkdir -p \
 		/etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
 		/etc/supervisord.d/sshd-bootstrap.conf \
 	&& chmod 700 \
-		/usr/sbin/{scmi,sshd-{bootstrap,wrapper}}
+		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper}}}
 
 EXPOSE 22
 
@@ -165,7 +164,7 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="1.8.1"
+ARG RELEASE_VERSION="1.8.2"
 LABEL \
 	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \

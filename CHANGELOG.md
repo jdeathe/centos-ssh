@@ -4,6 +4,15 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.8.2 - 2017-09-13
+
+- Updates [supervisor](http://supervisord.org/changes.html) to version 3.3.3.
+- Updates openssh and sudo to latest versions and remove openssl as upstream has latest.
+- Adds permissions to restrict access to the healthcheck script.
+- Fixes declaration of local readonly and array bash variables in SCMI scripts.
+- Fixes missing trailing newline in source vagrant insecure public key.
+- Fixes missing trailing newline for keys added to `~/.ssh/authorized_keys`.
+
 ### 1.8.1 - 2017-06-14
 
 - Adds clearer, improved [shpec](https://github.com/rylnd/shpec) test case output.

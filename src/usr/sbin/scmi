@@ -8,19 +8,19 @@ cd -- "$(
 function scmi ()
 {
 	# Constants
-	local readonly SCMI_INCLUDE_FILES="
+	local -r SCMI_INCLUDE_FILES="
 	 environment.sh
 	 default.sh
 	 service-unit.sh
 	"
-	local readonly SCMI_MANAGER_TYPE_PATTERN='^(docker|fleet|systemd)$'
-	local readonly SCMI_NAME_FORMAT='{<name>|<name>.[group]}.<instance>.<node>'
-	local readonly SCMI_PACKAGE_NAME="scmi"
+	local -r SCMI_MANAGER_TYPE_PATTERN='^(docker|fleet|systemd)$'
+	local -r SCMI_NAME_FORMAT='{<name>|<name>.[group]}.<instance>.<node>'
+	local -r SCMI_PACKAGE_NAME="scmi"
 
 	# Default settings
 	local SCMI_COMMAND=""
 	local SCMI_CHROOT_PATH="/"
-	declare -a local SCMI_ENV
+	local -a SCMI_ENV
 	local SCMI_IMAGE_PACKAGE_PATH="/var/opt/scmi/packages"
 	local SCMI_INFO=false
 	local SCMI_MANAGER_TYPE="docker"
@@ -28,7 +28,7 @@ function scmi ()
 	local SCMI_QUIET=false
 	local SCMI_REGISTER_ENABLED=false
 	local SCMI_RESTART=""
-	declare -a local SCMI_SETOPT
+	local -a SCMI_SETOPT
 	local SCMI_TAG="latest"
 
 	# Abort if not run by root user or with sudo
@@ -703,8 +703,8 @@ function scmi_fleet_get_unit_state ()
 
 function scmi_fleet_install ()
 {
-	declare -a local UNIT_FILE_HASH
-	declare -a local PIDS
+	local -a UNIT_FILE_HASH
+	local -a PIDS
 	local STATUS_COMMAND
 
 	scmi_fleet_prerequisites
@@ -1360,8 +1360,8 @@ function scmi_is_valid_managed_docker_name ()
 function scmi_manager_type_command_prerequisites ()
 {
 	local COMMAND
-	declare -a local COMMANDS
-	declare -a local COMMAND_PATHS=(
+	local -a COMMANDS
+	local -a COMMAND_PATHS=(
 		'/usr/local/bin'
 		'/usr/bin'
 	)
@@ -1816,7 +1816,7 @@ function scmi_systemd_get_unit_file_path ()
 
 function scmi_systemd_install ()
 {
-	declare -a local PIDS
+	local -a PIDS
 	local STATUS_COMMAND
 
 	scmi_systemd_prerequisites
