@@ -28,7 +28,7 @@ RUN rpm --rebuilddb \
 		openssh-clients-6.6.1p1-35.el7_3 \
 		openssl-1.0.1e-60.el7 \
 		python-setuptools-0.9.8-4.el7 \
-		sudo-1.8.6p7-21.el7_3 \
+		sudo-1.8.6p7-23.el7_3 \
 		vim-minimal-7.4.160-1.el7_3.1 \
 		yum-plugin-versionlock-1.1.31-40.el7 \
 		xz-5.2.2-1.el7 \
@@ -55,7 +55,7 @@ RUN rpm --rebuilddb \
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
 RUN easy_install \
-		'supervisor == 3.3.2' \
+		'supervisor == 3.3.3' \
 		'supervisor-stdout == 0.1.1' \
 	&& mkdir -p \
 		/var/log/supervisor/
@@ -130,7 +130,7 @@ RUN mkdir -p \
 		/etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
 		/etc/supervisord.d/sshd-bootstrap.conf \
 	&& chmod 700 \
-		/usr/sbin/{scmi,sshd-{bootstrap,wrapper}}
+		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper}}}
 
 EXPOSE 22
 
@@ -154,7 +154,7 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="2.2.3"
+ARG RELEASE_VERSION="2.2.4"
 LABEL \
 	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \
