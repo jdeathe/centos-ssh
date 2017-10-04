@@ -1087,17 +1087,7 @@ function test_custom_ssh_configuration ()
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
-			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
-				${STARTUP_TIME} \
-				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
-			then
-				#TODO This will fail to start since sshd no longer auto generates host keys.
-				:
-			fi
+			sleep ${STARTUP_TIME}
 
 			it "Can disable sshd-bootstrap."
 				docker logs ssh.pool-1.1.1 \
