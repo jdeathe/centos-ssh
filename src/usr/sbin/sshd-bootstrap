@@ -304,7 +304,11 @@ function get_ssh_key_fingerprint ()
 	echo "${SSH_KEY}" > "${SSH_KEY_FILE}"
 
 	FINGERPRINT="$(
-		ssh-keygen -lf "${SSH_KEY_FILE}"
+		ssh-keygen \
+			-l \
+			-E md5 \
+			-f "${SSH_KEY_FILE}" \
+		| sed 's~MD5:~~'
 	)"
 
 	rm -f "${SSH_KEY_FILE}"
