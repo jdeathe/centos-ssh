@@ -4,6 +4,10 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
+### 2.3.1 - Unreleased
+
+- Updates `openssh` package to openssh-7.4p1-13.el7_4.
+
 ### 2.3.0 - 2017-10-06
 
 - Updates source tag to CentOS 7.4.1708.
