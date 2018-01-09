@@ -65,6 +65,7 @@ RUN rpm --rebuilddb \
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
 RUN easy_install \
+		--index-url 'https://pypi.python.org/pypi' \
 		'supervisor == 3.3.3' \
 		'supervisor-stdout == 0.1.1' \
 	&& mkdir -p \
