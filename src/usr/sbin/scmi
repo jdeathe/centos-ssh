@@ -2218,7 +2218,7 @@ function scmi_usage ()
 	                             released container images. The default path is:
 	                             ${SCMI_IMAGE_PACKAGE_PATH}
 	  --info                     Show image information and exit.
-	  -m, --manager=MANAGER      Container manager (docker or systemd) 
+	  -m, --manager=MANAGER      Container manager (docker, systemd or fleet) 
 	                             defaults to docker.
 	  --monochrome               Output colour is suppressed.
 	  -n, --name=NAME            Container name. The required format is as follows
