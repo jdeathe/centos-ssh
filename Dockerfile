@@ -65,6 +65,7 @@ RUN rpm --rebuilddb \
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
 RUN easy_install \
+		--index-url 'https://pypi.python.org/pypi' \
 		'supervisor == 3.3.3' \
 		'supervisor-stdout == 0.1.1' \
 	&& mkdir -p \
@@ -164,7 +165,7 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="1.8.2"
+ARG RELEASE_VERSION="1.8.3"
 LABEL \
 	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \
