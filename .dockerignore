@@ -1,0 +1,10 @@
+.git
+.gitignore
+dist
+test
+LICENSE
+README-short.txt
+*.md
+!README.md
+**/*.mk
+**/Makefile

@@ -23,9 +23,9 @@ RUN rpm --rebuilddb \
 		centos-release-scl-rh \
 		epel-release \
 		https://centos7.iuscommunity.org/ius-release.rpm \
-		openssh-7.4p1-12.el7_4 \
-		openssh-server-7.4p1-12.el7_4 \
-		openssh-clients-7.4p1-12.el7_4 \
+		openssh-7.4p1-13.el7_4 \
+		openssh-server-7.4p1-13.el7_4 \
+		openssh-clients-7.4p1-13.el7_4 \
 		openssl-1.0.2k-8.el7 \
 		python-setuptools-0.9.8-7.el7 \
 		sudo-1.8.19p2-11.el7_4 \
@@ -154,7 +154,7 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="2.3.0"
+ARG RELEASE_VERSION="2.3.1"
 LABEL \
 	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \
