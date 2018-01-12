@@ -8,6 +8,7 @@ Summary of release changes for Version 2 - CentOS-7
 
 - Updates `openssh` package to openssh-7.4p1-13.el7_4.
 - Adds a `.dockerignore` file.
+- Deprecates use of the fleet `--manager` option in the `scmi` installer.
 
 ### 2.3.0 - 2017-10-06
 
