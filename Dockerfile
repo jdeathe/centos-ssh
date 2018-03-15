@@ -55,7 +55,7 @@ RUN rpm --rebuilddb \
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
 RUN easy_install \
-		'supervisor == 3.3.3' \
+		'supervisor == 3.3.4' \
 		'supervisor-stdout == 0.1.1' \
 	&& mkdir -p \
 		/var/log/supervisor/

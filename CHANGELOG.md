@@ -4,6 +4,10 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
+### 2.3.2 - Unreleased
+
+- Updates supervisor to 3.3.4.
+
 ### 2.3.1 - 2018-01-12
 
 - Updates `openssh` package to openssh-7.4p1-13.el7_4.
