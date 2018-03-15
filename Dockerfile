@@ -66,7 +66,7 @@ RUN rpm --rebuilddb \
 # -----------------------------------------------------------------------------
 RUN easy_install \
 		--index-url 'https://pypi.python.org/pypi' \
-		'supervisor == 3.3.3' \
+		'supervisor == 3.3.4' \
 		'supervisor-stdout == 0.1.1' \
 	&& mkdir -p \
 		/var/log/supervisor/
