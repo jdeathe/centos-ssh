@@ -4,6 +4,10 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.8.4 - Unreleased
+
+- Updates supervisor to 3.3.4
+
 ### 1.8.3 - 2018-01-12
 
 - Fixes image build failure caused by error installing supervisor via easy_install.
