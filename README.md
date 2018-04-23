@@ -299,7 +299,7 @@ There are several environmental variables defined at runtime these allow the ope
 
 ##### SSH_AUTHORIZED_KEYS
 
-As detailed below the public key added for the SSH user is insecure by default. This is intentional and allows for access using a known private key. Using `SSH_AUTHORIZED_KEYS` you can replace the insecure public key with another one (or several). Further details on how to create your own private + public key pair are provided below. If adding more than one key it is recommended to base64 encode the value.
+As detailed below the public key added for the SSH user is insecure by default. This is intentional and allows for access using a known private key. Using `SSH_AUTHORIZED_KEYS` you can replace the insecure public key with another one (or several). Further details on how to create your own private + public key pair are provided below. If adding more than one key it is recommended to either base64 encode the value or use a container file path in combination with a bind mounted file or Docker Swarm config etc.
 
 ```
 ...
@@ -317,6 +317,14 @@ ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJl
   --env "SSH_AUTHORIZED_KEYS=$(
     cat ${HOME}/.ssh/id_rsa.pub ${HOME}/.ssh/another_id_rsa.pub | base64 -i -
   )" \
+...
+```
+
+Using `SSH_AUTHORIZED_KEYS` with a container file path allows for the authorized_keys to be populated from the file path.
+
+```
+...
+  --env "SSH_AUTHORIZED_KEYS=/var/run/config/authorized_keys"
 ...
 ```
 
@@ -398,6 +406,14 @@ On first run the SSH user is created with a generated password. If you require a
 ```
 ...
   --env "SSH_USER_PASSWORD=Passw0rd!" \
+...
+```
+
+If set to a valid container file path the value will be read from the file - this allows for setting the value securely when combined with an orchestration feature such as Docker Swarm secrets.
+
+```
+...
+  --env "SSH_USER_PASSWORD=/var/run/secrets/ssh_user_password" \
 ...
 ```
 
