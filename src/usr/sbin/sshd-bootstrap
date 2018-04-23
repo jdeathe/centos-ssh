@@ -168,13 +168,20 @@ function get_ssh_authorized_keys ()
 	local VALUE="${SSH_AUTHORIZED_KEYS:-}"
 	local PATTERN_BASE64='^[A-Za-z0-9/+=]*$'
 
-	if [[ -z ${VALUE} ]] && [[ -s ${DEFAULT_PATH} ]]; then
+	if [[ -z ${VALUE} ]] \
+		&& [[ -s ${DEFAULT_PATH} ]]
+	then
 		VALUE="$(< "${DEFAULT_PATH}")"
 	elif [[ -n ${VALUE} ]] \
-		&& [[ ${VALUE} =~ ${PATTERN_BASE64} ]]; then
+		&& [[ ${VALUE} =~ ${PATTERN_BASE64} ]]
+	then
 		VALUE="$(
 			base64 -d -i <<< "${VALUE}"
 		)"
+	elif [[ -n ${VALUE} ]] \
+		&& [[ -f ${VALUE} ]]
+	then
+		VALUE="$(< "${VALUE}")"
 	fi
 
 	printf -- "%s" "${VALUE}"
@@ -496,9 +503,7 @@ function set_ssh_user_password ()
 	if [[ -n ${PASSWORD} ]] \
 		&& [[ -s ${PASSWORD} ]]
 	then
-		PASSWORD="$(
-			cat "${PASSWORD}"
-		)"
+		PASSWORD="$(< "${PASSWORD}")"
 	fi
 
 	if ! is_valid_ssh_user "${USER}"; then
@@ -662,9 +667,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	if [[ -n ${SSH_USER_PASSWORD} ]] \
 		&& [[ -s ${SSH_USER_PASSWORD} ]]
 	then
-		SSH_USER_PASSWORD="$(
-			cat "${SSH_USER_PASSWORD}"
-		)"
+		SSH_USER_PASSWORD="$(< "${SSH_USER_PASSWORD}")"
 		OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD}"
 	fi
 

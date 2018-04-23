@@ -595,84 +595,169 @@ function test_custom_ssh_configuration ()
 		end
 
 		describe "Configure multiple public keys"
-			__terminate_container \
-				ssh.pool-1.1.1 \
-			&> /dev/null
-
-			docker run \
-				--detach \
-				--name ssh.pool-1.1.1 \
-				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
-				--env "SSH_AUTHORIZED_KEYS=${PUBLIC_KEY_ID_RSA_TEST_COMBINED_BASE64}" \
-				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				jdeathe/centos-ssh:latest \
-			&> /dev/null
-
-			container_port_22="$(
-				__get_container_port \
+			describe "Base64 method"
+				__terminate_container \
 					ssh.pool-1.1.1 \
-					22/tcp
-			)"
+				&> /dev/null
 
-			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
-				${STARTUP_TIME} \
-				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
-			then
-				exit 1
-			fi
+				docker run \
+					--detach \
+					--name ssh.pool-1.1.1 \
+					--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
+					--env "SSH_AUTHORIZED_KEYS=${PUBLIC_KEY_ID_RSA_TEST_COMBINED_BASE64}" \
+					--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+					jdeathe/centos-ssh:latest \
+				&> /dev/null
 
-			it "Can set multiple keys."
-				user_home="$(
-					ssh -q \
-					-p ${container_port_22} \
-					-i ${TEST_DIRECTORY}/fixture/id_rsa_test_1 \
-					-o StrictHostKeyChecking=no \
-					-o LogLevel=error \
-					app-admin@${DOCKER_HOSTNAME} \
-					-- printf \
-						'%s\\n' \
-						"\${HOME}"
+				container_port_22="$(
+					__get_container_port \
+						ssh.pool-1.1.1 \
+						22/tcp
 				)"
 
-				user_home+=":"
+				if ! __is_container_ready \
+					ssh.pool-1.1.1 \
+					${STARTUP_TIME} \
+					"/usr/sbin/sshd " \
+					"grep \
+						'^Server listening on 0\.0\.0\.0 port 22\.' \
+						/var/log/secure"
+				then
+					exit 1
+				fi
 
-				user_home+="$(
-					ssh -q \
-					-p ${container_port_22} \
-					-i ${TEST_DIRECTORY}/fixture/id_rsa_test_2 \
-					-o StrictHostKeyChecking=no \
-					-o LogLevel=error \
-					app-admin@${DOCKER_HOSTNAME} \
-					-- printf \
-						'%s\\n' \
-						"\${HOME}"
-				)"
+				it "Can set multiple keys."
+					user_home="$(
+						ssh -q \
+						-p ${container_port_22} \
+						-i ${TEST_DIRECTORY}/fixture/id_rsa_test_1 \
+						-o StrictHostKeyChecking=no \
+						-o LogLevel=error \
+						app-admin@${DOCKER_HOSTNAME} \
+						-- printf \
+							'%s\\n' \
+							"\${HOME}"
+					)"
 
-				assert equal \
-					"${user_home}" \
-					"/home/app-admin:/home/app-admin"
+					user_home+=":"
+
+					user_home+="$(
+						ssh -q \
+						-p ${container_port_22} \
+						-i ${TEST_DIRECTORY}/fixture/id_rsa_test_2 \
+						-o StrictHostKeyChecking=no \
+						-o LogLevel=error \
+						app-admin@${DOCKER_HOSTNAME} \
+						-- printf \
+							'%s\\n' \
+							"\${HOME}"
+					)"
+
+					assert equal \
+						"${user_home}" \
+						"/home/app-admin:/home/app-admin"
+				end
+
+				it "Logs the key signatures."
+					user_key_signature="$(
+						docker logs ssh.pool-1.1.1 \
+						| awk '/^45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65$/ { print $1; }'
+					)"
+
+					user_key_signature+=" "
+
+					user_key_signature+="$(
+						docker logs ssh.pool-1.1.1 \
+						| awk '/^b3:2e:5d:8c:76:d3:c7:24:13:a3:4f:6f:4d:a2:31:9c$/ { print $1; }'
+					)"
+
+					assert equal \
+						"${user_key_signature}" \
+						"${PUBLIC_KEY_ID_RSA_TEST_1_SIGNATURE} ${PUBLIC_KEY_ID_RSA_TEST_2_SIGNATURE}"
+				end
 			end
 
-			it "Logs the key signatures."
-				user_key_signature="$(
-					docker logs ssh.pool-1.1.1 \
-					| awk '/^45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65$/ { print $1; }'
+			describe "File path method"
+				__terminate_container \
+					ssh.pool-1.1.1 \
+				&> /dev/null
+
+				docker run \
+					--detach \
+					--name ssh.pool-1.1.1 \
+					--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
+					--env "SSH_AUTHORIZED_KEYS=/var/run/config/authorized_keys" \
+					--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+					--volume ${PWD}/${TEST_DIRECTORY}/fixture/config:/var/run/config:ro \
+					jdeathe/centos-ssh:latest \
+				&> /dev/null
+
+				container_port_22="$(
+					__get_container_port \
+						ssh.pool-1.1.1 \
+						22/tcp
 				)"
 
-				user_key_signature+=" "
+				if ! __is_container_ready \
+					ssh.pool-1.1.1 \
+					${STARTUP_TIME} \
+					"/usr/sbin/sshd " \
+					"grep \
+						'^Server listening on 0\.0\.0\.0 port 22\.' \
+						/var/log/secure"
+				then
+					exit 1
+				fi
 
-				user_key_signature+="$(
-					docker logs ssh.pool-1.1.1 \
-					| awk '/^b3:2e:5d:8c:76:d3:c7:24:13:a3:4f:6f:4d:a2:31:9c$/ { print $1; }'
-				)"
+				it "Can set multiple keys."
+					user_home="$(
+						ssh -q \
+						-p ${container_port_22} \
+						-i ${TEST_DIRECTORY}/fixture/id_rsa_test_1 \
+						-o StrictHostKeyChecking=no \
+						-o LogLevel=error \
+						app-admin@${DOCKER_HOSTNAME} \
+						-- printf \
+							'%s\\n' \
+							"\${HOME}"
+					)"
 
-				assert equal \
-					"${user_key_signature}" \
-					"${PUBLIC_KEY_ID_RSA_TEST_1_SIGNATURE} ${PUBLIC_KEY_ID_RSA_TEST_2_SIGNATURE}"
+					user_home+=":"
+
+					user_home+="$(
+						ssh -q \
+						-p ${container_port_22} \
+						-i ${TEST_DIRECTORY}/fixture/id_rsa_test_2 \
+						-o StrictHostKeyChecking=no \
+						-o LogLevel=error \
+						app-admin@${DOCKER_HOSTNAME} \
+						-- printf \
+							'%s\\n' \
+							"\${HOME}"
+					)"
+
+					assert equal \
+						"${user_home}" \
+						"/home/app-admin:/home/app-admin"
+				end
+
+				it "Logs the key signatures."
+					user_key_signature="$(
+						docker logs ssh.pool-1.1.1 \
+						| awk '/^45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65$/ { print $1; }'
+					)"
+
+					user_key_signature+=" "
+
+					user_key_signature+="$(
+						docker logs ssh.pool-1.1.1 \
+						| awk '/^b3:2e:5d:8c:76:d3:c7:24:13:a3:4f:6f:4d:a2:31:9c$/ { print $1; }'
+					)"
+
+					assert equal \
+						"${user_key_signature}" \
+						"${PUBLIC_KEY_ID_RSA_TEST_1_SIGNATURE} ${PUBLIC_KEY_ID_RSA_TEST_2_SIGNATURE}"
+				end
 			end
 		end
 
@@ -993,7 +1078,7 @@ function test_custom_ssh_configuration ()
 				--name ssh.pool-1.1.1 \
 				--env "SSH_USER_PASSWORD=/var/run/secrets/ssh_user_password" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				--volume ${PWD}/test/fixture/secrets:/var/run/secrets:ro \
+				--volume ${PWD}/${TEST_DIRECTORY}/fixture/secrets:/var/run/secrets:ro \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
@@ -1132,7 +1217,7 @@ function test_custom_ssh_configuration ()
 				--env "SSH_USER_PASSWORD=/var/run/secrets/ssh_user_password_hashed" \
 				--env "SSH_USER_PASSWORD_HASHED=true" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
-				--volume ${PWD}/test/fixture/secrets:/var/run/secrets:ro \
+				--volume ${PWD}/${TEST_DIRECTORY}/fixture/secrets:/var/run/secrets:ro \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
