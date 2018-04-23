@@ -168,13 +168,20 @@ function get_ssh_authorized_keys ()
 	local VALUE="${SSH_AUTHORIZED_KEYS:-}"
 	local PATTERN_BASE64='^[A-Za-z0-9/+=]*$'
 
-	if [[ -z ${VALUE} ]] && [[ -s ${DEFAULT_PATH} ]]; then
+	if [[ -z ${VALUE} ]] \
+		&& [[ -s ${DEFAULT_PATH} ]]
+	then
 		VALUE="$(< "${DEFAULT_PATH}")"
 	elif [[ -n ${VALUE} ]] \
-		&& [[ ${VALUE} =~ ${PATTERN_BASE64} ]]; then
+		&& [[ ${VALUE} =~ ${PATTERN_BASE64} ]]
+	then
 		VALUE="$(
 			base64 -d -i <<< "${VALUE}"
 		)"
+	elif [[ -n ${VALUE} ]] \
+		&& [[ -f ${VALUE} ]]
+	then
+		VALUE="$(< "${VALUE}")"
 	fi
 
 	printf -- "%s" "${VALUE}"
@@ -481,6 +488,66 @@ function generate_ssh_host_keys ()
 	esac
 }
 
+function set_ssh_user_password ()
+{
+	local PASSWORD="${2:-${SSH_USER_PASSWORD}}"
+	local PASSWORD_HASHED="${3:-${SSH_USER_PASSWORD_HASHED:-false}}"
+	local PASSWORD_LENGTH="${4:-16}"
+	local USER="${1:-${SSH_USER}}"
+
+	# Get password from file
+	if [[ -n ${PASSWORD} ]] \
+		&& [[ -s ${PASSWORD} ]]
+	then
+		PASSWORD="$(< "${PASSWORD}")"
+	fi
+
+	if ! is_valid_ssh_user "${USER}"; then
+		printf -- \
+			'ERROR: Invalid user\n' \
+			>&2
+		sleep 0.1
+
+		return 1
+	else
+		if [[ ${PASSWORD_HASHED} == true ]]; then
+			if ! is_valid_ssh_user_password_hash "${PASSWORD}"; then
+				printf -- \
+					'ERROR: Invalid password - requires SHA-512 hash\n' \
+					>&2
+				sleep 0.1
+
+				return 1
+			else
+				printf -- \
+					'%s:%s\n' \
+					"${USER}" \
+					"${PASSWORD}" \
+				| chpasswd -e
+
+				return "${?}"
+			fi
+		else
+			if [[ -z ${PASSWORD} ]]; then
+				printf -- \
+					'ERROR: Invalid password - empty\n' \
+					>&2
+				sleep 0.1
+
+				return 1
+			else
+				printf -- \
+					'%s:%s\n' \
+					"${USER}" \
+					"${PASSWORD}" \
+				| chpasswd
+
+				return "${?}"
+			fi
+		fi
+	fi
+}
+
 OPTS_SSH_INHERIT_ENVIRONMENT="${SSH_INHERIT_ENVIRONMENT:-false}"
 OPTS_SSH_USER="$(
 	get_ssh_user app-admin
@@ -592,22 +659,34 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	) &
 	PIDS[1]=${!}
 
-	# Set SSH user password
-	if [[ ${OPTS_SSH_USER_PASSWORD_HASHED} == true ]] \
-		&& [[ -n ${SSH_USER_PASSWORD} ]]; then
-		# Hashed password must use SHA-512 hashing algorithm
-		if ! is_valid_ssh_user_password_hash "${SSH_USER_PASSWORD}"; then
-			echo "ERROR: Password hash not SHA-512 - setting new password."
-
-			SSH_USER_PASSWORD=
-			OPTS_SSH_USER_PASSWORD=$(get_password ${PASSWORD_LENGTH})
-			echo "${OPTS_SSH_USER}:${OPTS_SSH_USER_PASSWORD}" | chpasswd
-		else
-			echo "${OPTS_SSH_USER}:${SSH_USER_PASSWORD}" | chpasswd -e
-		fi
-	else
-		echo "${OPTS_SSH_USER}:${OPTS_SSH_USER_PASSWORD}" | chpasswd
+	# Get password from file
+	if [[ -n ${SSH_USER_PASSWORD} ]] \
+		&& [[ -s ${SSH_USER_PASSWORD} ]]
+	then
+		SSH_USER_PASSWORD="$(< "${SSH_USER_PASSWORD}")"
+		OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD}"
 	fi
+
+	# Hashed password must use SHA-512 hashing algorithm
+	if [[ ${OPTS_SSH_USER_PASSWORD_HASHED} == true ]] \
+		&& ! is_valid_ssh_user_password_hash "${OPTS_SSH_USER_PASSWORD}"
+	then
+		printf -- \
+			"ERROR: Password hash not SHA-512 - setting new password.\n"
+		sleep 0.1
+
+		SSH_USER_PASSWORD=
+		OPTS_SSH_USER_PASSWORD="$(
+			get_password ${PASSWORD_LENGTH}
+		)"
+		OPTS_SSH_USER_PASSWORD_HASHED=false
+	fi
+
+	set_ssh_user_password \
+		"${OPTS_SSH_USER}" \
+		"${OPTS_SSH_USER_PASSWORD}" \
+		"${OPTS_SSH_USER_PASSWORD_HASHED}" \
+		"${PASSWORD_LENGTH}"
 
 	# SFTP users
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
