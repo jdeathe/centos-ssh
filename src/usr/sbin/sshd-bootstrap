@@ -492,6 +492,15 @@ function set_ssh_user_password ()
 	local PASSWORD_LENGTH="${4:-16}"
 	local USER="${1:-${SSH_USER}}"
 
+	# Get password from file
+	if [[ -n ${PASSWORD} ]] \
+		&& [[ -s ${PASSWORD} ]]
+	then
+		PASSWORD="$(
+			cat "${PASSWORD}"
+		)"
+	fi
+
 	if ! is_valid_ssh_user "${USER}"; then
 		printf -- \
 			'ERROR: Invalid user\n' \
@@ -649,12 +658,23 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	) &
 	PIDS[1]=${!}
 
+	# Get password from file
+	if [[ -n ${SSH_USER_PASSWORD} ]] \
+		&& [[ -s ${SSH_USER_PASSWORD} ]]
+	then
+		SSH_USER_PASSWORD="$(
+			cat "${SSH_USER_PASSWORD}"
+		)"
+		OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD}"
+	fi
+
 	# Hashed password must use SHA-512 hashing algorithm
 	if [[ ${OPTS_SSH_USER_PASSWORD_HASHED} == true ]] \
 		&& ! is_valid_ssh_user_password_hash "${OPTS_SSH_USER_PASSWORD}"
 	then
 		printf -- \
 			"ERROR: Password hash not SHA-512 - setting new password.\n"
+		sleep 0.1
 
 		SSH_USER_PASSWORD=
 		OPTS_SSH_USER_PASSWORD="$(

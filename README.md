@@ -393,7 +393,7 @@ On first run the SSH user is created with the default HOME directory of `/home/%
 
 ##### SSH_USER_PASSWORD
 
-On first run the SSH user is created with a generated password. If you require a specific password `SSH_USER_PASSWORD` can be used when running the container. If set to an empty string then a password is auto-generated and, if `SSH_SUDO` is not set to allow no password for all commands, will be displayed in the docker logs.
+On first run the SSH user is created with a generated password. If you require a specific password `SSH_USER_PASSWORD` can be used when running the container. If set to a valid container file path the value will be read from the file - this allows for defining the value securely with an feature such as Docker Secrets. If set to an empty string then a password is auto-generated and, if `SSH_SUDO` is not set to allow no password for all commands, will be displayed in the docker logs.
 
 ```
 ...

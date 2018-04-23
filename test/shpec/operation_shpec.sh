@@ -967,17 +967,76 @@ function test_custom_ssh_configuration ()
 					"/home/app-admin"
 			end
 
-			# TODO
-			# it "Will redact the value of SSH_USER_PASSWORD after bootstrap."
-			# 	user_password="$(
-			# 		docker exec ssh.pool-1.1.1 env \
-			# 		| grep '^SSH_USER_PASSWORD='
-			# 	)"
-			# 	
-			# 	assert equal \
-			# 		"${user_password/SSH_USER_PASSWORD=/}" \
-			# 		"${REDACTED_VALUE}"
-			# end
+			it "Logs a redacted value."
+				user_password="$(
+					docker logs ssh.pool-1.1.1 \
+					| awk '/^password :.*$/ { print $0; }'
+				)"
+
+				assert equal \
+					"${user_password/password : /}" \
+					"${REDACTED_VALUE}"
+			end
+
+			# Reset sudo configuration
+			docker exec ssh.pool-1.1.1 \
+				bash -c 'rm -f /etc/sudoers.d/no_lecture'
+		end
+
+		describe "Configure secret password"
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.pool-1.1.1 \
+				--env "SSH_USER_PASSWORD=/var/run/secrets/ssh_user_password" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				--volume ${PWD}/test/fixture/secrets:/var/run/secrets:ro \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			# Prevent sudo lecture output when testing the sudo password
+			docker exec ssh.pool-1.1.1 \
+				bash -c 'echo "Defaults lecture_file = /dev/null" > /etc/sudoers.d/no_lecture'
+
+			container_port_22="$(
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
+			)"
+
+			if ! __is_container_ready \
+				ssh.pool-1.1.1 \
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
+				exit 1
+			fi
+
+			it "Can set a plain text password."
+				user_home="$(
+					echo 'Insecure_Passw0rd£' \
+					| ssh -q \
+						-p ${container_port_22} \
+						-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
+						-o StrictHostKeyChecking=no \
+						-o LogLevel=error \
+						app-admin@${DOCKER_HOSTNAME} \
+						-- sudo -p "[password_test]" -S \
+							printf \
+								'%s\\n' \
+								"\${HOME}"
+				)"
+
+				assert equal \
+					"${user_home}" \
+					"/home/app-admin"
+			end
 
 			it "Logs a redacted value."
 				user_password="$(
@@ -1050,17 +1109,73 @@ function test_custom_ssh_configuration ()
 					"/home/app-admin"
 			end
 
-			# TODO
-			# it "Will redact the SSH_USER_PASSWORD environment variable after bootstrap."
-			# 	user_password="$(
-			# 		docker exec ssh.pool-1.1.1 env \
-			# 		| grep '^SSH_USER_PASSWORD='
-			# 	)"
-			# 
-			# 	assert equal \
-			# 		"${user_password/SSH_USER_PASSWORD=/}" \
-			# 		"${REDACTED_VALUE}"
-			# end
+			it "Logs a redacted value."
+				user_password="$(
+					docker logs ssh.pool-1.1.1 \
+					| awk '/^password :.*$/ { print $0; }'
+				)"
+
+				assert equal \
+					"${user_password/password : /}" \
+					"${REDACTED_VALUE}"
+			end
+		end
+
+		describe "Configure secret hashed password"
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.pool-1.1.1 \
+				--env "SSH_USER_PASSWORD=/var/run/secrets/ssh_user_password_hashed" \
+				--env "SSH_USER_PASSWORD_HASHED=true" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				--volume ${PWD}/test/fixture/secrets:/var/run/secrets:ro \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			# Prevent sudo lecture output when testing the sudo password
+			docker exec ssh.pool-1.1.1 \
+				bash -c 'echo "Defaults lecture_file = /dev/null" > /etc/sudoers.d/no_lecture'
+
+			container_port_22="$(
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
+			)"
+
+			if ! __is_container_ready \
+				ssh.pool-1.1.1 \
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
+				exit 1
+			fi
+
+			it "Can set a hashed password."
+				user_home="$(
+					echo 'Passw0rd!' \
+					| ssh -q \
+						-p ${container_port_22} \
+						-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
+						-o StrictHostKeyChecking=no \
+						-o LogLevel=error \
+						app-admin@${DOCKER_HOSTNAME} \
+						-- sudo -p "[password_test]" -S \
+							printf \
+								'%s\\n' \
+								"\${HOME}"
+				)"
+
+				assert equal \
+					"${user_home}" \
+					"/home/app-admin"
+			end
 
 			it "Logs a redacted value."
 				user_password="$(
