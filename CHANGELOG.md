@@ -7,6 +7,8 @@ Summary of release changes for Version 2 - CentOS-7
 ### 2.3.2 - Unreleased
 
 - Updates supervisor to 3.3.4.
+- Adds feature to set `SSH_USER_PASSWORD` via a file path. e.g. Docker Swarm secrets.
+- Adds feature to set `SSH_AUTHORIZED_KEYS` via a file path. e.g. Docker Swarm config.
 
 ### 2.3.1 - 2018-01-12
 
