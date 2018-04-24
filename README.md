@@ -7,12 +7,12 @@ Includes public key authentication, Automated password generation and supports c
 
 ## Overview & links
 
-The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag - the convention is `centos-6-1.8.3` OR `1.8.3` for the [1.8.3](https://github.com/jdeathe/centos-ssh/tree/1.8.3) release tag and `centos-7-2.3.1` OR `2.3.1` for the [2.3.1](https://github.com/jdeathe/centos-ssh/tree/2.3.1) release tag.
+The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag - the convention is `centos-6-1.8.4` OR `1.8.4` for the [1.8.4](https://github.com/jdeathe/centos-ssh/tree/1.8.4) release tag and `centos-7-2.3.2` OR `2.3.2` for the [2.3.2](https://github.com/jdeathe/centos-ssh/tree/2.3.2) release tag.
 
 ### Tags and respective `Dockerfile` links
 
-- `centos-7`,`centos-7-2.3.1`,`2.3.1` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
-- `centos-6`,`centos-6-1.8.3`,`1.8.3` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
+- `centos-7`,`centos-7-2.3.2`,`2.3.2` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
+- `centos-6`,`centos-6-1.8.4`,`1.8.4` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
 
 The Dockerfile can be used to build a base image that is the bases for several other docker images.
 
@@ -105,10 +105,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:1.8.3 \
+  jdeathe/centos-ssh:1.8.4 \
   /usr/sbin/scmi install \
     --chroot=/media/root \
-    --tag=1.8.3 \
+    --tag=1.8.4 \
     --name=ssh.pool-1.1.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
@@ -122,10 +122,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:1.8.3 \
+  jdeathe/centos-ssh:1.8.4 \
   /usr/sbin/scmi uninstall \
     --chroot=/media/root \
-    --tag=1.8.3 \
+    --tag=1.8.4 \
     --name=ssh.pool-1.1.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
@@ -139,10 +139,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:1.8.3 \
+  jdeathe/centos-ssh:1.8.4 \
   /usr/sbin/scmi install \
     --chroot=/media/root \
-    --tag=1.8.3 \
+    --tag=1.8.4 \
     --name=ssh.pool-1.1.1 \
     --manager=systemd \
     --register \
@@ -164,7 +164,7 @@ Since release tags `1.7.2` / `2.1.2` the install template has been added to the 
 _NOTE:_ A prerequisite of the following examples is that the image has been pulled (or loaded from the release package).
 
 ```
-$ docker pull jdeathe/centos-ssh:1.8.3
+$ docker pull jdeathe/centos-ssh:1.8.4
 ```
 
 To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
@@ -173,7 +173,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:1.8.3
+    jdeathe/centos-ssh:1.8.4
   ) --info"
 ```
 
@@ -183,7 +183,7 @@ To perform an installation using the docker name `ssh.pool-1.2.1` simply use the
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:1.8.3
+    jdeathe/centos-ssh:1.8.4
   ) --name=ssh.pool-1.2.1"
 ```
 
@@ -193,7 +193,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.uninstall}}" \
-    jdeathe/centos-ssh:1.8.3
+    jdeathe/centos-ssh:1.8.4
   ) --name=ssh.pool-1.2.1"
 ```
 
@@ -206,7 +206,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:1.8.3 \
+  jdeathe/centos-ssh:1.8.4 \
   --info
 ```
 
@@ -215,14 +215,14 @@ To perform an installation using the docker name `ssh.pool-1.3.1` simply use the
 ```
 $ sudo -E atomic install \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:1.8.3
+  jdeathe/centos-ssh:1.8.4
 ```
 
 Alternatively, you could use the `scmi` options `--name` or `-n` for naming the container.
 
 ```
 $ sudo -E atomic install \
-  jdeathe/centos-ssh:1.8.3 \
+  jdeathe/centos-ssh:1.8.4 \
   --name ssh.pool-1.3.1
 ```
 
@@ -231,7 +231,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 ```
 $ sudo -E atomic uninstall \
   -n ssh.pool-1.3.1 \
-  jdeathe/centos-ssh:1.8.3
+  jdeathe/centos-ssh:1.8.4
 ```
 
 #### Using environment variables
@@ -299,7 +299,7 @@ There are several environmental variables defined at runtime these allow the ope
 
 ##### SSH_AUTHORIZED_KEYS
 
-As detailed below the public key added for the SSH user is insecure by default. This is intentional and allows for access using a known private key. Using `SSH_AUTHORIZED_KEYS` you can replace the insecure public key with another one (or several). Further details on how to create your own private + public key pair are provided below. If adding more than one key it is recommended to base64 encode the value.
+As detailed below the public key added for the SSH user is insecure by default. This is intentional and allows for access using a known private key. Using `SSH_AUTHORIZED_KEYS` you can replace the insecure public key with another one (or several). Further details on how to create your own private + public key pair are provided below. If adding more than one key it is recommended to either base64 encode the value or use a container file path in combination with a bind mounted file or Docker Swarm config etc.
 
 ```
 ...
@@ -317,6 +317,14 @@ ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJl
   --env "SSH_AUTHORIZED_KEYS=$(
     cat ${HOME}/.ssh/id_rsa.pub ${HOME}/.ssh/another_id_rsa.pub | base64 -i -
   )" \
+...
+```
+
+Using `SSH_AUTHORIZED_KEYS` with a container file path allows for the authorized_keys to be populated from the file path.
+
+```
+...
+  --env "SSH_AUTHORIZED_KEYS=/var/run/config/authorized_keys"
 ...
 ```
 
@@ -398,6 +406,14 @@ On first run the SSH user is created with a generated password. If you require a
 ```
 ...
   --env "SSH_USER_PASSWORD=Passw0rd!" \
+...
+```
+
+If set to a valid container file path the value will be read from the file - this allows for setting the value securely when combined with an orchestration feature such as Docker Swarm secrets.
+
+```
+...
+  --env "SSH_USER_PASSWORD=/var/run/secrets/ssh_user_password" \
 ...
 ```
 

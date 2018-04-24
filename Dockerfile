@@ -26,7 +26,7 @@ RUN rpm --rebuilddb \
 		openssh-5.3p1-123.el6_9 \
 		openssh-clients-5.3p1-123.el6_9 \
 		openssh-server-5.3p1-123.el6_9 \
-		python-setuptools-0.6.10-3.el6 \
+		python-setuptools-0.6.10-4el6_9 \
 		sudo-1.8.6p3-29.el6_9 \
 		vim-minimal-7.4.629-5.el6_8.1 \
 		yum-plugin-versionlock-1.1.30-40.el6 \
@@ -65,8 +65,7 @@ RUN rpm --rebuilddb \
 # supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
 RUN easy_install \
-		--index-url 'https://pypi.python.org/pypi' \
-		'supervisor == 3.3.3' \
+		'supervisor == 3.3.4' \
 		'supervisor-stdout == 0.1.1' \
 	&& mkdir -p \
 		/var/log/supervisor/
@@ -165,7 +164,7 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="1.8.3"
+ARG RELEASE_VERSION="1.8.4"
 LABEL \
 	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \
