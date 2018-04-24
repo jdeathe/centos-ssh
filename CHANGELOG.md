@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
-### 1.8.4 - Unreleased
+### 1.8.4 - 2018-04-24
 
 - Updates supervisor to 3.3.4.
 - Adds feature to set `SSH_USER_PASSWORD` via a file path. e.g. Docker Swarm secrets.
