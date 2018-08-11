@@ -1,10 +1,10 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-6 6.9 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
+# CentOS-6 6.10 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
 # 
 # =============================================================================
-FROM centos:centos6.9
+FROM centos:centos6.10
 
 # -----------------------------------------------------------------------------
 # Base Install + Import the RPM GPG keys for Repositories
@@ -26,11 +26,10 @@ RUN rpm --rebuilddb \
 		openssh-5.3p1-123.el6_9 \
 		openssh-clients-5.3p1-123.el6_9 \
 		openssh-server-5.3p1-123.el6_9 \
-		python-setuptools-0.6.10-4el6_9 \
+		python-setuptools-0.6.10-4.el6_9 \
 		sudo-1.8.6p3-29.el6_9 \
-		vim-minimal-7.4.629-5.el6_8.1 \
-		yum-plugin-versionlock-1.1.30-40.el6 \
-		xz-4.999.9-0.5.beta.20091007git.el6.x86_64 \
+		yum-plugin-versionlock-1.1.30-42.el6_10 \
+		xz-4.999.9-0.5.beta.20091007git.el6 \
 	&& yum versionlock add \
 		openssh \
 		openssh-clients \
@@ -193,7 +192,7 @@ jdeathe/centos-ssh:${RELEASE_VERSION} \
 	org.deathe.license="MIT" \
 	org.deathe.vendor="jdeathe" \
 	org.deathe.url="https://github.com/jdeathe/centos-ssh" \
-	org.deathe.description="CentOS-6 6.9 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
+	org.deathe.description="CentOS-6 6.10 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
 
 HEALTHCHECK \
 	--interval=0.5s \
