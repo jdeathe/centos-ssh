@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
-### 3.0.0 - Unreleased
+### 2.4.0 - Unreleased
 
 - Updates source tag to CentOS 7.5.1804.
 
