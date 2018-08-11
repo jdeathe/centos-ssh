@@ -4,6 +4,10 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
+### 3.0.0 - Unreleased
+
+- Updates source tag to CentOS 7.5.1804.
+
 ### 2.3.2 - 2018-04-24
 
 - Updates supervisor to 3.3.4.

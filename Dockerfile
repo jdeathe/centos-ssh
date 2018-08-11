@@ -1,10 +1,10 @@
 # =============================================================================
 # jdeathe/centos-ssh
 #
-# CentOS-7 7.4.1708 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
+# CentOS-7 7.5.1804 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
 # 
 # =============================================================================
-FROM centos:7.4.1708
+FROM centos:7.5.1804
 
 # -----------------------------------------------------------------------------
 # Base Install + Import the RPM GPG keys for Repositories
@@ -23,24 +23,19 @@ RUN rpm --rebuilddb \
 		centos-release-scl-rh \
 		epel-release \
 		https://centos7.iuscommunity.org/ius-release.rpm \
-		openssh-7.4p1-13.el7_4 \
-		openssh-server-7.4p1-13.el7_4 \
-		openssh-clients-7.4p1-13.el7_4 \
-		openssl-1.0.2k-8.el7 \
+		openssh-clients-7.4p1-16.el7 \
+		openssh-server-7.4p1-16.el7 \
+		openssl-1.0.2k-12.el7 \
 		python-setuptools-0.9.8-7.el7 \
-		sudo-1.8.19p2-11.el7_4 \
-		vim-minimal-7.4.160-2.el7 \
-		yum-plugin-versionlock-1.1.31-42.el7 \
-		xz-5.2.2-1.el7 \
+		sudo-1.8.19p2-14.el7_5 \
+		yum-plugin-versionlock-1.1.31-46.el7_5 \
 	&& yum versionlock add \
 		openssh \
 		openssh-server \
 		openssh-clients \
 		python-setuptools \
 		sudo \
-		vim-minimal \
 		yum-plugin-versionlock \
-		xz \
 	&& yum clean all \
 	&& rm -rf /etc/ld.so.cache \
 	&& rm -rf /sbin/sln \
@@ -183,7 +178,7 @@ jdeathe/centos-ssh:${RELEASE_VERSION} \
 	org.deathe.license="MIT" \
 	org.deathe.vendor="jdeathe" \
 	org.deathe.url="https://github.com/jdeathe/centos-ssh" \
-	org.deathe.description="CentOS-7 7.4.1708 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
+	org.deathe.description="CentOS-7 7.5.1804 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
 
 HEALTHCHECK \
 	--interval=0.5s \

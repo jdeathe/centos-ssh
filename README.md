@@ -1,7 +1,7 @@
 centos-ssh
 ==========
 
-Docker Images of CentOS-6 6.9 x86_64 / CentOS-7 7.4.1708 x86_64
+Docker Images of CentOS-6 6.9 x86_64 / CentOS-7 7.5.1804 x86_64
 
 Includes public key authentication, Automated password generation and supports custom configuration via environment variables.
 
