@@ -23,7 +23,7 @@ RUN rpm --rebuilddb \
 		centos-release-scl-rh \
 		epel-release \
 		https://centos6.iuscommunity.org/ius-release.rpm \
-		openssh-5.3p1-123.el6_9. \
+		openssh-5.3p1-123.el6_9 \
 		openssh-clients-5.3p1-123.el6_9 \
 		openssh-server-5.3p1-123.el6_9 \
 		python-setuptools-0.6.10-4.el6_9 \
