@@ -7,6 +7,7 @@ Summary of release changes for Version 1 - CentOS-6
 ### 1.9.0 - Unreleased
 
 - Update source to CentOS-6 6.10.
+- Adds explicit user (root) for running `supervisord`.
 
 ### 1.8.4 - 2018-04-24
 
