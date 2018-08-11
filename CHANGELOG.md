@@ -4,6 +4,10 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.9.0 - Unreleased
+
+- Update source to CentOS-6 6.10.
+
 ### 1.8.4 - 2018-04-24
 
 - Updates supervisor to 3.3.4.
