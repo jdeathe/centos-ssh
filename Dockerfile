@@ -161,7 +161,7 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="1.8.4"
+ARG RELEASE_VERSION="1.9.0"
 LABEL \
 	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \
