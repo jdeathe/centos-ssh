@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
-### 2.4.0 - Unreleased
+### 2.4.0 - 2018-08-12
 
 - Updates source tag to CentOS 7.5.1804.
 - Adds explicit user (root) for running `supervisord`.
