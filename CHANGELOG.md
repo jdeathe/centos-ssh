@@ -4,6 +4,11 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.9.0 - 2018-08-12
+
+- Update source to CentOS-6 6.10.
+- Adds explicit user (root) for running `supervisord`.
+
 ### 1.8.4 - 2018-04-24
 
 - Updates supervisor to 3.3.4.
@@ -43,7 +48,7 @@ Summary of release changes for Version 1 - CentOS-6
 
 ### 1.7.6 - 2017-02-21
 
-- Adds updated CentOS-7 version in `README.md` since updating to `7.3.1611`.
+- Adds updated CentOS-7 version in `README.md` since updating to `7.5.1804`.
 - Updates the `vim` package.
 - Fixes `shpec` test definition to allow `make test` to be interruptible.
 - Updates the `openssl` and `libxml2` packages that contain high risk security vulnerabilities.
