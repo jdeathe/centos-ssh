@@ -622,6 +622,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		get_ssh_authorized_keys \
 			/etc/services-config/ssh/authorized_keys
 	)"
+	OPTS_SSH_PASSWORD_AUTHENTICATION="no"
 	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
 	OPTS_SSH_TIMEZONE="${SSH_TIMEZONE:-UTC}"
 	OPTS_SSH_USER_PASSWORD_HASHED="${SSH_USER_PASSWORD_HASHED:-false}"
@@ -636,6 +637,14 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	OPTS_SSH_USER_GID="$(
 		get_ssh_user_gid
 	)"
+
+	if [[ ${SSH_PASSWORD_AUTHENTICATION} == true ]]; then
+		OPTS_SSH_PASSWORD_AUTHENTICATION="yes"
+
+		sed -i \
+			-e 's~^\(PasswordAuthentication \)no$~\1yes~g' \
+			/etc/services-config/ssh/sshd_config
+	fi
 
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
 		SSHD_COMMAND=SFTP
@@ -880,6 +889,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		--------------------------------------------------------------------------------
 		user : ${OPTS_SSH_USER}
 		password : ${OPTS_SSH_USER_PASSWORD}
+		password authentication : ${OPTS_SSH_PASSWORD_AUTHENTICATION}
 		id : ${OPTS_SSH_USER_UID}:${OPTS_SSH_USER_GID}
 		home : ${OPTS_SSH_USER_HOME}
 		chroot path : ${SSH_CHROOT_DIRECTORY_PATH:-N/A}
