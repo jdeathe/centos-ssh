@@ -63,6 +63,17 @@ function is_valid_ssh_chroot_directory ()
 	return 1
 }
 
+function is_valid_ssh_timezone ()
+{
+	local ZONE="${1:-}"
+
+	if [[ ! -f /usr/share/zoneinfo/${ZONE} ]]; then
+		return 1
+	else
+		return 0
+	fi
+}
+
 function is_valid_ssh_user ()
 {
 	local USERNAME="${1}"
@@ -488,6 +499,33 @@ function generate_ssh_host_keys ()
 	esac
 }
 
+function set_ssh_timezone ()
+{
+	local ZONE="${1:-UTC}"
+
+	if ! is_valid_ssh_timezone "${ZONE}"; then
+		printf -- \
+			'ERROR: Unknown time zone: %s\n' \
+			"${ZONE}"
+			>&2
+		sleep 0.1
+
+		return 1
+	else
+		if [[ -f /etc/sysconfig/clock ]]; then
+			sed -i \
+				-e "s~^\(ZONE=\).*$~\1${ZONE}~" \
+				/etc/sysconfig/clock
+		fi
+
+		ln -sf \
+			/usr/share/zoneinfo/"${ZONE}" \
+			/etc/localtime
+
+		return "${?}"
+	fi
+}
+
 function set_ssh_user_password ()
 {
 	local PASSWORD="${2:-${SSH_USER_PASSWORD}}"
@@ -581,6 +619,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 			/etc/services-config/ssh/authorized_keys
 	)"
 	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
+	OPTS_SSH_TIMEZONE="${SSH_TIMEZONE:-UTC}"
 	OPTS_SSH_USER_PASSWORD_HASHED="${SSH_USER_PASSWORD_HASHED:-false}"
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password ${PASSWORD_LENGTH})}"
 	OPTS_SSH_USER_FORCE_SFTP="${SSH_USER_FORCE_SFTP:-false}"
@@ -616,6 +655,8 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 				"${ENV}"
 		fi
 	done
+
+	set_ssh_timezone "${OPTS_SSH_TIMEZONE}"
 
 	# Fix symbolic links from services-config
 	if [[ -s /etc/services-config/ssh/sshd_config ]] \
@@ -844,6 +885,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		${SSH_KEY_FINGERPRINTS}
 		rsa host key fingerprint :
 		${SSH_HOST_KEY_FINGERPRINT_RSA}
+		timezone : ${OPTS_SSH_TIMEZONE}
 		--------------------------------------------------------------------------------
 		${TIMER_TOTAL}
 

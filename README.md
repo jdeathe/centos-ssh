@@ -369,6 +369,16 @@ On first run the SSH user is created with a the sudo rule `ALL=(ALL)  ALL` which
 ...
 ```
 
+##### SSH_TIMEZONE
+
+If you require a locale based system time zone `SSH_TIMEZONE` can be used when running the container.
+
+```
+...
+  --env "SSH_TIMEZONE=Europe/London" \
+...
+```
+
 ##### SSH_USER
 
 On first run the SSH user is created with the default username of "app-admin". If you require an alternative username `SSH_USER` can be used when running the container.
