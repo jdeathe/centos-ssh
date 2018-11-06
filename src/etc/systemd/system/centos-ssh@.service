@@ -59,6 +59,7 @@ Environment="SSH_AUTOSTART_SSHD_BOOTSTRAP=true"
 Environment="SSH_CHROOT_DIRECTORY=%%h"
 Environment="SSH_INHERIT_ENVIRONMENT=false"
 Environment="SSH_SUDO=ALL=(ALL) ALL"
+Environment="SSH_TIMEZONE=UTC"
 Environment="SSH_USER=app-admin"
 Environment="SSH_USER_FORCE_SFTP=false"
 Environment="SSH_USER_HOME=/home/%%u"
@@ -101,6 +102,7 @@ ExecStart=/bin/bash -c \
     --env \"SSH_CHROOT_DIRECTORY=${SSH_CHROOT_DIRECTORY}\" \
     --env \"SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT}\" \
     --env \"SSH_SUDO=${SSH_SUDO}\" \
+    --env \"SSH_TIMEZONE=${SSH_TIMEZONE}\" \
     --env \"SSH_USER=${SSH_USER}\" \
     --env \"SSH_USER_FORCE_SFTP=${SSH_USER_FORCE_SFTP}\" \
     --env \"SSH_USER_HOME=${SSH_USER_HOME}\" \

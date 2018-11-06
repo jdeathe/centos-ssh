@@ -4,6 +4,10 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.9.1 - Unreleased
+
+- Adds feature to set system time zone via `SSH_TIMEZONE`.
+
 ### 1.9.0 - 2018-08-12
 
 - Update source to CentOS-6 6.10.
