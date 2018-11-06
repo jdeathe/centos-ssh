@@ -380,6 +380,7 @@ function test_custom_ssh_configuration ()
 {
 	local append_line=""
 	local container_port_22=""
+	local timezone=""
 	local user=""
 	local user_env_value=""
 	local user_home=""
@@ -1271,6 +1272,55 @@ function test_custom_ssh_configuration ()
 				assert equal \
 					"${user_password/password : /}" \
 					"${REDACTED_VALUE}"
+			end
+		end
+
+		describe "Configure system timezone"
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.pool-1.1.1 \
+				--env "SSH_TIMEZONE=Europe/London" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			if ! __is_container_ready \
+				ssh.pool-1.1.1 \
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
+				exit 1
+			fi
+
+			it "Can set timezone to Europe/London."
+				timezone="$(
+					docker exec \
+						ssh.pool-1.1.1 \
+						find /etc/localtime -type l -ls \
+					| sed -e 's~^.*/usr/share/zoneinfo/~~'
+				)"
+
+				assert equal \
+					"${timezone}" \
+					"Europe/London"
+			end
+
+			it "Logs the setting value."
+				timezone="$(
+					docker logs ssh.pool-1.1.1 \
+					| awk '/^timezone :.*$/ { print $0; }'
+				)"
+
+				assert equal \
+					"${timezone/timezone : /}" \
+					"Europe/London"
 			end
 		end
 
