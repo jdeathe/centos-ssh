@@ -380,6 +380,9 @@ function test_custom_ssh_configuration ()
 {
 	local append_line=""
 	local container_port_22=""
+	local password=""
+	local password_authentication=""
+	local pwd_result=""
 	local timezone=""
 	local user=""
 	local user_env_value=""
@@ -396,6 +399,88 @@ function test_custom_ssh_configuration ()
 			__destroy; \
 			exit 1" \
 			INT TERM EXIT
+
+		describe "Configure password authentication"
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.pool-1.1.1 \
+				--env "SSH_PASSWORD_AUTHENTICATION=true" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			container_port_22="$(
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
+			)"
+
+			if ! __is_container_ready \
+				ssh.pool-1.1.1 \
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
+				exit 1
+			fi
+
+			it "Can connect using private key authentication."
+				ssh -q \
+					-p ${container_port_22} \
+					-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
+					-o StrictHostKeyChecking=no \
+					-o LogLevel=error \
+					app-admin@${DOCKER_HOSTNAME} \
+					-- printf \
+						'%s\\n' \
+						"\${HOME}" \
+					&> /dev/null
+
+				assert equal \
+					"${?}" \
+					0
+			end
+
+			it "Can connect using password authentication."
+				password="$(
+					docker logs \
+						ssh.pool-1.1.1 \
+					| awk '/^password :.*$/ { print $3 }'
+				)"
+
+				pwd_result="$(
+					expect test/ssh-password-auth.exp \
+						"${password}" \
+						app-admin \
+						127.0.0.1 \
+						"${container_port_22}" \
+						"pwd" \
+					| tail -n 1 \
+					| tr -d '\r'
+				)"
+
+				assert equal \
+					"${pwd_result}" \
+					"/home/app-admin"
+			end
+
+			it "Logs the setting value."
+				password_authentication="$(
+					docker logs ssh.pool-1.1.1 \
+					| awk '/^password authentication :.*$/ { print $0; }'
+				)"
+
+				assert equal \
+					"${password_authentication/password authentication : /}" \
+					"yes"
+			end
+		end
 
 		describe "Configure sudo command"
 			__terminate_container \
