@@ -133,23 +133,25 @@ EXPOSE 22
 # Set default environment variables
 # -----------------------------------------------------------------------------
 ENV SSH_AUTHORIZED_KEYS="" \
-	SSH_AUTOSTART_SSHD=true \
-	SSH_AUTOSTART_SSHD_BOOTSTRAP=true \
+	SSH_AUTOSTART_SSHD="true" \
+	SSH_AUTOSTART_SSHD_BOOTSTRAP="true" \
 	SSH_CHROOT_DIRECTORY="%h" \
-	SSH_INHERIT_ENVIRONMENT=false \
+	SSH_INHERIT_ENVIRONMENT="false" \
+	SSH_PASSWORD_AUTHENTICATION="false" \
 	SSH_SUDO="ALL=(ALL) ALL" \
+	SSH_TIMEZONE="UTC" \
 	SSH_USER="app-admin" \
-	SSH_USER_FORCE_SFTP=false \
+	SSH_USER_FORCE_SFTP="false" \
 	SSH_USER_HOME="/home/%u" \
 	SSH_USER_ID="500:500" \
 	SSH_USER_PASSWORD="" \
-	SSH_USER_PASSWORD_HASHED=false \
+	SSH_USER_PASSWORD_HASHED="false" \
 	SSH_USER_SHELL="/bin/bash"
 
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="2.4.0"
+ARG RELEASE_VERSION="2.4.1"
 LABEL \
 	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \

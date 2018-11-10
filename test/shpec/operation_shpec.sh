@@ -6,6 +6,7 @@ readonly PUBLIC_KEY_ID_RSA_TEST_1="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDHzd+mY
 readonly PUBLIC_KEY_ID_RSA_TEST_1_SIGNATURE="45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65"
 readonly PUBLIC_KEY_ID_RSA_TEST_2="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDD/sMi/JkrYtXVi6+pYuwvsUxLDXowp3okvK2+2qqnPA6nWGBu/LSSQZnYmHZYyhcbRKrdscnsbM0jfmU0cKf/lGiRRK1YfUepomtRWVBxzA3mvBu+qmbuU/PDHfJJxB19HHuc6a8/NPOZINNMGIZg91W79bW0gXIEh3+PiNVvuelOdFJdvKSWtElJlMk/ll7dS1vpwJ9iZ8EPbalSzEZ30SzqG8Xg4VMhOn9ybnvcNWGJVCg4yughmdVA32H2+rj6qis4AJdQYUNoh9kBK/XUoggRV7LEaeeyjMWPn6GxM4yM7IYkstpilbKiPIQjw9EDTN4FdIJ/LcescfwDT7KZ test_key_2"
 readonly PUBLIC_KEY_ID_RSA_TEST_2_SIGNATURE="b3:2e:5d:8c:76:d3:c7:24:13:a3:4f:6f:4d:a2:31:9c"
+readonly PUBLIC_KEY_ID_RSA_INSECURE="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
 readonly PUBLIC_KEY_ID_RSA_TEST_COMBINED_BASE64="c3NoLXJzYSBBQUFBQjNOemFDMXljMkVBQUFBREFRQUJBQUFCQVFESHpkK21ZWFNHTFFTWndVSld3WUtPQkk2STdtaEhoM093MERiVFF2UVVIaGtEY1FWcnFqcEJLWnE4U3NuRUs0RXh5SmVSUTVUdFQ1VnFvbGZWRzZMbGFUM3l4WG1KeHg3NVk4b3lwRkFLejdvQ09RQ0p1Z3F1YkFreDJZcFQ2S083ZDZVT1BxT3VMcG1GaTN0K1J5ZjQ5VGJObGpTZXMxc2JTQ3hVRGxUZWt4RytJdCsvZVpVcVhXdWRvcm5ZSkNmbU1lMVVBWXRSd01LaXlEV3FVMUxOMUtiMnpWUjc2WXBqTXhLOUlpRUpqaHBaUy9SNzB6eEdFaWpGckwrUnY0Qng4eS9VakFWVnRUa3ZwYUVhang3cE1uZDBmc2ZuVXdoWUxvVkhnRzVaZEhBWVNSeThqLzArbXBlVkVzVFFaSkFuZWdVYlZOdUJFYzN4MmIxeGdrUzMgdGVzdF9rZXlfMQpzc2gtcnNhIEFBQUFCM056YUMxeWMyRUFBQUFEQVFBQkFBQUJBUUREL3NNaS9Ka3JZdFhWaTYrcFl1d3ZzVXhMRFhvd3Azb2t2SzIrMnFxblBBNm5XR0J1L0xTU1FablltSFpZeWhjYlJLcmRzY25zYk0wamZtVTBjS2YvbEdpUlJLMVlmVWVwb210UldWQnh6QTNtdkJ1K3FtYnVVL1BESGZKSnhCMTlISHVjNmE4L05QT1pJTk5NR0laZzkxVzc5YlcwZ1hJRWgzK1BpTlZ2dWVsT2RGSmR2S1NXdEVsSmxNay9sbDdkUzF2cHdKOWlaOEVQYmFsU3pFWjMwU3pxRzhYZzRWTWhPbjl5Ym52Y05XR0pWQ2c0eXVnaG1kVkEzMkgyK3JqNnFpczRBSmRRWVVOb2g5a0JLL1hVb2dnUlY3TEVhZWV5ak1XUG42R3hNNHlNN0lZa3N0cGlsYktpUElRanc5RURUTjRGZElKL0xjZXNjZndEVDdLWiB0ZXN0X2tleV8yCg=="
 
 # This should ideally be a static value but hosts might be using this port so 
@@ -380,6 +381,10 @@ function test_custom_ssh_configuration ()
 {
 	local append_line=""
 	local container_port_22=""
+	local password=""
+	local password_authentication=""
+	local pwd_result=""
+	local timezone=""
 	local user=""
 	local user_env_value=""
 	local user_home=""
@@ -395,6 +400,134 @@ function test_custom_ssh_configuration ()
 			__destroy; \
 			exit 1" \
 			INT TERM EXIT
+
+		describe "Configure password authentication"
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.pool-1.1.1 \
+				--env "SSH_PASSWORD_AUTHENTICATION=true" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			container_port_22="$(
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
+			)"
+
+			if ! __is_container_ready \
+				ssh.pool-1.1.1 \
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
+				exit 1
+			fi
+
+			it "Can connect using password authentication."
+				password="$(
+					docker logs \
+						ssh.pool-1.1.1 \
+					| awk '/^password :.*$/ { print $3 }'
+				)"
+
+				pwd_result="$(
+					expect test/ssh-password-auth.exp \
+						"${password}" \
+						app-admin \
+						127.0.0.1 \
+						"${container_port_22}" \
+						"pwd" \
+					| tail -n 1 \
+					| tr -d '\r'
+				)"
+
+				assert equal \
+					"${pwd_result}" \
+					"/home/app-admin"
+			end
+
+			it "Removes insecure public key."
+				docker exec \
+					ssh.pool-1.1.1 \
+					bash -c \
+						"if [[ ! -s /home/app-admin/.ssh/authorized_keys ]]; \
+							then exit 0; \
+						else \
+							exit 1; \
+						fi" \
+				&> /dev/null
+
+				assert equal \
+					"${?}" \
+					0
+			end
+
+			it "Logs the setting value."
+				password_authentication="$(
+					docker logs ssh.pool-1.1.1 \
+					| awk '/^password authentication :.*$/ { print $0; }'
+				)"
+
+				assert equal \
+					"${password_authentication/password authentication : /}" \
+					"yes"
+			end
+
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.pool-1.1.1 \
+				--env "SSH_PASSWORD_AUTHENTICATION=true" \
+				--env "SSH_AUTHORIZED_KEYS=${PUBLIC_KEY_ID_RSA_INSECURE}" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			container_port_22="$(
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
+			)"
+
+			if ! __is_container_ready \
+				ssh.pool-1.1.1 \
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
+				exit 1
+			fi
+
+			it "Can enable private key authentication."
+				ssh -q \
+					-p ${container_port_22} \
+					-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
+					-o StrictHostKeyChecking=no \
+					-o LogLevel=error \
+					app-admin@${DOCKER_HOSTNAME} \
+					-- printf \
+						'%s\\n' \
+						"\${HOME}" \
+					&> /dev/null
+
+				assert equal \
+					"${?}" \
+					0
+			end
+		end
 
 		describe "Configure sudo command"
 			__terminate_container \
@@ -1271,6 +1404,55 @@ function test_custom_ssh_configuration ()
 				assert equal \
 					"${user_password/password : /}" \
 					"${REDACTED_VALUE}"
+			end
+		end
+
+		describe "Configure system timezone"
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.pool-1.1.1 \
+				--env "SSH_TIMEZONE=Europe/London" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			if ! __is_container_ready \
+				ssh.pool-1.1.1 \
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
+				exit 1
+			fi
+
+			it "Can set timezone to Europe/London."
+				timezone="$(
+					docker exec \
+						ssh.pool-1.1.1 \
+						find /etc/localtime -type l -ls \
+					| sed -e 's~^.*/usr/share/zoneinfo/~~'
+				)"
+
+				assert equal \
+					"${timezone}" \
+					"Europe/London"
+			end
+
+			it "Logs the setting value."
+				timezone="$(
+					docker logs ssh.pool-1.1.1 \
+					| awk '/^timezone :.*$/ { print $0; }'
+				)"
+
+				assert equal \
+					"${timezone/timezone : /}" \
+					"Europe/London"
 			end
 		end
 
