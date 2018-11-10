@@ -359,6 +359,16 @@ The SSH user's environment is reset by default meaning that the Docker environme
 ...
 ```
 
+##### SSH_PASSWORD_AUTHENTICATION
+
+The SSH password authentication is disabled by default; allowing access by public/private key based authentication only. This is the recommended configuration however it may be necessary to allow password based access if you have client's that are unable to use key based authentication. Use `SSH_PASSWORD_AUTHENTICATION` to enable password authentication.
+
+```
+...
+  --env "SSH_PASSWORD_AUTHENTICATION=true" \
+...
+```
+
 ##### SSH_SUDO
 
 On first run the SSH user is created with a the sudo rule `ALL=(ALL)  ALL` which allows the user to run all commands but a password is required. If you want to limit the access to specific commands or allow sudo without a password prompt `SSH_SUDO` can be used.
@@ -366,6 +376,16 @@ On first run the SSH user is created with a the sudo rule `ALL=(ALL)  ALL` which
 ```
 ...
   --env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
+...
+```
+
+##### SSH_TIMEZONE
+
+If you require a locale based system time zone `SSH_TIMEZONE` can be used when running the container.
+
+```
+...
+  --env "SSH_TIMEZONE=Europe/London" \
 ...
 ```
 
