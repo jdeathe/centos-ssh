@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
-### 1.9.1 - Unreleased
+### 1.9.1 - 2018-11-10
 
 - Adds feature to set system time zone via `SSH_TIMEZONE`.
 - Adds feature to enable password authentication.
