@@ -8,7 +8,7 @@ Summary of release changes for Version 1 - CentOS-6
 
 - Adds feature to set system time zone via `SSH_TIMEZONE`.
 - Adds feature to enable password authentication.
-- Adds (recommended) option of removing insecure public key when enabling password authentication.
+- Adds default of removing insecure public key when enabling password authentication.
 
 ### 1.9.0 - 2018-08-12
 
