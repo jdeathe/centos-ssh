@@ -480,6 +480,52 @@ function test_custom_ssh_configuration ()
 					"${password_authentication/password authentication : /}" \
 					"yes"
 			end
+
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.pool-1.1.1 \
+				--env "SSH_PASSWORD_AUTHENTICATION=true" \
+				--env "SSH_AUTHORIZED_KEYS=" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			container_port_22="$(
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
+			)"
+
+			if ! __is_container_ready \
+				ssh.pool-1.1.1 \
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
+				exit 1
+			fi
+
+			it "Can remove insecure public key."
+				docker exec \
+					ssh.pool-1.1.1 \
+					bash -c \
+						"if [[ ! -s /home/app-admin/.ssh/authorized_keys ]]; \
+							then exit 0; \
+						else \
+							exit 1; \
+						fi" \
+				&> /dev/null
+
+				assert equal \
+					"${?}" \
+					0
+			end
 		end
 
 		describe "Configure sudo command"
