@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
-### 2.4.1 - Unreleased
+### 2.4.1 - 2018-11-10
 
 - Adds feature to set system time zone via `SSH_TIMEZONE`.
 - Adds feature to enable password authentication.
