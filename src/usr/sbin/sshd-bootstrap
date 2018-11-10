@@ -176,6 +176,7 @@ function get_password ()
 function get_ssh_authorized_keys ()
 {
 	local DEFAULT_PATH="${1:-/etc/services-config/ssh/authorized_keys}"
+	local DEFAULT_VALUE="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
 	local VALUE="${SSH_AUTHORIZED_KEYS:-}"
 	local PATTERN_BASE64='^[A-Za-z0-9/+=]*$'
 
@@ -193,6 +194,14 @@ function get_ssh_authorized_keys ()
 		&& [[ -f ${VALUE} ]]
 	then
 		VALUE="$(< "${VALUE}")"
+	fi
+
+	# Force a default key if PasswordAuthentication is disabled, maintaining
+	# the original behaviour.
+	if [[ ${SSH_PASSWORD_AUTHENTICATION} != true ]] \
+		&& [[ -z ${VALUE} ]]
+	then
+		VALUE="${DEFAULT_VALUE}"
 	fi
 
 	printf -- "%s" "${VALUE}"
@@ -611,13 +620,14 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		[SSH_USER_ID]=is_valid_ssh_user_id
 		[SSH_USER_SHELL]=is_valid_ssh_user_shell
 	)
-	DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
-	PASSWORD_LENGTH=16
-	REDACTED_VALUE="********"
+	readonly DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
+	readonly PASSWORD_LENGTH=16
+	readonly REDACTED_VALUE="********"
 	OPTS_SSH_AUTHORIZED_KEYS="$(
 		get_ssh_authorized_keys \
 			/etc/services-config/ssh/authorized_keys
 	)"
+	OPTS_SSH_PASSWORD_AUTHENTICATION="no"
 	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
 	OPTS_SSH_TIMEZONE="${SSH_TIMEZONE:-UTC}"
 	OPTS_SSH_USER_PASSWORD_HASHED="${SSH_USER_PASSWORD_HASHED:-false}"
@@ -632,6 +642,14 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	OPTS_SSH_USER_GID="$(
 		get_ssh_user_gid
 	)"
+
+	if [[ ${SSH_PASSWORD_AUTHENTICATION} == true ]]; then
+		OPTS_SSH_PASSWORD_AUTHENTICATION="yes"
+
+		sed -i \
+			-e 's~^\(PasswordAuthentication \)no$~\1yes~g' \
+			/etc/services-config/ssh/sshd_config
+	fi
 
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]; then
 		SSHD_COMMAND=SFTP
@@ -812,9 +830,12 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 	chmod 600 \
 		"${OPTS_SSH_USER_HOME}"/.ssh/authorized_keys
 
-	if ! is_valid_ssh_authorized_keys "${OPTS_SSH_AUTHORIZED_KEYS}"; then
+	if [[ ${SSH_PASSWORD_AUTHENTICATION} == true ]] \
+		&& [[ -z ${SSH_AUTHORIZED_KEYS} ]]; then
+		SSH_KEY_FINGERPRINTS="N/A"
+	elif ! is_valid_ssh_authorized_keys "${OPTS_SSH_AUTHORIZED_KEYS}"; then
 		printf -v SSH_KEY_FINGERPRINTS \
-			-- '%s\nUnable to populate %s/.ssh/authorized_key'
+			-- '%s\nUnable to populate %s/.ssh/authorized_key' \
 			"ERROR: Public key validation failed." \
 			"${OPTS_SSH_USER_HOME}"
 	else
@@ -876,6 +897,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		--------------------------------------------------------------------------------
 		user : ${OPTS_SSH_USER}
 		password : ${OPTS_SSH_USER_PASSWORD}
+		password authentication : ${OPTS_SSH_PASSWORD_AUTHENTICATION}
 		id : ${OPTS_SSH_USER_UID}:${OPTS_SSH_USER_GID}
 		home : ${OPTS_SSH_USER_HOME}
 		chroot path : ${SSH_CHROOT_DIRECTORY_PATH:-N/A}
