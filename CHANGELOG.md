@@ -4,6 +4,12 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
+### 2.4.2 - Unreleased
+
+- Updates `openssl` package to 1.0.2k-16.el7.
+- Updates `sudo` package to 1.8.23-3.el7.
+- Updates `yum-plugin-versionlock` package to 1.1.31-50.el7.
+
 ### 2.4.1 - 2018-11-10
 
 - Adds feature to set system time zone via `SSH_TIMEZONE`.

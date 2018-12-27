@@ -25,10 +25,10 @@ RUN rpm --rebuilddb \
 		https://centos7.iuscommunity.org/ius-release.rpm \
 		openssh-clients-7.4p1-16.el7 \
 		openssh-server-7.4p1-16.el7 \
-		openssl-1.0.2k-12.el7 \
+		openssl-1.0.2k-16.el7 \
 		python-setuptools-0.9.8-7.el7 \
-		sudo-1.8.19p2-14.el7_5 \
-		yum-plugin-versionlock-1.1.31-46.el7_5 \
+		sudo-1.8.23-3.el7 \
+		yum-plugin-versionlock-1.1.31-50.el7 \
 	&& yum versionlock add \
 		openssh \
 		openssh-server \
