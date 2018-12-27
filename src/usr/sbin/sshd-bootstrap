@@ -161,11 +161,11 @@ function is_valid_ssh_user_id ()
 
 function get_password ()
 {
-	local PASSWORD_LENGTH="${1:-16}"
+	local password_length="${1:-16}"
 	local PASSWORD="$(
 		head -n 4096 /dev/urandom \
 		| tr -cd '[:alnum:]' \
-		| cut -c1-"${PASSWORD_LENGTH}"
+		| cut -c1-"${password_length}"
 	)"
 
 	printf -- "%s" "${PASSWORD}"
@@ -543,7 +543,6 @@ function set_ssh_user_password ()
 {
 	local PASSWORD="${2:-${SSH_USER_PASSWORD}}"
 	local PASSWORD_HASHED="${3:-${SSH_USER_PASSWORD_HASHED:-false}}"
-	local PASSWORD_LENGTH="${4:-16}"
 	local USER="${1:-${SSH_USER}}"
 
 	# Get password from file

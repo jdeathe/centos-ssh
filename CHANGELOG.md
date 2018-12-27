@@ -9,6 +9,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Updates `openssl` package to 1.0.2k-16.el7.
 - Updates `sudo` package to 1.8.23-3.el7.
 - Updates `yum-plugin-versionlock` package to 1.1.31-50.el7.
+- Fixes bootstrap errors regarding readonly `PASSWORD_LENGTH`.
 
 ### 2.4.1 - 2018-11-10
 
