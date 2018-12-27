@@ -14,13 +14,13 @@ source /etc/sshd-bootstrap.conf
 
 function is_sudo_no_password_all ()
 {
-	local SUDO="${1}"
+	local sudo="${1}"
 
-	if [[ -z ${SUDO} ]]; then
+	if [[ -z ${sudo} ]]; then
 		return 1
 	fi
 
-	if [[ -n $(echo "${SUDO}" \
+	if [[ -n $(echo "${sudo}" \
 		| awk -v pattern="NOPASSWD:ALL" '$NF ~ pattern { print $0; }') ]]; then
 		return 0
 	fi
@@ -30,33 +30,33 @@ function is_sudo_no_password_all ()
 
 function is_valid_ssh_authorized_keys ()
 {
-	local AUTHORIZED_KEYS="${1:-}"
+	local authorized_keys="${1:-}"
+	local invalid_key_pattern='is not a public key file.$'
+	local ssh_key=
 	local IFS=
-	local INVALID_KEY_PATTERN='is not a public key file.$'
-	local SSH_KEY=
 
-	if [[ -z ${AUTHORIZED_KEYS} ]]; then
+	if [[ -z ${authorized_keys} ]]; then
 		return 1
 	fi
 
-	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
-		if [[ -n ${SSH_KEY} ]] \
+	while read -r ssh_key || [[ -n ${ssh_key} ]]; do
+		if [[ -n ${ssh_key} ]] \
 			&& [[ $(
-				get_ssh_key_fingerprint "${SSH_KEY}"
-			) =~ ${INVALID_KEY_PATTERN} ]]; then
+				get_ssh_key_fingerprint "${ssh_key}"
+			) =~ ${invalid_key_pattern} ]]; then
 			return 1
 		fi
-	done <<< "${AUTHORIZED_KEYS}"
+	done <<< "${authorized_keys}"
 
 	return 0
 }
 
 function is_valid_ssh_chroot_directory ()
 {
-	local CHROOT_DIRECTORY="${1:-}"
-	local SAFE_DIRECTORY='^(%h|\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+)$'
+	local chroot_directory="${1:-}"
+	local safe_directory='^(%h|\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+)$'
 
-	if grep -qoP "${SAFE_DIRECTORY}" <<< "${CHROOT_DIRECTORY}"; then
+	if grep -qoP "${safe_directory}" <<< "${chroot_directory}"; then
 		return 0
 	fi
 
@@ -65,9 +65,9 @@ function is_valid_ssh_chroot_directory ()
 
 function is_valid_ssh_timezone ()
 {
-	local ZONE="${1:-}"
+	local zone="${1:-}"
 
-	if [[ ! -f /usr/share/zoneinfo/${ZONE} ]]; then
+	if [[ ! -f /usr/share/zoneinfo/${zone} ]]; then
 		return 1
 	else
 		return 0
@@ -76,11 +76,11 @@ function is_valid_ssh_timezone ()
 
 function is_valid_ssh_user ()
 {
-	local USERNAME="${1}"
-	local SAFE_USERNAME='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
+	local username="${1}"
+	local safe_username='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
 
-	if [[ ${USERNAME} != root ]] \
-		&& [[ ${USERNAME} =~ ${SAFE_USERNAME} ]]; then
+	if [[ ${username} != root ]] \
+		&& [[ ${username} =~ ${safe_username} ]]; then
 		return 0
 	fi
 
@@ -89,10 +89,10 @@ function is_valid_ssh_user ()
 
 function is_valid_ssh_user_home ()
 {
-	local HOME_DIRECTORY="${1:-}"
-	local SAFE_DIRECTORY='^\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+$'
+	local home_directory="${1:-}"
+	local safe_directory='^\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+$'
 
-	if grep -qoP "${SAFE_DIRECTORY}" <<< "${HOME_DIRECTORY}"; then
+	if grep -qoP "${safe_directory}" <<< "${home_directory}"; then
 		return 0
 	fi
 
@@ -101,14 +101,14 @@ function is_valid_ssh_user_home ()
 
 function is_valid_ssh_user_password_hash ()
 {
-	local PASSWORD_HASH="${1:-}"
-	local SHA_512_PATTERN='^\$6\$[a-zA-Z0-9./]{0,16}\$[a-zA-Z0-9./]{86}$'
+	local password_hash="${1:-}"
+	local sha_512_pattern='^\$6\$[a-zA-Z0-9./]{0,16}\$[a-zA-Z0-9./]{86}$'
 
-	if [[ -z ${PASSWORD_HASH} ]]; then
+	if [[ -z ${password_hash} ]]; then
 		return 1
 	fi
 
-	if [[ ${PASSWORD_HASH} =~ ${SHA_512_PATTERN} ]]; then
+	if [[ ${password_hash} =~ ${sha_512_pattern} ]]; then
 		return 0
 	fi
 
@@ -117,18 +117,18 @@ function is_valid_ssh_user_password_hash ()
 
 function is_valid_ssh_user_shell ()
 {
-	local SHELL="${1}"
-	local VALID_SHELL=
-	local VALID_SHELLS="$(
+	local shell="${1}"
+	local valid_shell=
+	local valid_shells="$(
 		chsh --list-shells
 	)"
 
-	if [[ -z ${SHELL} ]]; then
+	if [[ -z ${shell} ]]; then
 		return 1
 	fi
 
-	for VALID_SHELL in ${VALID_SHELLS}; do
-		if [[ ${VALID_SHELL} == "${SHELL}" ]]; then
+	for valid_shell in ${valid_shells}; do
+		if [[ ${valid_shell} == "${shell}" ]]; then
 			return 0
 		fi
 	done
@@ -138,20 +138,20 @@ function is_valid_ssh_user_shell ()
 
 function is_valid_ssh_user_id ()
 {
-	local GROUP_ID=500
-	local ID="${1}"
-	local ID_PATTERN='^([0-9]{3,}):([0-9]{3,})$'
-	local USER_ID=500
+	local group_id=500
+	local id="${1}"
+	local id_pattern='^([0-9]{3,}):([0-9]{3,})$'
+	local user_id=500
 
-	if [[ -z ${ID} ]]; then
+	if [[ -z ${id} ]]; then
 		return 1
 	fi
 
-	if [[ ${ID} =~ ${ID_PATTERN} ]]; then
-		USER_ID="${BASH_REMATCH[1]}"
-		GROUP_ID="${BASH_REMATCH[2]}"
+	if [[ ${id} =~ ${id_pattern} ]]; then
+		user_id="${BASH_REMATCH[1]}"
+		group_id="${BASH_REMATCH[2]}"
 
-		if (( USER_ID >= 500 )) && (( GROUP_ID >= 500 )); then
+		if (( user_id >= 500 )) && (( group_id >= 500 )); then
 			return 0
 		fi
 	fi
@@ -162,151 +162,151 @@ function is_valid_ssh_user_id ()
 function get_password ()
 {
 	local password_length="${1:-16}"
-	local PASSWORD="$(
+	local password="$(
 		head -n 4096 /dev/urandom \
 		| tr -cd '[:alnum:]' \
 		| cut -c1-"${password_length}"
 	)"
 
-	printf -- "%s" "${PASSWORD}"
+	printf -- "%s" "${password}"
 
 	return 0
 }
 
 function get_ssh_authorized_keys ()
 {
-	local DEFAULT_PATH="${1:-/etc/services-config/ssh/authorized_keys}"
-	local DEFAULT_VALUE="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
-	local VALUE="${SSH_AUTHORIZED_KEYS:-}"
-	local PATTERN_BASE64='^[A-Za-z0-9/+=]*$'
+	local default_path="${1:-/etc/services-config/ssh/authorized_keys}"
+	local default_value="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
+	local value="${SSH_AUTHORIZED_KEYS:-}"
+	local pattern_base64='^[A-Za-z0-9/+=]*$'
 
-	if [[ -z ${VALUE} ]] \
-		&& [[ -s ${DEFAULT_PATH} ]]
+	if [[ -z ${value} ]] \
+		&& [[ -s ${default_path} ]]
 	then
-		VALUE="$(< "${DEFAULT_PATH}")"
-	elif [[ -n ${VALUE} ]] \
-		&& [[ ${VALUE} =~ ${PATTERN_BASE64} ]]
+		value="$(< "${default_path}")"
+	elif [[ -n ${value} ]] \
+		&& [[ ${value} =~ ${pattern_base64} ]]
 	then
-		VALUE="$(
-			base64 -d -i <<< "${VALUE}"
+		value="$(
+			base64 -d -i <<< "${value}"
 		)"
-	elif [[ -n ${VALUE} ]] \
-		&& [[ -f ${VALUE} ]]
+	elif [[ -n ${value} ]] \
+		&& [[ -f ${value} ]]
 	then
-		VALUE="$(< "${VALUE}")"
+		value="$(< "${value}")"
 	fi
 
 	# Force a default key if PasswordAuthentication is disabled, maintaining
 	# the original behaviour.
 	if [[ ${SSH_PASSWORD_AUTHENTICATION} != true ]] \
-		&& [[ -z ${VALUE} ]]
+		&& [[ -z ${value} ]]
 	then
-		VALUE="${DEFAULT_VALUE}"
+		value="${default_value}"
 	fi
 
-	printf -- "%s" "${VALUE}"
+	printf -- "%s" "${value}"
 }
 
 function get_ssh_authorized_key_fingerprints ()
 {
-	local AUTHORIZED_KEYS="${1:-$(get_ssh_authorized_keys)}"
-	local FINGERPRINT=
-	local FINGERPRINTS=
+	local authorized_keys="${1:-$(get_ssh_authorized_keys)}"
+	local fingerprint=
+	local fingerprints=
+	local invalid_key_pattern='is not a public key file.$'
+	local insecure_fingerprint='dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6'
+	local ssh_key=
 	local IFS=
-	local INVALID_KEY_PATTERN='is not a public key file.$'
-	local INSECURE_FINGERPRINT='dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6'
-	local SSH_KEY=
 
-	if [[ -z ${AUTHORIZED_KEYS} ]]; then
+	if [[ -z ${authorized_keys} ]]; then
 		return 1
 	fi
 
-	while read -r SSH_KEY || [[ -n ${SSH_KEY} ]]; do
-		if [[ -n ${SSH_KEY} ]] \
+	while read -r ssh_key || [[ -n ${ssh_key} ]]; do
+		if [[ -n ${ssh_key} ]] \
 			&& [[ ! $(
-				get_ssh_key_fingerprint "${SSH_KEY}"
-			) =~ ${INVALID_KEY_PATTERN} ]]; then
+				get_ssh_key_fingerprint "${ssh_key}"
+			) =~ ${invalid_key_pattern} ]]; then
 
-			printf -v FINGERPRINT \
+			printf -v fingerprint \
 				-- '%s' \
 				"$(
-					get_ssh_key_fingerprint "${SSH_KEY}" \
+					get_ssh_key_fingerprint "${ssh_key}" \
 					| awk '{ print $2; }'
 				)"
 
 			# Indicate use of insecure public key
-			if [[ ${FINGERPRINT} == ${INSECURE_FINGERPRINT} ]];then
-				FINGERPRINT+=" (insecure key)"
+			if [[ ${fingerprint} == ${insecure_fingerprint} ]]; then
+				fingerprint+=" (insecure key)"
 			fi
 
-			printf -v FINGERPRINTS \
+			printf -v fingerprints \
 				-- '%s%s\n' \
-				"${FINGERPRINTS}" \
-				"${FINGERPRINT}"
+				"${fingerprints}" \
+				"${fingerprint}"
 		fi
-	done <<< "${AUTHORIZED_KEYS}"
+	done <<< "${authorized_keys}"
 
-	printf -- "%s" "${FINGERPRINTS}"
+	printf -- "%s" "${fingerprints}"
 }
 
 function get_ssh_chroot_directory ()
 {
-	local DEFAULT_VALUE="${1:-%h}"
-	local VALUE="${SSH_CHROOT_DIRECTORY:-}"
+	local default_value="${1:-%h}"
+	local value="${SSH_CHROOT_DIRECTORY:-}"
 
-	if [[ -z ${VALUE} ]] || ! is_valid_ssh_chroot_directory "${VALUE}"; then
-		VALUE="${DEFAULT_VALUE}"
+	if [[ -z ${value} ]] || ! is_valid_ssh_chroot_directory "${value}"; then
+		value="${default_value}"
 	fi
 
-	printf -- "%s" "${VALUE}"
+	printf -- "%s" "${value}"
 }
 
 function get_ssh_chroot_directory_path ()
 {
-	local CHROOT_DIRECTORY="${1:-$(get_ssh_chroot_directory)}"
-	local DEFAULT_CHROOT_DIRECTORY_VALUE="%h"
-	local USER="$(
+	local chroot_directory="${1:-$(get_ssh_chroot_directory)}"
+	local default_chroot_directory="%h"
+	local user="$(
 		get_ssh_user
 	)"
 	local HOME="$(
 		get_ssh_user_home
 	)"
-	local VALUE=
+	local value=
 
-	if ! is_valid_ssh_chroot_directory "${CHROOT_DIRECTORY}"; then
-		CHROOT_DIRECTORY="${DEFAULT_CHROOT_DIRECTORY_VALUE}"
+	if ! is_valid_ssh_chroot_directory "${chroot_directory}"; then
+		chroot_directory="${default_chroot_directory}"
 	fi
 
 	# Replace %h with SSH_USER_HOME
-	VALUE="${CHROOT_DIRECTORY//'%h'/${HOME}}"
+	value="${chroot_directory//'%h'/${HOME}}"
 
 	# Replace %u with SSH_USER
-	VALUE="${VALUE//'%u'/${USER}}"
+	value="${value//'%u'/${user}}"
 
-	printf -- "%s" "${VALUE}"
+	printf -- "%s" "${value}"
 }
 
 function get_ssh_host_key_fingerprint ()
 {
-	local FINGERPRINT=
-	local INVALID_KEY_PATTERN='is not a public key file.$'
-	local PUBLIC_KEY_PATH
-	local SSH_KEY
-	local TYPE="${1:-rsa}"
+	local fingerprint=
+	local invalid_key_pattern='is not a public key file.$'
+	local public_key_path
+	local ssh_key
+	local type="${1:-rsa}"
 
-	case "${TYPE}" in
+	case "${type}" in
 		rsa1|rsa|dsa|ecdsa|ed25519)
-			PUBLIC_KEY_PATH=/etc/ssh/ssh_host_${TYPE}_key.pub
-			SSH_KEY="$(< "${PUBLIC_KEY_PATH}")"
-			FINGERPRINT="$(
-				get_ssh_key_fingerprint "${SSH_KEY}"
+			public_key_path=/etc/ssh/ssh_host_${type}_key.pub
+			ssh_key="$(< "${public_key_path}")"
+			fingerprint="$(
+				get_ssh_key_fingerprint "${ssh_key}"
 			)"
 
-			if [[ -s ${PUBLIC_KEY_PATH} ]] \
-				&& [[ ! ${FINGERPRINT} =~ ${INVALID_KEY_PATTERN} ]]; then
+			if [[ -s ${public_key_path} ]] \
+				&& [[ ! ${fingerprint} =~ ${invalid_key_pattern} ]]; then
 				printf \
 					-- '%s\n' \
-					"${FINGERPRINT}" \
+					"${fingerprint}" \
 				| awk '{ print $2; }'
 			else
 				printf \
@@ -322,168 +322,168 @@ function get_ssh_host_key_fingerprint ()
 
 function get_ssh_key_fingerprint ()
 {
-	local FINGERPRINT
-	local SSH_KEY="${1:-}"
-	local SSH_KEY_FILE="$(
+	local fingerprint
+	local ssh_key="${1:-}"
+	local ssh_key_file="$(
 		mktemp
 	)"
 
-	echo "${SSH_KEY}" > "${SSH_KEY_FILE}"
+	echo "${ssh_key}" > "${ssh_key_file}"
 
-	FINGERPRINT="$(
+	fingerprint="$(
 		ssh-keygen \
 			-l \
 			-E md5 \
-			-f "${SSH_KEY_FILE}" \
+			-f "${ssh_key_file}" \
 		| sed 's~MD5:~~'
 	)"
 
-	rm -f "${SSH_KEY_FILE}"
+	rm -f "${ssh_key_file}"
 
-	printf -- "%s" "${FINGERPRINT}"
+	printf -- "%s" "${fingerprint}"
 }
 
 function get_ssh_user ()
 {
-	local DEFAULT_VALUE="${1:-app-admin}"
-	local VALUE="${SSH_USER:-}"
+	local default_value="${1:-app-admin}"
+	local value="${SSH_USER:-}"
 
-	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user "${VALUE}"; then
-		VALUE="${DEFAULT_VALUE}"
+	if [[ -z ${value} ]] || ! is_valid_ssh_user "${value}"; then
+		value="${default_value}"
 	fi
 
-	printf -- "%s" "${VALUE}"
+	printf -- "%s" "${value}"
 }
 
 function get_ssh_user_home ()
 {
-	local DEFAULT_VALUE="${1:-/home/%u}"
-	local USER="$(
+	local default_value="${1:-/home/%u}"
+	local user="$(
 		get_ssh_user
 	)"
-	local VALUE="${SSH_USER_HOME:-}"
+	local value="${SSH_USER_HOME:-}"
 
-	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_home "${VALUE}"; then
-		VALUE="${DEFAULT_VALUE}"
+	if [[ -z ${value} ]] || ! is_valid_ssh_user_home "${value}"; then
+		value="${default_value}"
 	fi
 
 	# Replace %u with SSH_USER
-	VALUE="${VALUE//'%u'/${USER}}"
+	value="${value//'%u'/${user}}"
 
-	printf -- "%s" "${VALUE}"
+	printf -- "%s" "${value}"
 }
 
 function get_ssh_user_shell ()
 {
-	local DEFAULT_VALUE="${1:-/bin/bash}"
-	local VALUE="${SSH_USER_SHELL:-}"
-	local FORCE_SFTP="${SSH_USER_FORCE_SFTP:-false}"
+	local default_value="${1:-/bin/bash}"
+	local value="${SSH_USER_SHELL:-}"
+	local force_sftp="${SSH_USER_FORCE_SFTP:-false}"
 
-	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_shell "${VALUE}"; then
-		VALUE="${DEFAULT_VALUE}"
+	if [[ -z ${value} ]] || ! is_valid_ssh_user_shell "${value}"; then
+		value="${default_value}"
 	fi
 
 	# SFTP users cannot have shell access
-	if [[ ${FORCE_SFTP} == true ]]; then
-		VALUE=/sbin/nologin
+	if [[ ${force_sftp} == true ]]; then
+		value=/sbin/nologin
 	fi
 
-	printf -- "%s" "${VALUE}"
+	printf -- "%s" "${value}"
 }
 
 function get_ssh_user_uid ()
 {
-	local DEFAULT_VALUE="${1:-500}"
-	local ID="$(
+	local default_value="${1:-500}"
+	local id="$(
 		get_ssh_user_id
 	)"
-	local ID_PATTERN='^([0-9]{3,}):([0-9]{3,})$'
-	local VALUE="${DEFAULT_VALUE}"
+	local id_pattern='^([0-9]{3,}):([0-9]{3,})$'
+	local value="${default_value}"
 
-	if [[ ${ID} =~ ${ID_PATTERN} ]]; then
-		VALUE="${BASH_REMATCH[1]}"
+	if [[ ${id} =~ ${id_pattern} ]]; then
+		value="${BASH_REMATCH[1]}"
 	fi
 
-	printf "%d" "${VALUE}"
+	printf "%d" "${value}"
 }
 
 function get_ssh_user_id ()
 {
-	local DEFAULT_VALUE="${1:-500:500}"
-	local VALUE="${SSH_USER_ID:-}"
+	local default_value="${1:-500:500}"
+	local value="${SSH_USER_ID:-}"
 
-	if [[ -z ${VALUE} ]] || ! is_valid_ssh_user_id "${VALUE}"; then
-		VALUE="${DEFAULT_VALUE}"
+	if [[ -z ${value} ]] || ! is_valid_ssh_user_id "${value}"; then
+		value="${default_value}"
 	fi
 
-	printf -- "%s" "${VALUE}"
+	printf -- "%s" "${value}"
 }
 
 function get_ssh_user_gid ()
 {
-	local DEFAULT_VALUE="${1:-500}"
-	local ID="$(
+	local default_value="${1:-500}"
+	local id="$(
 		get_ssh_user_id
 	)"
-	local ID_PATTERN='^([0-9]{3,}):([0-9]{3,})$'
-	local VALUE="${DEFAULT_VALUE}"
+	local id_pattern='^([0-9]{3,}):([0-9]{3,})$'
+	local value="${default_value}"
 
-	if [[ ${ID} =~ ${ID_PATTERN} ]]; then
-		VALUE="${BASH_REMATCH[2]}"
+	if [[ ${id} =~ ${id_pattern} ]]; then
+		value="${BASH_REMATCH[2]}"
 	fi
 
-	printf -- "%d" "${VALUE}"
+	printf -- "%d" "${value}"
 }
 
 function generate_ssh_host_key ()
 {
-	local PRIVATE_KEY_PATH
-	local PUBLIC_KEY_PATH
-	local REPLACE="${1:-false}"
-	local RESPONSE='n\n'
-	local TYPE="${2:-rsa}"
+	local private_key_path
+	local public_key_path
+	local replace="${1:-false}"
+	local response='n\n'
+	local type="${2:-rsa}"
 
-	if [[ ${REPLACE} == true ]] || [[ ${REPLACE} == 'y' ]]; then
-		RESPONSE='y\n'
+	if [[ ${replace} == true ]] || [[ ${replace} == 'y' ]]; then
+		response='y\n'
 	fi
 
-	case "${TYPE}" in
+	case "${type}" in
 		rsa1|rsa|dsa|ecdsa|ed25519)
-			if [[ ${TYPE} != rsa1 ]]; then
-				PRIVATE_KEY_PATH=/etc/ssh/ssh_host_${TYPE}_key
-				PUBLIC_KEY_PATH=/etc/ssh/ssh_host_${TYPE}_key.pub
+			if [[ ${type} != rsa1 ]]; then
+				private_key_path=/etc/ssh/ssh_host_${type}_key
+				public_key_path=/etc/ssh/ssh_host_${type}_key.pub
 			else
-				PRIVATE_KEY_PATH=/etc/ssh/ssh_host_key
-				PUBLIC_KEY_PATH=/etc/ssh/ssh_host_key.pub
+				private_key_path=/etc/ssh/ssh_host_key
+				public_key_path=/etc/ssh/ssh_host_key.pub
 			fi
 
-			echo -e "${RESPONSE}" \
+			echo -e "${response}" \
 			| ssh-keygen \
 				-q \
 				-C "" \
 				-N "" \
-				-t "${TYPE}" \
-				-f "${PRIVATE_KEY_PATH}" \
+				-t "${type}" \
+				-f "${private_key_path}" \
 				&> /dev/null
 
 			if [[ -x /sbin/restorecon ]]; then
-				/sbin/restorecon "${PUBLIC_KEY_PATH}"
+				/sbin/restorecon "${public_key_path}"
 			fi
 
 			;;
 		*)
-			echo "Unknown key type ${TYPE} - skipping."
+			echo "Unknown key type ${type} - skipping."
 			;;
 	esac
 }
 
 function generate_ssh_host_keys ()
 {
-	local REPLACE="${1:-false}"
-	local VERSION="${2:-}"
+	local replace="${1:-false}"
+	local version="${2:-}"
 
-	if [[ -z ${VERSION} ]] && [[ -e /etc/redhat-release ]]; then
-		VERSION="$(
+	if [[ -z ${version} ]] && [[ -e /etc/redhat-release ]]; then
+		version="$(
 			rpm -q \
 				--whatprovides redhat-release \
 				--queryformat "%{VERSION}"
@@ -493,33 +493,33 @@ function generate_ssh_host_keys ()
 		return 1
 	fi
 
-	case "${VERSION}" in
+	case "${version}" in
 		6)
-			generate_ssh_host_key "${REPLACE}" rsa1
-			generate_ssh_host_key "${REPLACE}" rsa
-			generate_ssh_host_key "${REPLACE}" dsa
+			generate_ssh_host_key "${replace}" rsa1
+			generate_ssh_host_key "${replace}" rsa
+			generate_ssh_host_key "${replace}" dsa
 			;;
 		7)
-			generate_ssh_host_key "${REPLACE}" rsa1
-			generate_ssh_host_key "${REPLACE}" rsa
-			generate_ssh_host_key "${REPLACE}" dsa
-			generate_ssh_host_key "${REPLACE}" ecdsa
-			generate_ssh_host_key "${REPLACE}" ed25519
+			generate_ssh_host_key "${replace}" rsa1
+			generate_ssh_host_key "${replace}" rsa
+			generate_ssh_host_key "${replace}" dsa
+			generate_ssh_host_key "${replace}" ecdsa
+			generate_ssh_host_key "${replace}" ed25519
 			;;
 		*)
-			echo "Unknown EL release ${VERSION} - skipping."
+			echo "Unknown EL release ${version} - skipping."
 			;;
 	esac
 }
 
 function set_ssh_timezone ()
 {
-	local ZONE="${1:-UTC}"
+	local zone="${1:-UTC}"
 
-	if ! is_valid_ssh_timezone "${ZONE}"; then
+	if ! is_valid_ssh_timezone "${zone}"; then
 		printf -- \
 			'ERROR: Unknown time zone: %s\n' \
-			"${ZONE}"
+			"${zone}"
 			>&2
 		sleep 0.1
 
@@ -527,12 +527,12 @@ function set_ssh_timezone ()
 	else
 		if [[ -f /etc/sysconfig/clock ]]; then
 			sed -i \
-				-e "s~^\(ZONE=\).*$~\1${ZONE}~" \
+				-e "s~^\(ZONE=\).*$~\1${zone}~" \
 				/etc/sysconfig/clock
 		fi
 
 		ln -sf \
-			/usr/share/zoneinfo/"${ZONE}" \
+			/usr/share/zoneinfo/"${zone}" \
 			/etc/localtime
 
 		return "${?}"
@@ -541,18 +541,18 @@ function set_ssh_timezone ()
 
 function set_ssh_user_password ()
 {
-	local PASSWORD="${2:-${SSH_USER_PASSWORD}}"
-	local PASSWORD_HASHED="${3:-${SSH_USER_PASSWORD_HASHED:-false}}"
-	local USER="${1:-${SSH_USER}}"
+	local password="${2:-${SSH_USER_PASSWORD}}"
+	local password_hashed="${3:-${SSH_USER_PASSWORD_HASHED:-false}}"
+	local user="${1:-${SSH_USER}}"
 
 	# Get password from file
-	if [[ -n ${PASSWORD} ]] \
-		&& [[ -s ${PASSWORD} ]]
+	if [[ -n ${password} ]] \
+		&& [[ -s ${password} ]]
 	then
-		PASSWORD="$(< "${PASSWORD}")"
+		password="$(< "${password}")"
 	fi
 
-	if ! is_valid_ssh_user "${USER}"; then
+	if ! is_valid_ssh_user "${user}"; then
 		printf -- \
 			'ERROR: Invalid user\n' \
 			>&2
@@ -560,8 +560,8 @@ function set_ssh_user_password ()
 
 		return 1
 	else
-		if [[ ${PASSWORD_HASHED} == true ]]; then
-			if ! is_valid_ssh_user_password_hash "${PASSWORD}"; then
+		if [[ ${password_hashed} == true ]]; then
+			if ! is_valid_ssh_user_password_hash "${password}"; then
 				printf -- \
 					'ERROR: Invalid password - requires SHA-512 hash\n' \
 					>&2
@@ -571,14 +571,14 @@ function set_ssh_user_password ()
 			else
 				printf -- \
 					'%s:%s\n' \
-					"${USER}" \
-					"${PASSWORD}" \
+					"${user}" \
+					"${password}" \
 				| chpasswd -e
 
 				return "${?}"
 			fi
 		else
-			if [[ -z ${PASSWORD} ]]; then
+			if [[ -z ${password} ]]; then
 				printf -- \
 					'ERROR: Invalid password - empty\n' \
 					>&2
@@ -588,8 +588,8 @@ function set_ssh_user_password ()
 			else
 				printf -- \
 					'%s:%s\n' \
-					"${USER}" \
-					"${PASSWORD}" \
+					"${user}" \
+					"${password}" \
 				| chpasswd
 
 				return "${?}"
