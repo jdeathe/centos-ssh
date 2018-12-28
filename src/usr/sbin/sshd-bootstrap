@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 readonly DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
+readonly ENV_EXCLUDE_PATTERN="^([.]*SSH_USER_PASSWORD|_|HOME|HOSTNAME|PATH|PWD|SHLVL|SUPERVISOR_ENABLED|SUPERVISOR_GROUP_NAME|SUPERVISOR_PROCESS_NAME|TERM)="
 readonly LOCK_FILE="/var/lock/subsys/sshd-bootstrap"
 readonly PASSWORD_LENGTH=16
 readonly REDACTED_VALUE="********"
@@ -679,26 +680,22 @@ function set_ssh_user_password ()
 	fi
 }
 
-OPTS_SSH_INHERIT_ENVIRONMENT="${SSH_INHERIT_ENVIRONMENT:-false}"
-OPTS_SSH_USER="$(
-	get_ssh_user app-admin
-)"
+
+# Docker ENV inheritance
+if [[ ${SSH_INHERIT_ENVIRONMENT} == true ]] \
+	&& [[ -s /etc/sshd-bootstrap.env ]]
+then
+	grep -Ev "${ENV_EXCLUDE_PATTERN}" \
+		/etc/sshd-bootstrap.env \
+		> /etc/environment
+fi
+
 OPTS_SSH_USER_HOME="$(
 	get_ssh_user_home
 )"
 
-# Docker ENV inheritance
-if [[ ${OPTS_SSH_INHERIT_ENVIRONMENT} == true ]] \
-	&& [[ -s /etc/sshd-bootstrap.env ]]
-then
-	# Variables to exclude
-	grep -Ev "^([.]*SSH_USER_PASSWORD|_|HOME|HOSTNAME|PATH|PWD|SHLVL|SUPERVISOR_ENABLED|SUPERVISOR_GROUP_NAME|SUPERVISOR_PROCESS_NAME|TERM)=" \
-		/etc/sshd-bootstrap.env > /etc/environment
-fi
-
 if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]
 then
-
 	declare -A ENV_VALIDATION_WITH_DEFAULTS=(
 		[SSH_CHROOT_DIRECTORY]=is_valid_ssh_chroot_directory
 		[SSH_USER]=is_valid_ssh_user
@@ -713,11 +710,14 @@ then
 	OPTS_SSH_PASSWORD_AUTHENTICATION="no"
 	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
 	OPTS_SSH_TIMEZONE="${SSH_TIMEZONE:-UTC}"
+	OPTS_SSH_USER="$(
+		get_ssh_user
+	)"
 	OPTS_SSH_USER_PASSWORD_HASHED="${SSH_USER_PASSWORD_HASHED:-false}"
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password ${PASSWORD_LENGTH})}"
 	OPTS_SSH_USER_FORCE_SFTP="${SSH_USER_FORCE_SFTP:-false}"
 	OPTS_SSH_USER_SHELL="$(
-		get_ssh_user_shell /bin/bash
+		get_ssh_user_shell
 	)"
 	OPTS_SSH_USER_UID="$(
 		get_ssh_user_uid
@@ -737,13 +737,13 @@ then
 
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
 	then
-		SSHD_COMMAND=SFTP
-		SSH_USER_GROUPS=users
+		SSHD_COMMAND="SFTP"
+		SSH_USER_GROUPS="users"
 		OPTS_SSH_CHROOT_DIRECTORY="$(
 			get_ssh_chroot_directory %h
 		)"
 	else
-		SSHD_COMMAND=SSH
+		SSHD_COMMAND="SSH"
 	fi
 
 	# Initialise
@@ -751,8 +751,8 @@ then
 		'Initialising %s.\n' \
 		"${SSHD_COMMAND}"
 
-	# Warn operator if any supplied environment variable values failed validation 
-	# and have been set to a safe default.
+	# Warn operator if any supplied environment variable values failed
+	# validation and have been set to a safe default.
 	for ENV in "${!ENV_VALIDATION_WITH_DEFAULTS[@]}"
 	do
 		if ! ${ENV_VALIDATION_WITH_DEFAULTS[${ENV}]} "${!ENV}"
@@ -775,7 +775,6 @@ then
 	fi
 
 	$(
-		# Generate new host keys
 		generate_ssh_host_keys
 	) &
 	PIDS[0]="${!}"
@@ -786,6 +785,7 @@ then
 	then
 		printf -- \
 			'Creating home base directory.\n'
+
 		mkdir -pm 755 "${OPTS_SSH_USER_HOME%/*}"
 	fi
 
@@ -843,8 +843,6 @@ then
 	# SFTP users
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
 	then
-		SSHD_COMMAND=SFTP
-
 		# Get the ChrootDirectory path.
 		# %h and %u are replaced with the User's HOME and USERNAME respectively.
 		SSH_CHROOT_DIRECTORY_PATH="$(
@@ -870,7 +868,8 @@ then
 			chmod 750 "${OPTS_SSH_USER_HOME}"
 		fi
 
-		# Create a user writeable data directory if no other directories are mounted.
+		# Create a user writeable data directory if no other directories are
+		# mounted.
 		if ! grep -q '^d' <<< "$(ls -l "${SSH_CHROOT_HOME_DIRECTORY_PATH}"/)"
 		then
 			# Make and set user permissions on new _data directory
@@ -889,16 +888,15 @@ then
 				"${SSH_CHROOT_HOME_DIRECTORY_PATH}"/_data
 		fi
 
+		# ChrootDirectory must be owned by root user
 		if [[ ${SSH_CHROOT_DIRECTORY_PATH} != "${OPTS_SSH_USER_HOME}" ]]
 		then
-			# ChrootDirectory must be owned by root user
 			chown \
 				root:root \
 				"${SSH_CHROOT_DIRECTORY_PATH}"
 			chmod 711 \
 				"${SSH_CHROOT_DIRECTORY_PATH}"
 		else
-			# ChrootDirectory must be owned by root user
 			chown root:"${OPTS_SSH_USER}" \
 				"${SSH_CHROOT_DIRECTORY_PATH}"
 		fi
@@ -975,7 +973,8 @@ then
 	# Never store the root password
 	SSH_ROOT_PASSWORD="${REDACTED_VALUE}"
 
-	# Only show user password if auto-generated and password is required for sudo
+	# Only show user password if auto-generated and password is required for
+	# sudo.
 	if [[ -n ${SSH_USER_PASSWORD} ]] \
 		|| is_sudo_no_password_all "${OPTS_SSH_SUDO}" \
 		|| [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
