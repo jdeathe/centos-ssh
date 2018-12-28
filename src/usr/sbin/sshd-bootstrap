@@ -482,10 +482,10 @@ function get_ssh_user_id ()
 function get_ssh_user_gid ()
 {
 	local -r default_value="${1:-500}"
-	local -r id_pattern='^([0-9]{3,}):([0-9]{3,})$'
 	local -r id="$(
 		get_ssh_user_id
 	)"
+	local -r id_pattern='^([0-9]{3,}):([0-9]{3,})$'
 
 	local value="${default_value}"
 
