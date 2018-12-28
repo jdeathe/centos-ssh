@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 
-# Create lock file
-touch /var/lock/subsys/sshd-bootstrap
-
-TIMER_START="$(
+readonly DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
+readonly LOCK_FILE="/var/lock/subsys/sshd-bootstrap"
+readonly PASSWORD_LENGTH=16
+readonly REDACTED_VALUE="********"
+readonly TIMER_START="$(
 	date +%s.%N
 )"
+
+# Create lock file
+touch \
+	"${LOCK_FILE}"
 
 # Populate the environment source file
 env >> /etc/sshd-bootstrap.env
@@ -623,9 +628,6 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 		[SSH_USER_ID]=is_valid_ssh_user_id
 		[SSH_USER_SHELL]=is_valid_ssh_user_shell
 	)
-	readonly DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
-	readonly PASSWORD_LENGTH=16
-	readonly REDACTED_VALUE="********"
 	OPTS_SSH_AUTHORIZED_KEYS="$(
 		get_ssh_authorized_keys \
 			/etc/services-config/ssh/authorized_keys
@@ -918,6 +920,7 @@ if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]; then
 fi
 
 # Release lock file
-rm -f /var/lock/subsys/sshd-bootstrap
+rm -f \
+	"${LOCK_FILE}"
 
 exit 0
