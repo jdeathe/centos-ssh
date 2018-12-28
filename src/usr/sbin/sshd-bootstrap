@@ -37,8 +37,9 @@ function is_sudo_no_password_all ()
 
 function is_valid_ssh_authorized_keys ()
 {
+	local -r invalid_key_pattern='is not a public key file.$'
+
 	local authorized_keys="${1:-}"
-	local invalid_key_pattern='is not a public key file.$'
 	local ssh_key=
 	local IFS=
 
@@ -63,8 +64,9 @@ function is_valid_ssh_authorized_keys ()
 
 function is_valid_ssh_chroot_directory ()
 {
+	local -r safe_directory='^(%h|\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+)$'
+
 	local chroot_directory="${1:-}"
-	local safe_directory='^(%h|\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+)$'
 
 	if grep -qoP "${safe_directory}" <<< "${chroot_directory}"
 	then
@@ -88,8 +90,9 @@ function is_valid_ssh_timezone ()
 
 function is_valid_ssh_user ()
 {
+	local -r safe_username='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
+
 	local username="${1}"
-	local safe_username='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
 
 	if [[ ${username} != root ]] \
 		&& [[ ${username} =~ ${safe_username} ]]
@@ -102,8 +105,9 @@ function is_valid_ssh_user ()
 
 function is_valid_ssh_user_home ()
 {
+	local -r safe_directory='^\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+$'
+
 	local home_directory="${1:-}"
-	local safe_directory='^\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+$'
 
 	if grep -qoP "${safe_directory}" <<< "${home_directory}"
 	then
@@ -115,8 +119,9 @@ function is_valid_ssh_user_home ()
 
 function is_valid_ssh_user_password_hash ()
 {
+	local -r sha_512_pattern='^\$6\$[a-zA-Z0-9./]{0,16}\$[a-zA-Z0-9./]{86}$'
+
 	local password_hash="${1:-}"
-	local sha_512_pattern='^\$6\$[a-zA-Z0-9./]{0,16}\$[a-zA-Z0-9./]{86}$'
 
 	if [[ -z ${password_hash} ]]
 	then
@@ -157,9 +162,10 @@ function is_valid_ssh_user_shell ()
 
 function is_valid_ssh_user_id ()
 {
+	local -r id_pattern='^([0-9]{3,}):([0-9]{3,})$'
+
 	local group_id=500
 	local id="${1}"
-	local id_pattern='^([0-9]{3,}):([0-9]{3,})$'
 	local user_id=500
 
 	if [[ -z ${id} ]]
@@ -197,10 +203,11 @@ function get_password ()
 
 function get_ssh_authorized_keys ()
 {
+	local -r default_value="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
+	local -r pattern_base64='^[A-Za-z0-9/+=]*$'
+
 	local default_path="${1:-/etc/services-config/ssh/authorized_keys}"
-	local default_value="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
 	local value="${SSH_AUTHORIZED_KEYS:-}"
-	local pattern_base64='^[A-Za-z0-9/+=]*$'
 
 	if [[ -z ${value} ]] \
 		&& [[ -s ${default_path} ]]
@@ -231,11 +238,12 @@ function get_ssh_authorized_keys ()
 
 function get_ssh_authorized_key_fingerprints ()
 {
+	local -r invalid_key_pattern='is not a public key file.$'
+	local -r insecure_fingerprint='dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6'
+
 	local authorized_keys="${1:-$(get_ssh_authorized_keys)}"
 	local fingerprint=
 	local fingerprints=
-	local invalid_key_pattern='is not a public key file.$'
-	local insecure_fingerprint='dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6'
 	local ssh_key=
 	local IFS=
 
@@ -290,8 +298,9 @@ function get_ssh_chroot_directory ()
 
 function get_ssh_chroot_directory_path ()
 {
+	local -r default_chroot_directory="%h"
+
 	local chroot_directory="${1:-$(get_ssh_chroot_directory)}"
-	local default_chroot_directory="%h"
 	local user="$(
 		get_ssh_user
 	)"
@@ -316,8 +325,9 @@ function get_ssh_chroot_directory_path ()
 
 function get_ssh_host_key_fingerprint ()
 {
+	local -r invalid_key_pattern='is not a public key file.$'
+
 	local fingerprint=
-	local invalid_key_pattern='is not a public key file.$'
 	local public_key_path
 	local ssh_key
 	local type="${1:-rsa}"
@@ -391,6 +401,7 @@ function get_ssh_user_home ()
 	local user="$(
 		get_ssh_user
 	)"
+
 	local value="${SSH_USER_HOME:-}"
 
 	if [[ -z ${value} ]] || ! is_valid_ssh_user_home "${value}"
@@ -407,8 +418,8 @@ function get_ssh_user_home ()
 function get_ssh_user_shell ()
 {
 	local default_value="${1:-/bin/bash}"
-	local value="${SSH_USER_SHELL:-}"
 	local force_sftp="${SSH_USER_FORCE_SFTP:-false}"
+	local value="${SSH_USER_SHELL:-}"
 
 	if [[ -z ${value} ]] || ! is_valid_ssh_user_shell "${value}"
 	then
@@ -426,11 +437,12 @@ function get_ssh_user_shell ()
 
 function get_ssh_user_uid ()
 {
+	local -r id_pattern='^([0-9]{3,}):([0-9]{3,})$'
+
 	local default_value="${1:-500}"
 	local id="$(
 		get_ssh_user_id
 	)"
-	local id_pattern='^([0-9]{3,}):([0-9]{3,})$'
 	local value="${default_value}"
 
 	if [[ ${id} =~ ${id_pattern} ]]
@@ -456,11 +468,12 @@ function get_ssh_user_id ()
 
 function get_ssh_user_gid ()
 {
+	local -r id_pattern='^([0-9]{3,}):([0-9]{3,})$'
+
 	local default_value="${1:-500}"
 	local id="$(
 		get_ssh_user_id
 	)"
-	local id_pattern='^([0-9]{3,}):([0-9]{3,})$'
 	local value="${default_value}"
 
 	if [[ ${id} =~ ${id_pattern} ]]
