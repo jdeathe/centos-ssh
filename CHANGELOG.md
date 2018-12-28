@@ -4,6 +4,10 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.9.2 - Unreleased
+
+- Fixes bootstrap errors regarding readonly `PASSWORD_LENGTH`.
+
 ### 1.9.1 - 2018-11-10
 
 - Adds feature to set system time zone via `SSH_TIMEZONE`.
