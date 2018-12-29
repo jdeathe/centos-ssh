@@ -1018,6 +1018,68 @@ function test_custom_ssh_configuration ()
 			end
 		end
 
+		describe "Configure system id"
+			__terminate_container \
+				ssh.pool-1.1.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.pool-1.1.1 \
+				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
+				--env "SSH_USER_ID=499:33" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			container_port_22="$(
+				__get_container_port \
+					ssh.pool-1.1.1 \
+					22/tcp
+			)"
+
+			if ! __is_container_ready \
+				ssh.pool-1.1.1 \
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
+				exit 1
+			fi
+
+			it "Can set the user's uid:gid."
+				user_id="$(
+					ssh -q \
+					-p ${container_port_22} \
+					-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
+					-o StrictHostKeyChecking=no \
+					-o LogLevel=error \
+					app-admin@${DOCKER_HOSTNAME} \
+					-- printf \
+						'%s:%s\\n' \
+						"\$(id --user app-admin)" \
+						"\$(id --group app-admin)"
+				)"
+
+				assert equal \
+					"${user_id}" \
+					"499:33"
+			end
+
+			it "Logs the setting value."
+				user_id="$(
+					docker logs ssh.pool-1.1.1 \
+					| awk '/^id :.*$/ { print $0; }'
+				)"
+
+				assert equal \
+					"${user_id/id : /}" \
+					"499:33"
+			end
+		end
+
 		describe "Configure shell"
 			__terminate_container \
 				ssh.pool-1.1.1 \
