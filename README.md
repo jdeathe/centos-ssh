@@ -470,7 +470,9 @@ On first run the SSH user is created with a default shell of "/bin/bash". If you
 
 ##### SSH_USER_ID
 
-Use `SSH_USER_ID` to set a specific UID:GID for the `SSH_USER`. The values should be 500 or more - the default being 500:500. This may be useful when running an SFTP container and mounting data volumes from an existing container.
+Use `SSH_USER_ID` to set a specific UID:GID for the `SSH_USER`. The values should be 500 or more for non system users - the default being 500:500. Using values in the range 2-499 is possible but should be used with caution as these values may conflict with existing system accounts.
+
+This may be useful when running an SFTP container and mounting data volumes from an existing container.
 
 ```
 ...

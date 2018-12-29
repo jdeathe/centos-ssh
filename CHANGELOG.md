@@ -7,6 +7,7 @@ Summary of release changes for Version 1 - CentOS-6
 ### 1.9.2 - Unreleased
 
 - Fixes bootstrap errors regarding readonly `PASSWORD_LENGTH`.
+- Updates validation for `SSH_USER_ID` to allow values in the system ID range.
 
 ### 1.9.1 - 2018-11-10
 
