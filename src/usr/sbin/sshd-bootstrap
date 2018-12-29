@@ -166,10 +166,10 @@ function is_valid_ssh_user_shell ()
 function is_valid_ssh_user_id ()
 {
 	local -r id="${1}"
-	local -r id_pattern='^([0-9]{3,}):([0-9]{3,})$'
+	local -r id_pattern='^([0-9]{1,}):([0-9]{1,})$'
 
-	local group_id=500
-	local user_id=500
+	local group_id=1
+	local user_id=1
 
 	if [[ -z ${id} ]]
 	then
@@ -181,7 +181,7 @@ function is_valid_ssh_user_id ()
 		user_id="${BASH_REMATCH[1]}"
 		group_id="${BASH_REMATCH[2]}"
 
-		if (( user_id >= 500 )) && (( group_id >= 500 ))
+		if (( user_id >= 2 )) && (( group_id >= 2 ))
 		then
 			return 0
 		fi
@@ -453,7 +453,7 @@ function get_ssh_user_uid ()
 	local -r id="$(
 		get_ssh_user_id
 	)"
-	local -r id_pattern='^([0-9]{3,}):([0-9]{3,})$'
+	local -r id_pattern='^([0-9]{1,}):([0-9]{1,})$'
 
 	local value="${default_value}"
 
@@ -485,7 +485,7 @@ function get_ssh_user_gid ()
 	local -r id="$(
 		get_ssh_user_id
 	)"
-	local -r id_pattern='^([0-9]{3,}):([0-9]{3,})$'
+	local -r id_pattern='^([0-9]{1,}):([0-9]{1,})$'
 
 	local value="${default_value}"
 
