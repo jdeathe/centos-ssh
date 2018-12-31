@@ -76,6 +76,27 @@ function is_valid_ssh_chroot_directory ()
 	return 1
 }
 
+function is_valid_ssh_key ()
+{
+	local -r private_key="${1}"
+	local -r invalid_key_pattern='is not a public key file.$'
+
+	if [[ -z ${private_key} ]]
+	then
+		return 1
+	fi
+
+	if [[ -n ${private_key} ]] \
+		&& [[ $(
+			get_ssh_key_fingerprint "${private_key}"
+		) =~ ${invalid_key_pattern} ]]
+	then
+		return 1
+	fi
+
+	return 0
+}
+
 function is_valid_ssh_timezone ()
 {
 	local -r zone="${1}"
@@ -241,47 +262,27 @@ function get_ssh_authorized_keys ()
 function get_ssh_authorized_key_fingerprints ()
 {
 	local -r authorized_keys="${1:-$(get_ssh_authorized_keys)}"
-	local -r invalid_key_pattern='is not a public key file.$'
-	local -r insecure_fingerprint='dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6'
 
-	local fingerprint
 	local ssh_key
 	local value
 	local IFS=
 
-	if [[ -z ${authorized_keys} ]]
+	if [[ -n ${authorized_keys} ]]
 	then
-		return 1
-	fi
-
-	while read -r ssh_key || [[ -n ${ssh_key} ]]
-	do
-		if [[ -n ${ssh_key} ]] \
-			&& [[ ! $(
-				get_ssh_key_fingerprint "${ssh_key}"
-			) =~ ${invalid_key_pattern} ]]
-		then
-			printf -v fingerprint \
-				-- \
-				'%s' \
-				"$(
-					get_ssh_key_fingerprint "${ssh_key}" \
-					| awk '{ print $2; }'
-				)"
-
-			# Indicate use of insecure public key
-			if [[ ${fingerprint} == ${insecure_fingerprint} ]]
+		while read -r ssh_key || [[ -n ${ssh_key} ]]
+		do
+			if is_valid_ssh_key "${ssh_key}"
 			then
-				fingerprint+=" (insecure key)"
+				printf -v value \
+					-- \
+					'%s%s\n' \
+					"${value}" \
+					"$(
+						get_ssh_key_fingerprint_hash_output "${ssh_key}"
+					)"
 			fi
-
-			printf -v value \
-				-- \
-				'%s%s\n' \
-				"${value}" \
-				"${fingerprint}"
-		fi
-	done <<< "${authorized_keys}"
+		done <<< "${authorized_keys}"
+	fi
 
 	printf -- "%s" "${value}"
 }
@@ -329,7 +330,6 @@ function get_ssh_chroot_directory_path ()
 
 function get_ssh_host_key_fingerprint ()
 {
-	local -r invalid_key_pattern='is not a public key file.$'
 	local -r type="${1:-rsa}"
 
 	local fingerprint
@@ -340,27 +340,24 @@ function get_ssh_host_key_fingerprint ()
 		rsa1|rsa|dsa|ecdsa|ed25519)
 			public_key_path=/etc/ssh/ssh_host_${type}_key.pub
 			ssh_key="$(< "${public_key_path}")"
-			fingerprint="$(
-				get_ssh_key_fingerprint "${ssh_key}"
-			)"
 
-			if [[ -s ${public_key_path} ]] \
-				&& [[ ! ${fingerprint} =~ ${invalid_key_pattern} ]]
+			if is_valid_ssh_key "${ssh_key}"
 			then
-				printf -- \
-					'%s\n' \
-					"${fingerprint}" \
-				| awk '{ print $2; }'
+				get_ssh_key_fingerprint_hash_output "${ssh_key}"
 			else
 				printf -- \
-					'%s\n' \
-					"invalid-key"
+					'ERROR: invalid host key\n' \
+					>&2
+
+				return 1
 			fi
 			;;
 		*)
 			printf -- \
-				'%s\n' \
-				"invalid-key-type"
+				'ERROR: invalid key type\n' \
+				>&2
+
+			return 1
 			;;
 	esac
 }
@@ -390,6 +387,60 @@ function get_ssh_key_fingerprint ()
 	rm -f "${ssh_key_file}"
 
 	printf -- "%s" "${fingerprint}"
+}
+
+function get_ssh_key_fingerprint_hash_output ()
+{
+	local -r ssh_key="${1}"
+	local -r insecure_fingerprint='dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6'
+
+	local value
+
+	if is_valid_ssh_key "${ssh_key}"
+	then
+		printf -v value \
+			-- \
+			'%s' \
+			"$(
+				get_ssh_key_fingerprint "${ssh_key}" \
+				| awk '{ print $2; }'
+			)"
+
+		# Indicate use of insecure public key
+		if [[ ${value} == ${insecure_fingerprint} ]]
+		then
+			value+=" (insecure key)"
+		fi
+
+		printf -v value \
+			-- \
+			'%s\n' \
+			"${value}"
+	fi
+
+	printf -- "%s" "${value}"
+}
+
+function get_ssh_user_private_key ()
+{
+	local -r default_value=""
+	local -r pattern_base64='^[A-Za-z0-9/+=]*$'
+
+	local value="${SSH_USER_PRIVATE_KEY:-}"
+
+	if [[ -n ${value} ]] \
+		&& [[ ${value} =~ ${pattern_base64} ]]
+	then
+		value="$(
+			base64 -d -i <<< "${value}"
+		)"
+	elif [[ -n ${value} ]] \
+		&& [[ -f ${value} ]]
+	then
+		value="$(< "${value}")"
+	fi
+
+	printf -- "%s" "${value}"
 }
 
 function get_ssh_user ()
@@ -680,7 +731,6 @@ function set_ssh_user_password ()
 	fi
 }
 
-
 # Docker ENV inheritance
 if [[ ${SSH_INHERIT_ENVIRONMENT} == true ]] \
 	&& [[ -s /etc/sshd-bootstrap.env ]]
@@ -704,8 +754,7 @@ then
 		[SSH_USER_SHELL]=is_valid_ssh_user_shell
 	)
 	OPTS_SSH_AUTHORIZED_KEYS="$(
-		get_ssh_authorized_keys \
-			/etc/services-config/ssh/authorized_keys
+		get_ssh_authorized_keys
 	)"
 	OPTS_SSH_PASSWORD_AUTHENTICATION="no"
 	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
@@ -713,9 +762,12 @@ then
 	OPTS_SSH_USER="$(
 		get_ssh_user
 	)"
+	OPTS_SSH_USER_FORCE_SFTP="${SSH_USER_FORCE_SFTP:-false}"
 	OPTS_SSH_USER_PASSWORD_HASHED="${SSH_USER_PASSWORD_HASHED:-false}"
 	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-$(get_password ${PASSWORD_LENGTH})}"
-	OPTS_SSH_USER_FORCE_SFTP="${SSH_USER_FORCE_SFTP:-false}"
+	OPTS_SSH_USER_PRIVATE_KEY="$(
+		get_ssh_user_private_key
+	)"
 	OPTS_SSH_USER_SHELL="$(
 		get_ssh_user_shell
 	)"
@@ -803,8 +855,8 @@ then
 		-s "${OPTS_SSH_USER_SHELL}" \
 		"${OPTS_SSH_USER}"
 
+	# Set root user password
 	$(
-		# Set root user password
 		echo "root:${SSH_ROOT_PASSWORD:-$(get_password ${PASSWORD_LENGTH})}" \
 		| chpasswd
 	) &
@@ -927,6 +979,7 @@ then
 	chmod 600 \
 		"${OPTS_SSH_USER_HOME}"/.ssh/authorized_keys
 
+	# Details output for SSH public key fingerprints
 	if [[ ${SSH_PASSWORD_AUTHENTICATION} == true ]] \
 		&& [[ -z ${SSH_AUTHORIZED_KEYS} ]]
 	then
@@ -937,8 +990,7 @@ then
 			-- \
 			'%s\nUnable to populate %s/.ssh/authorized_key' \
 			"ERROR: Public key validation failed." \
-			"${OPTS_SSH_USER_HOME}" \
-			>&2
+			"${OPTS_SSH_USER_HOME}"
 	else
 		printf -- \
 			'%s\n' \
@@ -947,6 +999,37 @@ then
 
 		SSH_KEY_FINGERPRINTS="$(
 			get_ssh_authorized_key_fingerprints
+		)"
+	fi
+
+	# Details output for SSH private key fingerprint
+	if [[ -z ${OPTS_SSH_USER_PRIVATE_KEY} ]] \
+		|| [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
+	then
+		SSH_USER_PRIVATE_KEY_FINGERPRINT="N/A"
+	elif ! is_valid_ssh_key "${OPTS_SSH_USER_PRIVATE_KEY}"
+	then
+		printf -v SSH_USER_PRIVATE_KEY_FINGERPRINT \
+			-- \
+			'%s\nUnable to populate %s/.ssh/id_rsa' \
+			"ERROR: Private key validation failed." \
+			"${OPTS_SSH_USER_HOME}"
+	else
+		printf -- \
+			'%s\n' \
+			"${OPTS_SSH_USER_PRIVATE_KEY}" \
+			> "${OPTS_SSH_USER_HOME}"/.ssh/id_rsa
+
+		chown \
+			"${OPTS_SSH_USER}":"${OPTS_SSH_USER}" \
+			"${OPTS_SSH_USER_HOME}"/.ssh/id_rsa
+		chmod 600 \
+			${OPTS_SSH_USER_HOME}/.ssh/id_rsa
+
+		SSH_USER_PRIVATE_KEY_FINGERPRINT="$(
+			get_ssh_key_fingerprint_hash_output "$(
+				get_ssh_user_private_key
+			)"
 		)"
 	fi
 
@@ -1010,6 +1093,8 @@ then
 		sudo : ${OPTS_SSH_SUDO:-N/A}
 		key fingerprints :
 		${SSH_KEY_FINGERPRINTS}
+		rsa private key fingerprint :
+		${SSH_USER_PRIVATE_KEY_FINGERPRINT:-N/A}
 		rsa host key fingerprint :
 		${SSH_HOST_KEY_FINGERPRINT_RSA}
 		timezone : ${OPTS_SSH_TIMEZONE}
