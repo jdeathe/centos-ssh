@@ -448,6 +448,30 @@ If setting a password for the SSH user you might not want to store the plain tex
 ...
 ```
 
+##### SSH_USER_PRIVATE_KEY
+
+Use `SSH_USER_PRIVATE_KEY` to set an RSA private key for `SSH_USER`. It is recommended to use a container file path in combination with a secrets feature of your orchestration system e.g. Docker Swarm secrets. Alternatively, a container file path in combination with a bind mounted file or base64 encode the value (without line-breaks).
+
+*Note:* Setting a value has no effect if `SSH_USER_FORCE_SFTP` is set to "true" (i.e. running in SFTP mode).
+
+If set to a valid container file path the value will be read from the file - this allows for setting the value securely when combined with an orchestration feature such as Docker Swarm secrets.
+
+```
+...
+  --env "SSH_USER_PRIVATE_KEY=/var/run/secrets/ssh_user_private_key"
+...
+```
+
+*Note:* The `base64` command on Mac OSX will encode a file without line breaks by default but if using the command on Linux you need to include use the `-w` option to prevent wrapping lines at 80 characters. i.e. `base64 -w 0 -i {key-path}`.
+
+```
+...
+  --env "SSH_USER_PRIVATE_KEY=$(
+    base64 -i ${HOME}/.ssh/id_rsa
+  )" \
+...
+```
+
 ###### Generating a crypt SHA-512 password hash
 
 To generate a hashed password string for the password `Passw0rd!`, use the following method.

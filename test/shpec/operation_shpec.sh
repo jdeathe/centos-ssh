@@ -2,6 +2,8 @@ readonly DOCKER_HOSTNAME="localhost"
 readonly REDACTED_VALUE="********"
 readonly STARTUP_TIME=2
 readonly TEST_DIRECTORY="test"
+readonly PRIVATE_KEY_ID_RSA_TEST_1_BASE64="LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBeDgzZnBtRjBoaTBFbWNGQ1ZzR0NqZ1NPaU81b1I0ZHpzTkEyMDBMMEZCNFpBM0VGCmE2bzZRU21hdkVySnhDdUJNY2lYa1VPVTdVK1ZhcUpYMVJ1aTVXazk4c1Y1aWNjZStXUEtNcVJRQ3MrNkFqa0EKaWJvS3Jtd0pNZG1LVStpanUzZWxEajZqcmk2WmhZdDdma2NuK1BVMnpaWTBuck5iRzBnc1ZBNVUzcE1SdmlMZgp2M21WS2wxcm5hSzUyQ1FuNWpIdFZBR0xVY0RDb3NnMXFsTlN6ZFNtOXMxVWUrbUtZek1TdlNJaENZNGFXVXYwCmU5TThSaElveGF5L2tiK0FjZk12MUl3RlZiVTVMNldoR284ZTZUSjNkSDdINTFNSVdDNkZSNEJ1V1hSd0dFa2MKdkkvOVBwcVhsUkxFMEdTUUozb0ZHMVRiZ1JITjhkbTljWUpFdHdJREFRQUJBb0lCQUF0cUYzekoxSDVWMUExMApuUFdYMkgyRWhTQU5mcWVYZFdTRWdKMVJGZUNRVjUxNnQzU1BKUVRUKzZNR0lzQ3lPNDg4aG13bUVEditiK3JICm0zenhOejBqNWdZWWdmajlCeWY0SzNUNUxobHdCSkJiOFV2czlPOUIvTVI4U1FyQ0g1aDJIVmZTL0ViWElxNGUKYWMrdEFQdVlCcWw0QzBtRnRZNjVjTTdjZ3J5MFVGYW1SUUpRQk5Yd2JjV09pbEYwbWxhZTZUTnBLSzlISWhJcgpoZWxIeS9qMmlvZVNXTHVkT3dYaUtKbFRZeEhqR083L3JtYkh0NFJ4aFE4NHJlVmNETjhqMkdQQWY4UXh2bkNuCjJEdStacUhpK2NCVTdjczB0dGVNRm1yTUFCS1dETDIzMFdnT3BCeHd6eUJRUG5TbVpta2kvbnZyWGRkb2tYNmQKSUVlSG93RUNnWUVBNXBnZlpEYVp3b2YvSW1ud1c5SGJSZEM0QWQ0clJvYno0NEtyZlZDUEtKT3VCSTVsdmtpegpxbzE1OEJFWnZXa1ZORVdlcnhaUGRQd0V2ejBQOGxVZ1MzVXVBYVpMbHBmc3JtM2htVTdKM25pZ2xSc3hYZllTCncrK2JDTEx2OElqUDE1dEhCamtOR3Z2dVc4N0JYOFlCSHJZSldSVklBNUU5aDYwOHllcHlSNTBDZ1lFQTNkRlMKakhPK2czVW5WTk9zNTk3NVRyZmFOSm5IT0M1ZVNKdm1qNHNuWEgvL0FzOTBzYkNkV2liZmg2RmQrQTF6eUdVagpta20rK01oWEo5ZUpUbmNFekVwbGZHNHc0REs5YS9YWlRaRlZmOStBclp3Z3IvTkVnTlhIQzIwRHRzenhPUTBiClQybEFhU2tzaVYrRi9kNUx0bVhiWFZRbFZxY3ZrQ3VMaGM2NTcyTUNnWUFVVXJQeGtSNWNGc0JWdUNDRzl5ZnMKTDBrSVlSeFBTdldUeDZCMW12UURENEQyeGRZUnZ6YVdnWUdOdHZRZHpYVWc5a0hXREpGVUxpSDgrTlMrOXVHeAp4TklaTXg3V1Z1MTFNaG4vK1FHeHFjLzlWRGcxbjhwbm1tWi9qY1czM1ZiMEdhdFkwUTVtb20yUGlkbGhKNEpSCndwbHdVSC9ZVUtTcm9Ja0xBcTZ2d1FLQmdRQ1lZZHFSdmxuY3VUakIzNERpOFp6WFpSbzBGSWgxb2ZVSGNJSmQKamowR0lMQXhZQTlNbW9ZZWpxSDA3UGcvRmc2NlZqQzFKNEJZTEZramQ4Qk45Um1JdG5zdGxnMWhsN25sVnNsbgpyalhNV09Cdlk5aFl4NGdCOGRxQmtPeUNRaHhkRXhIMTVkcG40KzlDbUNyV2trWDFFZGczTHoxUFlCOGVyYXQxCnl1U1UvUUtCZ0EwZ1dBZGNHNmJOVUxmUC9yYWJHTnpqOUFjS2RQUjJtend2VUhhcDMzeUZSV3FEekRUcVlWMEYKRkJoV3g3TnBlN3lXTUtnM1huaUcyN3NuU0krZS96cXZ3c0wvLzBwTXdUQU8vc3BIbWZKQjBzcUx1WFRZYWJGWQprMURVRzFSK0FZM25sNzFWT0crd3FKVnl6VXZaMWhmSkkzZ0R4aGFqa3NBZ3dXa0pTUGh0Ci0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg=="
+readonly PRIVATE_KEY_ID_RSA_TEST_1_MD5SUM="be458f698f9f6dc89b5d94f8bf56054c"
 readonly PUBLIC_KEY_ID_RSA_TEST_1="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDHzd+mYXSGLQSZwUJWwYKOBI6I7mhHh3Ow0DbTQvQUHhkDcQVrqjpBKZq8SsnEK4ExyJeRQ5TtT5VqolfVG6LlaT3yxXmJxx75Y8oypFAKz7oCOQCJugqubAkx2YpT6KO7d6UOPqOuLpmFi3t+Ryf49TbNljSes1sbSCxUDlTekxG+It+/eZUqXWudornYJCfmMe1UAYtRwMKiyDWqU1LN1Kb2zVR76YpjMxK9IiEJjhpZS/R70zxGEijFrL+Rv4Bx8y/UjAVVtTkvpaEajx7pMnd0fsfnUwhYLoVHgG5ZdHAYSRy8j/0+mpeVEsTQZJAnegUbVNuBEc3x2b1xgkS3 test_key_1"
 readonly PUBLIC_KEY_ID_RSA_TEST_1_SIGNATURE="45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65"
 readonly PUBLIC_KEY_ID_RSA_TEST_2="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDD/sMi/JkrYtXVi6+pYuwvsUxLDXowp3okvK2+2qqnPA6nWGBu/LSSQZnYmHZYyhcbRKrdscnsbM0jfmU0cKf/lGiRRK1YfUepomtRWVBxzA3mvBu+qmbuU/PDHfJJxB19HHuc6a8/NPOZINNMGIZg91W79bW0gXIEh3+PiNVvuelOdFJdvKSWtElJlMk/ll7dS1vpwJ9iZ8EPbalSzEZ30SzqG8Xg4VMhOn9ybnvcNWGJVCg4yughmdVA32H2+rj6qis4AJdQYUNoh9kBK/XUoggRV7LEaeeyjMWPn6GxM4yM7IYkstpilbKiPIQjw9EDTN4FdIJ/LcescfwDT7KZ test_key_2"
@@ -389,6 +391,7 @@ function test_custom_ssh_configuration ()
 	local user_env_value=""
 	local user_home=""
 	local user_id=""
+	local user_private_key_md5sum=""
 	local user_key=""
 	local user_key_signature=""
 	local user_password=""
@@ -890,6 +893,123 @@ function test_custom_ssh_configuration ()
 					assert equal \
 						"${user_key_signature}" \
 						"${PUBLIC_KEY_ID_RSA_TEST_1_SIGNATURE} ${PUBLIC_KEY_ID_RSA_TEST_2_SIGNATURE}"
+				end
+			end
+		end
+
+		describe "Configure private key"
+			describe "Base64 method"
+				__terminate_container \
+					ssh.pool-1.1.1 \
+				&> /dev/null
+
+				docker run \
+					--detach \
+					--name ssh.pool-1.1.1 \
+					--env "SSH_USER_PRIVATE_KEY=${PRIVATE_KEY_ID_RSA_TEST_1_BASE64}" \
+					--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+					jdeathe/centos-ssh:latest \
+				&> /dev/null
+
+				container_port_22="$(
+					__get_container_port \
+						ssh.pool-1.1.1 \
+						22/tcp
+				)"
+
+				if ! __is_container_ready \
+					ssh.pool-1.1.1 \
+					${STARTUP_TIME} \
+					"/usr/sbin/sshd " \
+					"grep \
+						'^Server listening on 0\.0\.0\.0 port 22\.' \
+						/var/log/secure"
+				then
+					exit 1
+				fi
+
+				it "Can set the key."
+					user_private_key_md5sum="$(
+						docker exec ssh.pool-1.1.1 \
+							md5sum \
+							/home/app-admin/.ssh/id_rsa \
+							2> /dev/null \
+							| awk '{ print $1; }'
+					)"
+				
+					assert equal \
+						"${user_private_key_md5sum}" \
+						"${PRIVATE_KEY_ID_RSA_TEST_1_MD5SUM}"
+				end
+
+				it "Logs the key signature."
+					user_key_signature="$(
+						docker logs ssh.pool-1.1.1 \
+						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
+						| awk '{ print $1; }'
+					)"
+
+					assert equal \
+						"${user_key_signature}" \
+						"${PUBLIC_KEY_ID_RSA_TEST_1_SIGNATURE}"
+				end
+			end
+
+			describe "File path method"
+				__terminate_container \
+					ssh.pool-1.1.1 \
+				&> /dev/null
+
+				docker run \
+					--detach \
+					--name ssh.pool-1.1.1 \
+					--env "SSH_USER_PRIVATE_KEY=/var/run/secrets/ssh_user_private_key" \
+					--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+					--volume ${PWD}/${TEST_DIRECTORY}/fixture/secrets:/var/run/secrets:ro \
+					jdeathe/centos-ssh:latest \
+				&> /dev/null
+
+				container_port_22="$(
+					__get_container_port \
+						ssh.pool-1.1.1 \
+						22/tcp
+				)"
+
+				if ! __is_container_ready \
+					ssh.pool-1.1.1 \
+					${STARTUP_TIME} \
+					"/usr/sbin/sshd " \
+					"grep \
+						'^Server listening on 0\.0\.0\.0 port 22\.' \
+						/var/log/secure"
+				then
+					exit 1
+				fi
+
+				it "Can set the key."
+					user_private_key_md5sum="$(
+						docker exec ssh.pool-1.1.1 \
+							md5sum \
+							/home/app-admin/.ssh/id_rsa \
+							2> /dev/null \
+							| awk '{ print $1; }'
+					)"
+
+					assert equal \
+						"${user_private_key_md5sum}" \
+						"${PRIVATE_KEY_ID_RSA_TEST_1_MD5SUM}"
+				end
+
+				it "Logs the key signature."
+					user_key_signature="$(
+						docker logs ssh.pool-1.1.1 \
+						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
+						| awk '{ print $1; }'
+					)"
+
+					assert equal \
+						"${user_key_signature}" \
+						"${PUBLIC_KEY_ID_RSA_TEST_1_SIGNATURE}"
 				end
 			end
 		end
@@ -1673,6 +1793,63 @@ function test_custom_sftp_configuration ()
 				assert equal \
 					"${?}" \
 					0
+			end
+		end
+
+		describe "Configure private key"
+			describe "Not permitted"
+				__terminate_container \
+					sftp.pool-1.1.1 \
+				&> /dev/null
+
+				docker run \
+					--detach \
+					--name sftp.pool-1.1.1 \
+					--env "SSH_USER_FORCE_SFTP=true" \
+					--env "SSH_USER_PRIVATE_KEY=${PRIVATE_KEY_ID_RSA_TEST_1_BASE64}" \
+					--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+					jdeathe/centos-ssh:latest \
+				&> /dev/null
+
+				container_port_22="$(
+					__get_container_port \
+						sftp.pool-1.1.1 \
+						22/tcp
+				)"
+
+				if ! __is_container_ready \
+					sftp.pool-1.1.1 \
+					${STARTUP_TIME} \
+					"/usr/sbin/sshd " \
+					"grep \
+						'^Server listening on 0\.0\.0\.0 port 22\.' \
+						/var/log/secure"
+				then
+					exit 1
+				fi
+
+				it "Will not set the key."
+					docker exec sftp.pool-1.1.1 \
+						ls \
+						/home/app-admin/.ssh/id_rsa \
+						2> /dev/null
+
+					assert unequal \
+						"${?}" \
+						"0"
+				end
+
+				it "Logs N/A key signature."
+					user_key_signature="$(
+						docker logs sftp.pool-1.1.1 \
+						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
+						| awk '{ print $1; }'
+					)"
+
+					assert equal \
+						"${user_key_signature}" \
+						"N/A"
+				end
 			end
 		end
 
