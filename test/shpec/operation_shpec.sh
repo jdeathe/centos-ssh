@@ -933,6 +933,7 @@ function test_custom_ssh_configuration ()
 						docker exec ssh.pool-1.1.1 \
 							md5sum \
 							/home/app-admin/.ssh/id_rsa \
+							2> /dev/null \
 							| awk '{ print $1; }'
 					)"
 				
@@ -990,6 +991,7 @@ function test_custom_ssh_configuration ()
 						docker exec ssh.pool-1.1.1 \
 							md5sum \
 							/home/app-admin/.ssh/id_rsa \
+							2> /dev/null \
 							| awk '{ print $1; }'
 					)"
 
@@ -1782,6 +1784,63 @@ function test_custom_sftp_configuration ()
 				assert equal \
 					"${?}" \
 					0
+			end
+		end
+
+		describe "Configure private key"
+			describe "Not permitted"
+				__terminate_container \
+					sftp.pool-1.1.1 \
+				&> /dev/null
+
+				docker run \
+					--detach \
+					--name sftp.pool-1.1.1 \
+					--env "SSH_USER_FORCE_SFTP=true" \
+					--env "SSH_USER_PRIVATE_KEY=${PRIVATE_KEY_ID_RSA_TEST_1_BASE64}" \
+					--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+					jdeathe/centos-ssh:latest \
+				&> /dev/null
+
+				container_port_22="$(
+					__get_container_port \
+						sftp.pool-1.1.1 \
+						22/tcp
+				)"
+
+				if ! __is_container_ready \
+					sftp.pool-1.1.1 \
+					${STARTUP_TIME} \
+					"/usr/sbin/sshd " \
+					"grep \
+						'^Server listening on 0\.0\.0\.0 port 22\.' \
+						/var/log/secure"
+				then
+					exit 1
+				fi
+
+				it "Will not set the key."
+					docker exec sftp.pool-1.1.1 \
+						ls \
+						/home/app-admin/.ssh/id_rsa \
+						2> /dev/null
+
+					assert unequal \
+						"${?}" \
+						"0"
+				end
+
+				it "Logs N/A key signature."
+					user_key_signature="$(
+						docker logs sftp.pool-1.1.1 \
+						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
+						| awk '{ print $1; }'
+					)"
+
+					assert equal \
+						"${user_key_signature}" \
+						"N/A"
+				end
 			end
 		end
 
