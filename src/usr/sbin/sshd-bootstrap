@@ -78,17 +78,17 @@ function is_valid_ssh_chroot_directory ()
 
 function is_valid_ssh_key ()
 {
-	local -r private_key="${1}"
+	local -r public_key="${1}"
 	local -r invalid_key_pattern='is not a public key file.$'
 
-	if [[ -z ${private_key} ]]
+	if [[ -z ${public_key} ]]
 	then
 		return 1
 	fi
 
-	if [[ -n ${private_key} ]] \
+	if [[ -n ${public_key} ]] \
 		&& [[ $(
-			get_ssh_key_fingerprint "${private_key}"
+			get_ssh_key_fingerprint "${public_key}"
 		) =~ ${invalid_key_pattern} ]]
 	then
 		return 1
@@ -370,11 +370,29 @@ function get_ssh_key_fingerprint ()
 	)"
 
 	local fingerprint
+	local public_key
 
 	printf -- \
 		"%s\n" \
 		"${ssh_key}" \
 	> "${ssh_key_file}"
+
+	# If an RSA private key convert to a public key
+	if openssl rsa -check -noout -in \
+		"${ssh_key_file}" \
+		&> /dev/null
+	then
+		public_key="$(
+			ssh-keygen \
+				-y \
+				-f "${ssh_key_file}"
+		)"
+
+		printf -- \
+			"%s\n" \
+			"${public_key}" \
+		> "${ssh_key_file}"
+	fi
 
 	fingerprint="$(
 		ssh-keygen \
@@ -1027,9 +1045,8 @@ then
 			${OPTS_SSH_USER_HOME}/.ssh/id_rsa
 
 		SSH_USER_PRIVATE_KEY_FINGERPRINT="$(
-			get_ssh_key_fingerprint_hash_output "$(
-				get_ssh_user_private_key
-			)"
+			get_ssh_key_fingerprint_hash_output \
+				"${OPTS_SSH_USER_PRIVATE_KEY}"
 		)"
 	fi
 
