@@ -1074,10 +1074,18 @@ then
 	SSH_ROOT_PASSWORD="${REDACTED_VALUE}"
 
 	# Only show user password if auto-generated and password is required for
-	# sudo.
-	if [[ -n ${SSH_USER_PASSWORD} ]] \
-		|| is_sudo_no_password_all "${OPTS_SSH_SUDO}" \
-		|| [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
+	# sudo or password authentication.
+	if [[ -n ${SSH_USER_PASSWORD} ]]
+	then
+		OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
+		SSH_USER_PASSWORD="${REDACTED_VALUE}"
+	elif [[ ${SSH_PASSWORD_AUTHENTICATION} != true ]] \
+		&& is_sudo_no_password_all "${OPTS_SSH_SUDO}"
+	then
+		OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
+		SSH_USER_PASSWORD="${REDACTED_VALUE}"
+	elif [[ ${SSH_PASSWORD_AUTHENTICATION} != true ]] \
+		&& [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
 	then
 		OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
 		SSH_USER_PASSWORD="${REDACTED_VALUE}"
