@@ -105,6 +105,7 @@ ADD src/opt/scmi \
 ADD src/etc/systemd/system \
 	/etc/systemd/system/
 ADD src/etc/services-config/ssh/authorized_keys \
+	src/etc/services-config/ssh/id_rsa \
 	src/etc/services-config/ssh/sshd-bootstrap.conf \
 	src/etc/services-config/ssh/sshd-bootstrap.env \
 	/etc/services-config/ssh/
@@ -158,6 +159,7 @@ ENV SSH_AUTHORIZED_KEYS="" \
 	SSH_USER_ID="500:500" \
 	SSH_USER_PASSWORD="" \
 	SSH_USER_PASSWORD_HASHED="false" \
+	SSH_USER_PRIVATE_KEY="" \
 	SSH_USER_SHELL="/bin/bash"
 
 # -----------------------------------------------------------------------------
