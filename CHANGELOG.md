@@ -11,6 +11,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Updates `yum-plugin-versionlock` package to 1.1.31-50.el7.
 - Updates validation for `SSH_USER_ID` to allow values in the system ID range.
 - Fixes bootstrap errors regarding readonly `PASSWORD_LENGTH`.
+- Fixes issue with redacted password when using `SSH_PASSWORD_AUTHENTICATION` in combination with `SSH_USER_FORCE_SFTP`.
 - Adds `SSH_USER_PRIVATE_KEY` to allow configuration of an RSA private key for `SSH_USER`.
 
 ### 2.4.1 - 2018-11-10
