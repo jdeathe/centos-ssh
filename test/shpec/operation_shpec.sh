@@ -1719,6 +1719,8 @@ function test_custom_sftp_configuration ()
 {
 	local container_port_22=""
 	local chroot_path=""
+	local password=""
+	local pwd_result=""
 	local user_shell=""
 
 	describe "Customised SFTP configuration"
@@ -1729,11 +1731,96 @@ function test_custom_sftp_configuration ()
 			exit 1" \
 			INT TERM EXIT
 
-		__terminate_container \
-			sftp.pool-1.1.1 \
-		&> /dev/null
+		describe "Configure password authentication"
+			__terminate_container \
+				sftp.pool-1.1.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name sftp.pool-1.1.1 \
+				--env "SSH_PASSWORD_AUTHENTICATION=true" \
+				--env "SSH_USER_FORCE_SFTP=true" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			container_port_22="$(
+				__get_container_port \
+					sftp.pool-1.1.1 \
+					22/tcp
+			)"
+
+			if ! __is_container_ready \
+				sftp.pool-1.1.1 \
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
+				exit 1
+			fi
+
+			it "Can connect using password authentication."
+				password="$(
+					docker logs \
+						sftp.pool-1.1.1 \
+					| awk '/^password :.*$/ { print $3; }'
+				)"
+
+				pwd_result="$(
+					expect test/sftp-password-auth.exp \
+						"${password}" \
+						app-admin \
+						127.0.0.1 \
+						"${container_port_22}" \
+						"pwd" \
+					| tail -n 2 \
+					| head -n 1 \
+					| awk -F": " '{ print $NF; }' \
+					| tr -d '\r'
+				)"
+
+				assert equal \
+					"${pwd_result}" \
+					"/"
+			end
+
+			it "Removes insecure public key."
+				docker exec \
+					sftp.pool-1.1.1 \
+					bash -c \
+						"if [[ ! -s /home/app-admin/.ssh/authorized_keys ]]; then \
+							exit 0; \
+						else \
+							exit 1; \
+						fi" \
+				&> /dev/null
+
+				assert equal \
+					"${?}" \
+					0
+			end
+
+			it "Logs the setting value."
+				password_authentication="$(
+					docker logs \
+						sftp.pool-1.1.1 \
+					| awk '/^password authentication :.*$/ { print $0; }'
+				)"
+
+				assert equal \
+					"${password_authentication/password authentication : /}" \
+					"yes"
+			end
+		end
 
 		describe "Configure a ChrootDirectory"
+			__terminate_container \
+				sftp.pool-1.1.1 \
+			&> /dev/null
+
 			docker run \
 				--detach \
 				--name sftp.pool-1.1.1 \
