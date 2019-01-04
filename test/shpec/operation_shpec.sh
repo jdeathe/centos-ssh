@@ -445,7 +445,7 @@ function test_custom_ssh_configuration ()
 					expect test/ssh-password-auth.exp \
 						"${password}" \
 						app-admin \
-						127.0.0.1 \
+						"${DOCKER_HOSTNAME}" \
 						"${container_port_22}" \
 						"pwd" \
 					| tail -n 1 \
@@ -1773,7 +1773,7 @@ function test_custom_sftp_configuration ()
 					expect test/sftp-password-auth.exp \
 						"${password}" \
 						app-admin \
-						127.0.0.1 \
+						"${DOCKER_HOSTNAME}" \
 						"${container_port_22}" \
 						"pwd" \
 					| tail -n 2 \
