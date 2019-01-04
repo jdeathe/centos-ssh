@@ -1071,16 +1071,16 @@ then
 	wait ${PIDS[1]}
 
 	# Only show user password if auto-generated and password is required for
-	# sudo or password authentication.
+	# password authentication or sudo.
 	if [[ -n ${SSH_USER_PASSWORD} ]]
 	then
 		OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
 	elif [[ ${SSH_PASSWORD_AUTHENTICATION} != true ]] \
-		&& is_sudo_no_password_all "${OPTS_SSH_SUDO}"
+		&& [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
 	then
 		OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
 	elif [[ ${SSH_PASSWORD_AUTHENTICATION} != true ]] \
-		&& [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
+		&& is_sudo_no_password_all "${OPTS_SSH_SUDO}"
 	then
 		OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
 	fi
