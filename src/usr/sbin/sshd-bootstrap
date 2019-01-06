@@ -226,17 +226,12 @@ function get_password ()
 
 function get_ssh_authorized_keys ()
 {
-	local -r default_path="${1:-/etc/services-config/ssh/authorized_keys}"
 	local -r default_value="ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA6NF8iallvQVp22WDkTkyrtvp9eWW6A8YVr+kz4TjGYe7gHzIw+niNltGEFHzD8+v1I2YJ6oXevct1YeS0o9HZyN1Q9qgCgzUFtdOKLv6IedplqoPkcmF0aYet2PkEDo3MlTBckFXPITAMzF8dJSIFo9D8HfdOV0IAdx4O7PtixWKn5y2hMNG0zQPyUecp4pzC6kivAIhyfHilFR61RGL+GPXQ2MWZWFYbAGjyiYJnAmCP3NOTd0jMZEnDkbUvxhMmBYSdETk1rRgm+R4LOzFUGaHqHDLKLX+FIPKcF96hrucXzcWyLbIbEgE98OHlnVYCzRdK8jlqm8tehUc9c9WhQ== vagrant insecure public key"
 	local -r pattern_base64='^[A-Za-z0-9/+=]*$'
 
 	local value="${SSH_AUTHORIZED_KEYS:-}"
 
-	if [[ -z ${value} ]] \
-		&& [[ -s ${default_path} ]]
-	then
-		value="$(< "${default_path}")"
-	elif [[ -n ${value} ]] \
+	if [[ -n ${value} ]] \
 		&& [[ ${value} =~ ${pattern_base64} ]]
 	then
 		value="$(
@@ -802,7 +797,7 @@ then
 
 		sed -i \
 			-e 's~^\(PasswordAuthentication \)no$~\1yes~g' \
-			/etc/services-config/ssh/sshd_config
+			/etc/ssh/sshd_config
 	fi
 
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
@@ -834,15 +829,6 @@ then
 	done
 
 	set_ssh_timezone "${OPTS_SSH_TIMEZONE}"
-
-	# Fix symbolic links from services-config
-	if [[ -s /etc/services-config/ssh/sshd_config ]] \
-		&& [[ ! -L /etc/ssh/sshd_config ]]
-	then
-		ln -sf \
-			/etc/services-config/ssh/sshd_config \
-			/etc/ssh/sshd_config
-	fi
 
 	$(
 		generate_ssh_host_keys
@@ -972,7 +958,7 @@ then
 		fi
 
 		# Add group specific sshd configuration
-		tee -a /etc/services-config/ssh/sshd_config > /dev/null <<-EOT
+		tee -a /etc/ssh/sshd_config > /dev/null <<-EOT
 			# Force SFTP
 			Match group ${SSH_USER_GROUPS}
 			AllowTcpForwarding no
@@ -983,7 +969,7 @@ then
 	else
 		sed -i \
 			-e '/# Force SFTP/,/ForceCommand internal-sftp/ { d; }' \
-			/etc/services-config/ssh/sshd_config
+			/etc/ssh/sshd_config
 	fi
 
 	# SSH require files
