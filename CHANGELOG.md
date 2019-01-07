@@ -10,6 +10,7 @@ Summary of release changes for Version 1 - CentOS-6
 - Fixes bootstrap errors regarding readonly `PASSWORD_LENGTH`.
 - Fixes issue with redacted password when using `SSH_PASSWORD_AUTHENTICATION` in combination with `SSH_USER_FORCE_SFTP`.
 - Adds `SSH_USER_PRIVATE_KEY` to allow configuration of an RSA private key for `SSH_USER`.
+- Removes use of `/etc/services-config` paths.
 
 ### 1.9.1 - 2018-11-10
 
