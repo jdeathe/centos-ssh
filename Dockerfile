@@ -1,10 +1,6 @@
-# =============================================================================
-# jdeathe/centos-ssh
-#
-# CentOS-6 6.10 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
-# 
-# =============================================================================
 FROM centos:centos6.10
+
+ARG RELEASE_VERSION="1.9.1"
 
 # -----------------------------------------------------------------------------
 # Base Install + Import the RPM GPG keys for Repositories
@@ -105,7 +101,10 @@ ADD src/opt/scmi \
 ADD src/etc \
 	/etc/
 
-RUN chmod 644 \
+RUN sed -i \
+		-e "s~{{RELEASE_VERSION}}~${RELEASE_VERSION}~g" \
+		/etc/systemd/system/centos-ssh@.service \
+	&& chmod 644 \
 		/etc/{sshd-bootstrap.{conf,env},supervisord.conf,supervisord.d/sshd-{bootstrap,wrapper}.conf} \
 	&& chmod 700 \
 		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper}}}
@@ -135,7 +134,6 @@ ENV SSH_AUTHORIZED_KEYS="" \
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="1.9.1"
 LABEL \
 	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \
