@@ -102,41 +102,11 @@ ADD src/usr/sbin \
 	/usr/sbin/
 ADD src/opt/scmi \
 	/opt/scmi/
-ADD src/etc/systemd/system \
-	/etc/systemd/system/
-ADD src/etc/services-config/ssh/authorized_keys \
-	src/etc/services-config/ssh/id_rsa \
-	src/etc/services-config/ssh/sshd-bootstrap.conf \
-	src/etc/services-config/ssh/sshd-bootstrap.env \
-	/etc/services-config/ssh/
-ADD src/etc/services-config/supervisor/supervisord.conf \
-	/etc/services-config/supervisor/
-ADD src/etc/services-config/supervisor/supervisord.d \
-	/etc/services-config/supervisor/supervisord.d/
+ADD src/etc \
+	/etc/
 
-RUN mkdir -p \
-		/etc/supervisord.d/ \
-	&& cp -pf \
-		/etc/ssh/sshd_config \
-		/etc/services-config/ssh/ \
-	&& ln -sf \
-		/etc/services-config/ssh/sshd_config \
-		/etc/ssh/sshd_config \
-	&& ln -sf \
-		/etc/services-config/ssh/sshd-bootstrap.conf \
-		/etc/sshd-bootstrap.conf \
-	&& ln -sf \
-		/etc/services-config/ssh/sshd-bootstrap.env \
-		/etc/sshd-bootstrap.env \
-	&& ln -sf \
-		/etc/services-config/supervisor/supervisord.conf \
-		/etc/supervisord.conf \
-	&& ln -sf \
-		/etc/services-config/supervisor/supervisord.d/sshd-wrapper.conf \
-		/etc/supervisord.d/sshd-wrapper.conf \
-	&& ln -sf \
-		/etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
-		/etc/supervisord.d/sshd-bootstrap.conf \
+RUN chmod 644 \
+		/etc/{sshd-bootstrap.{conf,env},supervisord.conf,supervisord.d/sshd-{bootstrap,wrapper}.conf} \
 	&& chmod 700 \
 		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper}}}
 
