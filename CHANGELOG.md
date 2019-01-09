@@ -6,6 +6,7 @@ Summary of release changes for Version 1 - CentOS-6
 
 ### 1.9.2 - Unreleased
 
+- Updates supervisor to 3.3.5.
 - Updates validation for `SSH_USER_ID` to allow values in the system ID range.
 - Fixes bootstrap errors regarding readonly `PASSWORD_LENGTH`.
 - Fixes issue with redacted password when using `SSH_PASSWORD_AUTHENTICATION` in combination with `SSH_USER_FORCE_SFTP`.
