@@ -8,6 +8,7 @@ Summary of release changes for Version 1 - CentOS-6
 
 - Updates supervisor to 3.3.5.
 - Updates validation for `SSH_USER_ID` to allow values in the system ID range.
+- Updates and restructures Dockerfile to reduce number of layers in image.
 - Fixes bootstrap errors regarding readonly `PASSWORD_LENGTH`.
 - Fixes issue with redacted password when using `SSH_PASSWORD_AUTHENTICATION` in combination with `SSH_USER_FORCE_SFTP`.
 - Adds `SSH_USER_PRIVATE_KEY` to allow configuration of an RSA private key for `SSH_USER`.

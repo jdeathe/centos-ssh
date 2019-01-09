@@ -3,7 +3,11 @@ FROM centos:centos6.10
 ARG RELEASE_VERSION="1.9.1"
 
 # -----------------------------------------------------------------------------
-# Base Install + Import the RPM GPG keys for Repositories
+# - Import the RPM GPG keys for repositories
+# - Base install of required packages
+# - Install supervisord (used to run more than a single process)
+# - Install supervisor-stdout to allow output of services started by
+#  supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
 RUN rpm --rebuilddb \
 	&& rpm --import \
@@ -40,6 +44,11 @@ RUN rpm --rebuilddb \
 		policycoreutils \
 		sysvinit-tools \
 	&& yum clean all \
+	&& easy_install \
+		'supervisor == 3.3.5' \
+		'supervisor-stdout == 0.1.1' \
+	&& mkdir -p \
+		/var/log/supervisor/ \
 	&& find /usr/share \
 		-type f \
 		-regextype posix-extended \
@@ -50,44 +59,6 @@ RUN rpm --rebuilddb \
 	&& rm -rf /usr/{{lib,share}/locale,share/{man,doc,info,cracklib,i18n},{lib,lib64}/gconv,bin/localedef,sbin/build-locale-archive} \
 	&& rm -rf /{root,tmp,var/cache/{ldconfig,yum}}/* \
 	&& > /etc/sysconfig/i18n
-
-# -----------------------------------------------------------------------------
-# Install supervisord (required to run more than a single process in a container)
-# Note: EPEL package lacks /usr/bin/pidproxy
-# We require supervisor-stdout to allow output of services started by 
-# supervisord to be easily inspected with "docker logs".
-# -----------------------------------------------------------------------------
-RUN easy_install \
-		'supervisor == 3.3.5' \
-		'supervisor-stdout == 0.1.1' \
-	&& mkdir -p \
-		/var/log/supervisor/
-
-# -----------------------------------------------------------------------------
-# UTC Timezone & Networking
-# -----------------------------------------------------------------------------
-RUN ln -sf \
-		/usr/share/zoneinfo/UTC \
-		/etc/localtime \
-	&& echo "NETWORKING=yes" > /etc/sysconfig/network
-
-# -----------------------------------------------------------------------------
-# Configure SSH for non-root public key authentication
-# -----------------------------------------------------------------------------
-RUN sed -i \
-	-e 's~^PasswordAuthentication yes~PasswordAuthentication no~g' \
-	-e 's~^#PermitRootLogin yes~PermitRootLogin no~g' \
-	-e 's~^#UseDNS yes~UseDNS no~g' \
-	-e 's~^\(.*\)/usr/libexec/openssh/sftp-server$~\1internal-sftp~g' \
-	/etc/ssh/sshd_config
-
-# -----------------------------------------------------------------------------
-# Enable the wheel sudoers group
-# -----------------------------------------------------------------------------
-RUN sed -i \
-	-e 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' \
-	-e 's~\(.*\) requiretty$~#\1requiretty~' \
-	/etc/sudoers
 
 # -----------------------------------------------------------------------------
 # Copy files into place
@@ -101,7 +72,31 @@ ADD src/opt/scmi \
 ADD src/etc \
 	/etc/
 
-RUN sed -i \
+# -----------------------------------------------------------------------------
+# Provisioning
+# - UTC Timezone
+# - Networking
+# - Configure SSH defaults for non-root public key authentication
+# - Enable the wheel sudoers group
+# - Replace placeholders with values in systemd service unit template
+# - Set permissions
+# -----------------------------------------------------------------------------
+RUN ln -sf \
+		/usr/share/zoneinfo/UTC \
+		/etc/localtime \
+	&& echo "NETWORKING=yes" \
+		> /etc/sysconfig/network \
+	&& sed -i \
+		-e 's~^PasswordAuthentication yes~PasswordAuthentication no~g' \
+		-e 's~^#PermitRootLogin yes~PermitRootLogin no~g' \
+		-e 's~^#UseDNS yes~UseDNS no~g' \
+		-e 's~^\(.*\)/usr/libexec/openssh/sftp-server$~\1internal-sftp~g' \
+		/etc/ssh/sshd_config \
+	&& sed -i \
+		-e 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' \
+		-e 's~\(.*\) requiretty$~#\1requiretty~' \
+		/etc/sudoers \
+	&& sed -i \
 		-e "s~{{RELEASE_VERSION}}~${RELEASE_VERSION}~g" \
 		/etc/systemd/system/centos-ssh@.service \
 	&& chmod 644 \
