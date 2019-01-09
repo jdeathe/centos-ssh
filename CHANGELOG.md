@@ -9,6 +9,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Updates `openssl` package to 1.0.2k-16.el7.
 - Updates `sudo` package to 1.8.23-3.el7.
 - Updates `yum-plugin-versionlock` package to 1.1.31-50.el7.
+- Updates supervisor to 3.3.5.
 - Updates validation for `SSH_USER_ID` to allow values in the system ID range.
 - Fixes bootstrap errors regarding readonly `PASSWORD_LENGTH`.
 - Fixes issue with redacted password when using `SSH_PASSWORD_AUTHENTICATION` in combination with `SSH_USER_FORCE_SFTP`.
