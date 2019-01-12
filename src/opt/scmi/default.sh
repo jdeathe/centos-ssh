@@ -1,9 +1,11 @@
 
 # Handle incrementing the docker host port for instances unless a port range is defined.
 DOCKER_PUBLISH=
-if [[ ${DOCKER_PORT_MAP_TCP_22} != NULL ]]; then
+if [[ ${DOCKER_PORT_MAP_TCP_22} != NULL ]]
+then
 	if grep -qE '^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:)?[0-9]*$' <<< "${DOCKER_PORT_MAP_TCP_22}" \
-		&& grep -qE '^.+\.([0-9]+)\.([0-9]+)$' <<< "${DOCKER_NAME}"; then
+		&& grep -qE '^.+\.([0-9]+)\.([0-9]+)$' <<< "${DOCKER_NAME}"
+	then
 		printf -v \
 			DOCKER_PUBLISH \
 			-- '%s --publish %s%s:22' \
