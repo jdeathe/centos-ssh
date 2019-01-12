@@ -18,6 +18,8 @@ Summary of release changes for Version 2 - CentOS-7
 - Adds placeholder replacement of `RELEASE_VERSION` docker argument to systemd service unit template.
 - Adds error messages to healthcheck script and includes supervisord check.
 - Removes use of `/etc/services-config` paths.
+- Removes fleet `--manager` option in the `scmi` installer.
+- Removes X-Fleet section from etcd register template unit-file.
 
 ### 2.4.1 - 2018-11-10
 
