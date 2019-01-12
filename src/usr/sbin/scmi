@@ -32,21 +32,24 @@ function scmi ()
 	local SCMI_TAG="latest"
 
 	# Abort if not run by root user or with sudo
-	if [[ ${EUID} -ne 0 ]]; then
+	if [[ ${EUID} -ne 0 ]]
+	then
 		scmi_print_message "error" \
 			"Run as root or use: sudo -E $(basename ${0})"
 		exit 1
 	fi
 
 	# Parse install options
-	while [[ ${#} -gt 0 ]]; do
+	while [[ "${#}" -gt 0 ]]
+	do
 		case "${1}" in
 			-h|--help)
 				scmi_usage
 				break
 				;;
 			-c)
-				if [[ -z ${2:-} ]]; then
+				if [[ -z ${2:-} ]]
+				then
 					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
@@ -55,7 +58,8 @@ function scmi ()
 				shift 2
 				;;
 			--chroot=*)
-				if [[ -z ${1#*=} ]]; then
+				if [[ -z ${1#*=} ]]
+				then
 					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
@@ -64,7 +68,8 @@ function scmi ()
 				shift 1
 				;;
 			--env=*)
-				if [[ -z ${1#*=} ]]; then
+				if [[ -z ${1#*=} ]]
+				then
 					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
@@ -73,7 +78,8 @@ function scmi ()
 				shift 1
 				;;
 			--image-package-path=*)
-				if [[ -z ${1#*=} ]]; then
+				if [[ -z ${1#*=} ]]
+				then
 					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
@@ -86,7 +92,8 @@ function scmi ()
 				shift 1
 				;;
 			-m)
-				if [[ ! ${2:-} =~ ${SCMI_MANAGER_TYPE_PATTERN} ]]; then
+				if [[ ! ${2:-} =~ ${SCMI_MANAGER_TYPE_PATTERN} ]]
+				then
 					scmi_print_message "error" \
 						"Invalid option value (${1})"
 					scmi_usage
@@ -95,7 +102,8 @@ function scmi ()
 				shift 2
 				;;
 			--manager=*)
-				if [[ ! ${1#*=} =~ ${SCMI_MANAGER_TYPE_PATTERN} ]]; then
+				if [[ ! ${1#*=} =~ ${SCMI_MANAGER_TYPE_PATTERN} ]]
+				then
 					scmi_print_message "error" \
 						"Invalid option value (${1})"
 					scmi_usage
@@ -124,7 +132,8 @@ function scmi ()
 				shift 1
 				;;
 			--restart=*)
-				if [[ -z ${1#*=} ]]; then
+				if [[ -z ${1#*=} ]]
+				then
 					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
@@ -133,7 +142,8 @@ function scmi ()
 				shift 1
 				;;
 			--setopt=*)
-				if [[ -z ${1#*=} ]]; then
+				if [[ -z ${1#*=} ]]
+				then
 					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
@@ -142,7 +152,8 @@ function scmi ()
 				shift 1
 				;;
 			-t)
-				if [[ -z ${2:-} ]]; then
+				if [[ -z ${2:-} ]]
+				then
 					scmi_print_message "error" \
 						"Empty option value (${1})"
 					scmi_usage
@@ -170,13 +181,16 @@ function scmi ()
 		esac
 	done
 
-	if [[ -z ${SCMI_COMMAND} ]]; then
+	if [[ -z ${SCMI_COMMAND} ]]
+	then
 		scmi_usage
 	fi
 
 	# Export environment options
-	if [[ ${#SCMI_ENV[@]} -gt 0 ]]; then
-		for ENV in "${SCMI_ENV[@]}"; do
+	if [[ ${#SCMI_ENV[@]} -gt 0 ]]
+	then
+		for ENV in "${SCMI_ENV[@]}"
+		do
 			eval "$(
 				printf -- \
 					'export %s' \
@@ -185,7 +199,8 @@ function scmi ()
 		done
 	fi
 
-	if [[ -d ${SCMI_CHROOT_PATH} ]]; then
+	if [[ -d ${SCMI_CHROOT_PATH} ]]
+	then
 		export SCMI_CHROOT_PATH="${SCMI_CHROOT_PATH}"
 	else
 		scmi_print_message "error" \
@@ -194,7 +209,8 @@ function scmi ()
 	fi
 
 	# Let SCMI override values set in the environment.
-	if [[ -n ${SCMI_NAME} ]]; then
+	if [[ -n ${SCMI_NAME} ]]
+	then
 		export DOCKER_NAME="${SCMI_NAME}"
 	fi
 
@@ -205,54 +221,67 @@ function scmi ()
 			;;
 		on-failure:*|unless-stopped)
 			# docker specific
-			if [[ ${SCMI_MANAGER_TYPE} != docker ]]; then
+			if [[ ${SCMI_MANAGER_TYPE} != docker ]]
+			then
 				scmi_restart_option_error
 			fi
 			export DOCKER_RESTART_POLICY="${SCMI_RESTART}"
 			;;
 		on-success|on-abnormal|on-abort|on-watchdog)
 			# systemd specific
-			if [[ ! ${SCMI_MANAGER_TYPE} =~ ^(fleet|systemd)$ ]]; then
+			if [[ ! ${SCMI_MANAGER_TYPE} =~ ^(fleet|systemd)$ ]]
+			then
 				scmi_restart_option_error
 			fi
 			;;
 		*)
 			# Allow unset restart policy as include defaults can vary.
-			if [[ -n ${SCMI_RESTART} ]]; then
+			if [[ -n ${SCMI_RESTART} ]]
+			then
 				# Unknown setting
 				scmi_restart_option_error
 			fi
 			;;
 	esac
 
-	if [[ -n ${SCMI_TAG} ]]; then
+	if [[ -n ${SCMI_TAG} ]]
+	then
 		export DOCKER_IMAGE_TAG="${SCMI_TAG}"
 	fi
 
-	if [[ -n ${SCMI_IMAGE_PACKAGE_PATH} ]]; then
+	if [[ -n ${SCMI_IMAGE_PACKAGE_PATH} ]]
+	then
 		export DOCKER_IMAGE_PACKAGE_PATH="${SCMI_IMAGE_PACKAGE_PATH}"
 	fi
 
 	# Source include files
-	for INCLUDE_FILE in ${SCMI_INCLUDE_FILES}; do
-		if [[ -f ${INCLUDE_FILE} ]]; then
+	for INCLUDE_FILE in ${SCMI_INCLUDE_FILES}
+	do
+		if [[ -f ${INCLUDE_FILE} ]]
+		then
 			source ${INCLUDE_FILE}
-		elif [[ -f ../../opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
+		elif [[ -f ../../opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE} ]]
+		then
 			source ../../opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE}
-		elif [[ -f /opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE} ]]; then
+		elif [[ -f /opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE} ]]
+		then
 			source /opt/${SCMI_PACKAGE_NAME}/${INCLUDE_FILE}
 		fi
 	done
 
 	# Use the default docker name if SCMI name is unset
-	if [[ -z ${SCMI_NAME} ]]; then
+	if [[ -z ${SCMI_NAME} ]]
+	then
 		SCMI_NAME="${DOCKER_NAME}"
 	fi
 
-	if [[ ${#SCMI_SETOPT[@]} -gt 0 ]]; then
-		for OPT in "${SCMI_SETOPT[@]}"; do
+	if [[ ${#SCMI_SETOPT[@]} -gt 0 ]]
+	then
+		for OPT in "${SCMI_SETOPT[@]}"
+		do
 			# Abort if operator attempts to set a --name option. 
-			if [[ ${OPT} =~ ^--name.+$ ]]; then
+			if [[ ${OPT} =~ ^--name.+$ ]]
+			then
 				scmi_print_message "error" \
 					"Option conflict (--setopt=\"${OPT}\")"
 				exit 1
@@ -271,7 +300,8 @@ function scmi ()
 	fi
 
 	# Validate variable values
-	if ! scmi_is_valid_managed_docker_name "${DOCKER_NAME}"; then
+	if ! scmi_is_valid_managed_docker_name "${DOCKER_NAME}"
+	then
 		scmi_print_message "error" \
 			"Invalid container name (${DOCKER_NAME})"
 		scmi_print_message "error_info" \
@@ -286,7 +316,8 @@ function scmi ()
 	fi
 
 	# If requested, display info and exit.
-	if [[ ${SCMI_INFO} == true ]]; then
+	if [[ ${SCMI_INFO} == true ]]
+	then
 		scmi_info
 	fi
 
@@ -313,21 +344,25 @@ function scmi_cleanup_background_task ()
 	local PID="${1:-}"
 	local PID_CHILD="${2:-}"
 
-	if [[ -n ${PID} ]]; then
+	if [[ -n ${PID} ]]
+	then
 
 		# Descendents
-		if [[ -z ${PID_CHILD} ]]; then
+		if [[ -z ${PID_CHILD} ]]
+		then
 			PID_CHILD="$(
 				ps -o pid= --ppid ${PID} \
 					| awk '$0 ~ /[0-9]{1,}/ { print $1 }'
 			)"
 		fi
 
-		if [[ -n ${PID_CHILD} ]]; then
+		if [[ -n ${PID_CHILD} ]]
+		then
 			PID=${PID_CHILD}
 		fi
 
-		if kill -15 -- ${PID} > /dev/null 2>&1; then
+		if kill -15 -- ${PID} > /dev/null 2>&1
+		then
 			wait ${PID} 2> /dev/null
 		fi
 	fi
@@ -342,7 +377,8 @@ function scmi_docker_create ()
 	scmi_print_message "step_info" \
 		"Creating container"
 
-	if [[ ${SCMI_QUIET} != true ]]; then
+	if [[ ${SCMI_QUIET} != true ]]
+	then
 		SHELL_OPTIONS='set -x;'
 	fi
 
@@ -358,7 +394,8 @@ function scmi_docker_create ()
 			--filter "status=created"
 	)
 
-	if [[ -n ${RESPONSE_CREATED} ]]; then
+	if [[ -n ${RESPONSE_CREATED} ]]
+	then
 		scmi_print_message "sub_step_info" \
 			"${RESPONSE_CREATED}"
 		scmi_print_message "sub_step_complete" \
@@ -392,7 +429,8 @@ function scmi_docker_get_image ()
 	local xz
 
 	# Get the path to the xz binary if available on the local host.
-	if command -v xz &> /dev/null; then
+	if command -v xz &> /dev/null
+	then
 		printf -v \
 			xz \
 			-- '%s' \
@@ -405,8 +443,8 @@ function scmi_docker_get_image ()
 	# Release images don't get updated so only need loading/pulling once. 
 	# Check if release image is available.
 	if [[ -n ${DOCKER_IMAGE_RELEASE_TAG_PATTERN} ]] \
-		&& [[ ${DOCKER_IMAGE_TAG} =~ ${DOCKER_IMAGE_RELEASE_TAG_PATTERN} ]]; then
-
+		&& [[ ${DOCKER_IMAGE_TAG} =~ ${DOCKER_IMAGE_RELEASE_TAG_PATTERN} ]]
+	then
 		# Query docker for image using default user/name:tag
 		IMAGE_ID="$(
 			${docker} images -q \
@@ -414,7 +452,8 @@ function scmi_docker_get_image ()
 		)"
 
 		# On CentOS-7 hosts images might get saved under the docker.io namespace.
-		if [[ -z ${IMAGE_ID} ]]; then
+		if [[ -z ${IMAGE_ID} ]]
+		then
 			IMAGE_ID="$(
 				${docker} images -q \
 				docker.io/${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
@@ -424,7 +463,8 @@ function scmi_docker_get_image ()
 
 	# If image is not available (or is not a release tag) load from disk or pull 
 	# from the registry.
-	if [[ -z ${IMAGE_ID} ]]; then
+	if [[ -z ${IMAGE_ID} ]]
+	then
 		printf -v \
 			IMAGE_PATH \
 			-- '%s/%s/%s.%s.tar.xz' \
@@ -434,7 +474,8 @@ function scmi_docker_get_image ()
 			"${DOCKER_IMAGE_TAG}"
 
 		if [[ -n ${xz} ]] \
-			&& [[ -f ${IMAGE_PATH} ]]; then
+			&& [[ -f ${IMAGE_PATH} ]]
+		then
 			GET_TYPE="load"
 
 			scmi_print_message "step_info" \
@@ -452,7 +493,8 @@ function scmi_docker_get_image ()
 				${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}
 		fi
 
-		if [[ ${?} -ne 0 ]]; then
+		if [[ ${?} -ne 0 ]]
+		then
 			scmi_print_message "sub_step_error" \
 				"Image ${GET_TYPE} failed."
 			exit 1
@@ -496,12 +538,14 @@ function scmi_docker_release_host_mounted_container ()
 {
 	# Skip if not applicable case.
 	if [[ -z ${SCMI_CHROOT_PATH} ]] \
-		|| [[ ${SCMI_CHROOT_PATH} == / ]]; then
+		|| [[ ${SCMI_CHROOT_PATH} == / ]]
+	then
 		return 0
 	else
 		scmi_docker_prerequisites
 
-		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]
+		then
 			CONTAINER_ID=$(
 				${docker} inspect --format="{{.Id}}" ${DOCKER_NAME}
 			)
@@ -513,7 +557,8 @@ function scmi_docker_release_host_mounted_container ()
 					2> /dev/null
 			)
 
-			if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]; then
+			if [[ -n ${CONTAINER_ID} ]] && [[ -n ${CONTAINER_SHM_MOUNT} ]]
+			then
 				scmi_print_message "sub_step_info" \
 					"Unmounting container id: ${CONTAINER_ID}"
 				umount \
@@ -525,7 +570,8 @@ function scmi_docker_release_host_mounted_container ()
 
 function scmi_docker_require_container ()
 {
-	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]
+	then
 		scmi_print_message "step_error" \
 			"This operation requires the ${DOCKER_NAME} docker container."
 		exit 1
@@ -534,7 +580,8 @@ function scmi_docker_require_container ()
 
 function scmi_docker_require_container_not ()
 {
-	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]
+	then
 		scmi_print_message "step_error" \
 			"This operation requires the ${DOCKER_NAME} docker container be removed (or renamed)."
 		scmi_print_message "sub_step_info" \
@@ -546,10 +593,11 @@ function scmi_docker_require_container_not ()
 function scmi_docker_require_container_not_status_paused ()
 {
 	if [[ -n $(
-		${docker} ps -aq \
-			--filter "name=${DOCKER_NAME}" \
-			--filter "status=paused"
-	) ]]; then
+			${docker} ps -aq \
+				--filter "name=${DOCKER_NAME}" \
+				--filter "status=paused"
+		) ]]
+	then
 		scmi_print_message "step_error" \
 			"This operation requires the ${DOCKER_NAME} docker container to be unpaused."
 		scmi_print_message "sub_step_info" \
@@ -570,15 +618,17 @@ function scmi_docker_start ()
 			${docker} ps -aq \
 				--filter "name=${DOCKER_NAME}" \
 				--filter "status=running"
-		) ]]; then
+		) ]]
+	then
 		${docker} start ${DOCKER_NAME} 1> /dev/null
 	fi
 
 	if [[ -n $(
-		${docker} ps -aq \
-			--filter "name=${DOCKER_NAME}" \
-			--filter "status=running"
-	) ]]; then
+			${docker} ps -aq \
+				--filter "name=${DOCKER_NAME}" \
+				--filter "status=running"
+		) ]]
+	then
 		scmi_print_message "sub_step_complete" \
 			"Container started"
 	else
@@ -590,33 +640,37 @@ function scmi_docker_start ()
 
 function scmi_docker_terminate ()
 {
-	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]
+	then
 		scmi_print_message "step_info" \
 			"Container termination skipped"
 	else
 		scmi_print_message "step_info" \
 			"Terminating container"
 		if [[ -n $(
-			${docker} ps -aq \
-				--filter "name=${DOCKER_NAME}" \
-				--filter "status=paused"
-		) ]]; then
+				${docker} ps -aq \
+					--filter "name=${DOCKER_NAME}" \
+					--filter "status=paused"
+			) ]]
+		then
 			scmi_print_message "sub_step_info" \
 				"Unpausing container"
 			${docker} unpause ${DOCKER_NAME} 1> /dev/null
 		fi
 
 		if [[ -n $(
-			${docker} ps -aq \
-				--filter "name=${DOCKER_NAME}" \
-				--filter "status=running"
-		) ]]; then
+				${docker} ps -aq \
+					--filter "name=${DOCKER_NAME}" \
+					--filter "status=running"
+			) ]]
+		then
 			scmi_print_message "sub_step_info" \
 				"Stopping container"
 			${docker} stop ${DOCKER_NAME} 1> /dev/null
 		fi
 
-		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]; then
+		if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]
+		then
 			scmi_print_message "sub_step_info" \
 				"Removing container"
 			scmi_docker_release_host_mounted_container
@@ -629,7 +683,8 @@ function scmi_docker_terminate ()
 					"${SCMI_CHROOT_PATH%*/}/var/lib/docker/containers" \
 					-type d \
 					-name "${CONTAINER_ID}" 2> /dev/null
-			) ]]; then
+			) ]]
+		then
 			scmi_print_message "sub_step_complete" \
 				"Container terminated"
 		else
@@ -653,7 +708,8 @@ function scmi_fleet_get_unit_file_hash ()
 	local UNIT_FILE_NAME="${1:-}"
 	local HASH=""
 
-	if [[ -n ${UNIT_FILE_NAME} ]]; then
+	if [[ -n ${UNIT_FILE_NAME} ]]
+	then
 		HASH="$(
 			${fleetctl} list-unit-files -full -no-legend -fields unit,hash \
 			| awk -v pattern="^${UNIT_FILE_NAME}$" \
@@ -673,7 +729,8 @@ function scmi_fleet_get_unit_state ()
 	local UNIT_NAME="${1:-}"
 	local UNIT_STATE_TYPE="${2:-}"
 
-	if [[ -n ${UNIT_NAME} ]]; then
+	if [[ -n ${UNIT_NAME} ]]
+	then
 		case "${UNIT_STATE_TYPE}" in
 			load)
 				OUTPUT_PATTERN="'\$1 ~ pattern { print \$3; }'"
@@ -728,7 +785,8 @@ function scmi_fleet_install ()
 		"${DOCKER_IMAGE_NAME}@.service"
 
 	# Purge register template unit-file when not required.
-	if [[ ${SCMI_REGISTER_ENABLED} != true ]]; then
+	if [[ ${SCMI_REGISTER_ENABLED} != true ]]
+	then
 		scmi_systemd_uninstall_template_unit_file \
 			"${DOCKER_IMAGE_NAME}.register@.service"
 		scmi_systemd_uninstall_template_unit_file_drop_in \
@@ -739,7 +797,8 @@ function scmi_fleet_install ()
 	# Template units
 	# ----------------------------------------------------------------------------
 
-	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+	if [[ ${SCMI_REGISTER_ENABLED} == true ]]
+	then
 		# Pre re-deploy hash
 		UNIT_FILE_HASH[0]=$(
 			scmi_fleet_get_unit_file_hash \
@@ -748,7 +807,8 @@ function scmi_fleet_install ()
 
 		# Once a unit-file has been loaded into the cluster it cannot be changed.
 		# If unit-file was loaded previously, destroying it to allow re-deployment.
-		if [[ -n ${UNIT_FILE_HASH[0]} ]]; then
+		if [[ -n ${UNIT_FILE_HASH[0]} ]]
+		then
 			scmi_print_message "sub_step_info" \
 				"Terminating template unit-file ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
 			scmi_run_step \
@@ -775,7 +835,8 @@ function scmi_fleet_install ()
 
 	# Once a unit-file has been loaded into the cluster it cannot be changed.
 	# If unit-file was loaded previously, destroying it to allow re-deployment.
-	if [[ -n ${UNIT_FILE_HASH[2]} ]]; then
+	if [[ -n ${UNIT_FILE_HASH[2]} ]]
+	then
 		scmi_print_message "sub_step_info" \
 			"Terminating template unit-file ${SERVICE_UNIT_TEMPLATE_NAME}"
 		scmi_run_step \
@@ -800,7 +861,8 @@ function scmi_fleet_install ()
 	# Fleet will not update the in-memory unit file if you re-submit it. 
 	# To update an existing unit file, you must destroy and then re-submit it.
 	if ${fleetctl} list-units -full -no-legend -fields unit \
-		| grep -q "^${SERVICE_UNIT_REGISTER_INSTANCE_NAME}$"; then
+		| grep -q "^${SERVICE_UNIT_REGISTER_INSTANCE_NAME}$"
+	then
 		scmi_print_message "sub_step_info" \
 			"Terminating unit instance ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 		scmi_run_step \
@@ -808,7 +870,8 @@ function scmi_fleet_install ()
 	fi
 
 	if ${fleetctl} list-units -full -no-legend -fields unit \
-		| grep -q "^${SERVICE_UNIT_INSTANCE_NAME}$"; then
+		| grep -q "^${SERVICE_UNIT_INSTANCE_NAME}$"
+	then
 		scmi_print_message "sub_step_info" \
 			"Terminating unit instance ${SERVICE_UNIT_INSTANCE_NAME}"
 		scmi_run_step \
@@ -818,11 +881,13 @@ function scmi_fleet_install ()
 	# Check if the template unit-file has changed. If so, warn operator if any 
 	# unit instances are still using the previous template unit-file.
 	if [[ -n ${UNIT_FILE_HASH[2]} ]] && [[ -n ${UNIT_FILE_HASH[3]} ]] \
-		&& [[ ${UNIT_FILE_HASH[2]} != ${UNIT_FILE_HASH[3]} ]]; then
+		&& [[ ${UNIT_FILE_HASH[2]} != ${UNIT_FILE_HASH[3]} ]]
+	then
 		if ${fleetctl} list-unit-files -full -no-legend -fields unit,hash \
 			| awk -v pattern="^${SERVICE_UNIT_NAME}@[0-9]{1,}.[0-9]{1,}.service$" \
 				'$1 ~ pattern { print $NF; }' \
-			| grep -qv "${UNIT_FILE_HASH[3]}"; then
+			| grep -qv "${UNIT_FILE_HASH[3]}"
+		then
 			scmi_print_message "sub_step_info" \
 				"$(
 					printf -- \
@@ -839,7 +904,8 @@ function scmi_fleet_install ()
 	scmi_run_step \
 		"${fleetctl} load ${SERVICE_UNIT_INSTANCE_NAME}"
 
-	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+	if [[ ${SCMI_REGISTER_ENABLED} == true ]]
+	then
 		scmi_print_message "sub_step_info" \
 			"Scheduling unit instance ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 		scmi_run_step \
@@ -847,7 +913,8 @@ function scmi_fleet_install ()
 	fi
 
 	# Tail the systemd unit logs unitl installation completes
-	if [[ ${SCMI_QUIET} != true ]]; then
+	if [[ ${SCMI_QUIET} != true ]]
+	then
 		${fleetctl} journal -follow -lines 0 ${SERVICE_UNIT_INSTANCE_NAME} &
 		PIDS[2]=${!}
 
@@ -861,7 +928,8 @@ function scmi_fleet_install ()
 		"${fleetctl} start ${SERVICE_UNIT_INSTANCE_NAME}" &
 	PIDS[0]=${!}
 
-	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+	if [[ ${SCMI_REGISTER_ENABLED} == true ]]
+	then
 		scmi_print_message "sub_step_info" \
 			"Starting unit instance ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 		scmi_run_step \
@@ -884,14 +952,16 @@ function scmi_fleet_install ()
 	COUNTER=$((
 		2 * ${SERVICE_UNIT_INSTALL_TIMEOUT:-10}
 	))
-	while (( ${COUNTER} >= 1 )); do
+	while (( ${COUNTER} >= 1 ))
+	do
 		sleep 0.5
 
 		if scmi_fleet_unit_is_active "${SERVICE_UNIT_INSTANCE_NAME}" \
 			&& ( \
 				[[ ${SCMI_REGISTER_ENABLED} != true ]] \
 				|| scmi_fleet_unit_is_active "${SERVICE_UNIT_REGISTER_INSTANCE_NAME}" \
-			); then
+			)
+		then
 			break
 		fi
 
@@ -902,7 +972,8 @@ function scmi_fleet_install ()
 		&& ( \
 			[[ ${SCMI_REGISTER_ENABLED} != true ]] \
 			|| scmi_fleet_unit_is_active "${SERVICE_UNIT_REGISTER_INSTANCE_NAME}" \
-		); then
+		)
+	then
 
 		scmi_print_message "step_info" \
 			"Service unit state         : $(
@@ -911,7 +982,8 @@ function scmi_fleet_install ()
 					"full"
 			)"
 
-		if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+		if [[ ${SCMI_REGISTER_ENABLED} == true ]]
+		then
 			scmi_print_message "step_info" \
 				"Service register unit state: $(
 					scmi_fleet_get_unit_state \
@@ -982,9 +1054,12 @@ function scmi_fleet_uninstall ()
 
 	# Remove template units
 	if ${fleetctl} list-units -full -no-legend -fields unit \
-		| grep -q "^${SERVICE_UNIT_INSTANCE_NAME}$"; then
-		for UNIT_NAME in ${TEMPLATE_UNITS}; do
-			if [[ -n $(scmi_fleet_get_unit_file_hash "${UNIT_NAME}") ]]; then
+		| grep -q "^${SERVICE_UNIT_INSTANCE_NAME}$"
+	then
+		for UNIT_NAME in ${TEMPLATE_UNITS}
+		do
+			if [[ -n $(scmi_fleet_get_unit_file_hash "${UNIT_NAME}") ]]
+			then
 				scmi_print_message "sub_step_info" \
 					"Terminating template unit-file ${UNIT_NAME}"
 				scmi_run_step \
@@ -994,9 +1069,11 @@ function scmi_fleet_uninstall ()
 	fi
 
 	# Remove instance units
-	for UNIT_NAME in ${INSTANCE_UNITS}; do
+	for UNIT_NAME in ${INSTANCE_UNITS}
+	do
 		if ${fleetctl} list-units -full -no-legend -fields unit \
-			| grep -q "^${UNIT_NAME}$"; then
+			| grep -q "^${UNIT_NAME}$"
+		then
 			scmi_print_message "sub_step_info" \
 				"Terminating unit instance ${UNIT_NAME}"
 			scmi_run_step \
@@ -1005,7 +1082,8 @@ function scmi_fleet_uninstall ()
 	done
 
 	# Remove template unit-files and drop-in
-	for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}; do
+	for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}
+	do
 		scmi_systemd_uninstall_template_unit_file \
 			"${SOURCE_UNIT_FILE_NAME}"
 		scmi_systemd_uninstall_template_unit_file_drop_in \
@@ -1020,10 +1098,12 @@ function scmi_fleet_unit_is_active ()
 {
 	local UNIT_NAME="${1:-}"
 
-	if [[ -n ${UNIT_NAME} ]]; then
+	if [[ -n ${UNIT_NAME} ]]
+	then
 		if [[ $(
-			scmi_fleet_get_unit_state "${UNIT_NAME}" "active"
-		) == active ]]; then
+				scmi_fleet_get_unit_state "${UNIT_NAME}" "active"
+			) == active ]]
+		then
 			return 0
 		fi
 	fi
@@ -1084,7 +1164,8 @@ function scmi_info ()
 	local UNITS
 
 	# Allow for uncolourised output
-	if [[ -n ${SCMI_MONOCHROME} ]]; then
+	if [[ -n ${SCMI_MONOCHROME} ]]
+	then
 		COLOUR_BOLD=""
 		COLOUR_LIGHT=""
 		COLOUR_RESET=""
@@ -1100,7 +1181,8 @@ function scmi_info ()
 	)"
 
 	# On CentOS-7 hosts images might get saved under the docker.io namespace.
-	if [[ -z ${IMAGE_ID} ]]; then
+	if [[ -z ${IMAGE_ID} ]]
+	then
 		IMAGE_NAME="docker.io/${IMAGE_NAME}"
 		IMAGE_ID="$(
 			${docker} images -q \
@@ -1108,13 +1190,15 @@ function scmi_info ()
 		)"
 	fi
 
-	if [[ -n ${IMAGE_ID} ]]; then
+	if [[ -n ${IMAGE_ID} ]]
+	then
 		KEY_TYPES="LABEL_KEYS_INFO"
 		KEY_TYPES+=" LABEL_KEYS_SOURCE"
 		KEY_TYPES+=" LABEL_KEYS_USAGE"
 		KEY_TYPES+=" LABEL_KEYS_DETAILS"
 
-		for KEY_TYPE in ${KEY_TYPES}; do
+		for KEY_TYPE in ${KEY_TYPES}
+		do
 
 			case "${KEY_TYPE}" in
 				LABEL_KEYS_SOURCE)
@@ -1141,14 +1225,16 @@ function scmi_info ()
 				"${INFO_SECTION}" \
 				"${COLOUR_RESET}"
 
-			if [[ -n ${!KEY_TYPE} ]]; then
+			if [[ -n ${!KEY_TYPE} ]]
+			then
 				printf -v \
 					INFO \
 					-- '%s\n' \
 					"${INFO}"
 			fi
 
-			for LABEL_KEY in ${!KEY_TYPE}; do
+			for LABEL_KEY in ${!KEY_TYPE}
+			do
 				LABEL_KEY_CLEAN="${LABEL_KEY//${LABEL_NAMESPACE_PREFIX}}"
 				LABEL_VALUE="$(
 					${docker} inspect --format \
@@ -1170,7 +1256,8 @@ function scmi_info ()
 					"${LABEL_VALUE}"
 			done
 
-			if [[ -n ${!KEY_TYPE} ]]; then
+			if [[ -n ${!KEY_TYPE} ]]
+			then
 				printf -v \
 					INFO \
 					-- '%s\n' \
@@ -1228,7 +1315,8 @@ function scmi_info ()
 			UNITS="${SERVICE_UNIT_INSTANCE_NAME}"
 			UNIT_FILES="${SERVICE_UNIT_TEMPLATE_NAME}"
 
-			if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+			if [[ ${SCMI_REGISTER_ENABLED} == true ]]
+			then
 				UNITS+=", ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 				UNIT_FILES+=", ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
 			fi
@@ -1248,11 +1336,13 @@ function scmi_info ()
 				"${COLOUR_RESET}" \
 				"${UNIT_FILES}"
 
-			if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+			if [[ ${SCMI_REGISTER_ENABLED} == true ]]
+			then
 				SOURCE_UNIT_FILE_NAMES+=" ${DOCKER_IMAGE_NAME}.register@.service"
 			fi
 
-			for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}; do
+			for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}
+			do
 				UNIT_FILE_CONTENT="$(
 					scmi_systemd_get_template_unit_file_content \
 						"${SOURCE_UNIT_FILE_NAME}"
@@ -1266,7 +1356,8 @@ function scmi_info ()
 				)"
 
 				if [[ -n ${UNIT_FILE_PATH} ]] \
-					&& [[ -n ${UNIT_FILE_CONTENT} ]]; then
+					&& [[ -n ${UNIT_FILE_CONTENT} ]]
+				then
 					printf -v \
 						DETAILS_SCMI_MANAGER_TYPE \
 						-- '%s%bunit preview    :%b %s\n%s\n' \
@@ -1284,7 +1375,8 @@ function scmi_info ()
 			UNITS="${SERVICE_UNIT_INSTANCE_NAME}"
 			UNIT_FILES="${SERVICE_UNIT_TEMPLATE_NAME}"
 
-			if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+			if [[ ${SCMI_REGISTER_ENABLED} == true ]]
+			then
 				UNITS+=", ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 				UNIT_FILES+=", ${SERVICE_UNIT_REGISTER_TEMPLATE_NAME}"
 			fi
@@ -1304,11 +1396,13 @@ function scmi_info ()
 				"${COLOUR_RESET}" \
 				"${UNIT_FILES}"
 
-			if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+			if [[ ${SCMI_REGISTER_ENABLED} == true ]]
+			then
 				SOURCE_UNIT_FILE_NAMES+=" ${DOCKER_IMAGE_NAME}.register@.service"
 			fi
 
-			for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}; do
+			for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}
+			do
 				UNIT_FILE_CONTENT="$(
 					scmi_systemd_get_template_unit_file_drop_in_content \
 						"${SOURCE_UNIT_FILE_NAME}"
@@ -1322,7 +1416,8 @@ function scmi_info ()
 				)"
 
 				if [[ -n ${UNIT_FILE_PATH} ]] \
-					&& [[ -n ${UNIT_FILE_CONTENT} ]]; then
+					&& [[ -n ${UNIT_FILE_CONTENT} ]]
+				then
 					printf -v \
 						DETAILS_SCMI_MANAGER_TYPE \
 						-- '%s%bdrop-in         :%b %s\n%s\n' \
@@ -1350,11 +1445,13 @@ function scmi_is_valid_managed_docker_name ()
 	local NAME="${1:-}"
 	local NAME_PATTERN='^[a-zA-Z0-9][a-zA-Z0-9_.-]*\.[0-9][0-9]*\.[0-9][0-9]*$'
 
-	if [[ -z ${NAME} ]]; then
+	if [[ -z ${NAME} ]]
+	then
 		return 1
 	fi
 
-	if [[ ${NAME} =~ ${NAME_PATTERN} ]]; then
+	if [[ ${NAME} =~ ${NAME_PATTERN} ]]
+	then
 		return 0
 	fi
 
@@ -1394,9 +1491,12 @@ function scmi_manager_type_command_prerequisites ()
 			;;
 	esac
 
-	if [[ ${SCMI_CHROOT_PATH} == / ]]; then
-		for COMMAND in "${COMMANDS[@]}"; do
-			if ! command -v ${COMMAND} &> /dev/null; then
+	if [[ ${SCMI_CHROOT_PATH} == / ]]
+	then
+		for COMMAND in "${COMMANDS[@]}"
+		do
+			if ! command -v ${COMMAND} &> /dev/null
+			then
 				scmi_print_message "error" \
 					"Missing required command: ${COMMAND}"
 				exit 1
@@ -1411,9 +1511,12 @@ function scmi_manager_type_command_prerequisites ()
 				)"
 		done
 	else
-		for COMMAND in "${COMMANDS[@]}"; do
-			for COMMAND_PATH in "${COMMAND_PATHS[@]}"; do
-				if [[ -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
+		for COMMAND in "${COMMANDS[@]}"
+		do
+			for COMMAND_PATH in "${COMMAND_PATHS[@]}"
+			do
+				if [[ -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]
+				then
 					printf -v \
 						${COMMAND} \
 						-- 'chroot %s %s/%s' \
@@ -1424,7 +1527,8 @@ function scmi_manager_type_command_prerequisites ()
 				fi
 			done
 
-			if [[ ! -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]; then
+			if [[ ! -f ${SCMI_CHROOT_PATH%*/}${COMMAND_PATH}/${COMMAND} ]]
+			then
 				scmi_print_message "error" \
 					"Missing required chroot command: ${COMMAND}"
 				exit 1
@@ -1433,7 +1537,8 @@ function scmi_manager_type_command_prerequisites ()
 	fi
 
 	# Test docker connection given that docker is a common prerequisite
-	if [[ -z $(${docker} info) ]]; then
+	if [[ -z $(${docker} info) ]]
+	then
 		scmi_print_message "error" \
 			"docker failed to connect to host."
 		exit 1
@@ -1454,7 +1559,8 @@ function scmi_print_message ()
 	local TYPE_PATTERN_ERROR='^(error|error_info|step_error|sub_step_error)$'
 
 	# Allow for uncolourised output
-	if [[ -n ${SCMI_MONOCHROME} ]]; then
+	if [[ -n ${SCMI_MONOCHROME} ]]
+	then
 		COLOUR_NEGATIVE=""
 		COLOUR_NOTICE=""
 		COLOUR_POSITIVE=""
@@ -1550,7 +1656,8 @@ function scmi_print_message ()
 	esac
 
 	if [[ ${SCMI_QUIET} != true ]] \
-		|| [[ ${TYPE} =~ ${TYPE_PATTERN_ERROR} ]]; then
+		|| [[ ${TYPE} =~ ${TYPE_PATTERN_ERROR} ]]
+	then
 		printf -- \
 			"${PREFIX}${FORMAT}" \
 			"${MESSAGE}"
@@ -1565,9 +1672,11 @@ function scmi_restart_option_error ()
 		"Invalid restart policy (${SCMI_RESTART})"
 
 	if [[ ${SCMI_MANAGER_TYPE} == systemd ]] \
-		|| [[ ${SCMI_MANAGER_TYPE} == fleet ]]; then
+		|| [[ ${SCMI_MANAGER_TYPE} == fleet ]]
+	then
 		RESTART_TYPES="on|always|on-success|on-failure|on-abort|on-watchdog"
-	elif [[ ${SCMI_MANAGER_TYPE} == docker ]]; then
+	elif [[ ${SCMI_MANAGER_TYPE} == docker ]]
+	then
 		RESTART_TYPES="on|always|on-failure[:max-retries]|unless-stopped"
 	fi
 
@@ -1582,14 +1691,16 @@ function scmi_run_step ()
 	local COMMAND="${1:-}"
 	local COMMAND_OUTPUT
 
-	if [[ -n ${COMMAND} ]]; then
+	if [[ -n ${COMMAND} ]]
+	then
 
 		COMMAND_OUTPUT="$(
 			${COMMAND}
 		)"
 
 		if [[ -n ${COMMAND_OUTPUT} ]] \
-			&& [[ ${SCMI_QUIET} != true ]]; then
+			&& [[ ${SCMI_QUIET} != true ]]
+		then
 			printf -- \
 				'%s\n' \
 				"${COMMAND_OUTPUT}"
@@ -1611,7 +1722,8 @@ function scmi_systemd_get_template_unit_file_drop_in_content ()
 		${DOCKER_IMAGE_NAME}@.service|*)
 			SOURCE_UNIT_FILE_NAME="${DOCKER_IMAGE_NAME}@.service"
 			KEYS="SERVICE_UNIT_ENVIRONMENT_KEYS"
-			if [[ -n ${SCMI_RESTART} ]]; then
+			if [[ -n ${SCMI_RESTART} ]]
+			then
 				printf -v \
 					UNIT_SERVICE \
 					-- '%sRestart=%s\n' \
@@ -1622,10 +1734,12 @@ function scmi_systemd_get_template_unit_file_drop_in_content ()
 	esac
 
 	# Create drop-in to set environment variables defined at install time.
-	if [[ -n ${!KEYS} ]]; then
+	if [[ -n ${!KEYS} ]]
+	then
 
 		# Set each key and value - escaping any % characters.
-		for KEY in ${!KEYS}; do
+		for KEY in ${!KEYS}
+		do
 			# Escape % and leading and trailing " characters.
 			VALUE="$(
 				sed \
@@ -1659,7 +1773,8 @@ function scmi_systemd_get_template_unit_file_content ()
 	local VALUE
 
 	# Remove comment and blank lines then add newline before section headings
-	for SED_COMMAND_ITEM in '/^[ \t]*#.*$/d' '/^$/d'; do
+	for SED_COMMAND_ITEM in '/^[ \t]*#.*$/d' '/^$/d'
+	do
 		printf -v \
 			SED_COMMAND_LIST \
 			-- '%s -e "%s"' \
@@ -1672,7 +1787,8 @@ function scmi_systemd_get_template_unit_file_content ()
 			KEYS="SERVICE_UNIT_REGISTER_ENVIRONMENT_KEYS"
 
 			# Replace placehoder values
-			if [[ -n ${SERVICE_UNIT_NAME} ]]; then
+			if [[ -n ${SERVICE_UNIT_NAME} ]]
+			then
 				printf -v \
 					SED_COMMAND_LIST \
 					-- '%s -e %s' \
@@ -1681,7 +1797,8 @@ function scmi_systemd_get_template_unit_file_content ()
 			fi
 
 			# Modify bound unit to allow fleetd to start|stop it directly.
-			if [[ ${SCMI_MANAGER_TYPE} == fleet ]]; then
+			if [[ ${SCMI_MANAGER_TYPE} == fleet ]]
+			then
 				printf -v \
 					SED_COMMAND_LIST \
 					-- '%s -e %s -e %s' \
@@ -1696,9 +1813,11 @@ function scmi_systemd_get_template_unit_file_content ()
 
 			# Only modify the template directly for fleet manager.
 			# Drop-In override method is used for systemd.
-			if [[ ${SCMI_MANAGER_TYPE} == fleet ]]; then
+			if [[ ${SCMI_MANAGER_TYPE} == fleet ]]
+			then
 				# Set the restart policy if defined
-				if [[ -n ${SCMI_RESTART} ]]; then
+				if [[ -n ${SCMI_RESTART} ]]
+				then
 					UNIT_FILE_KEY="Restart"
 					VALUE="${SCMI_RESTART}"
 
@@ -1718,7 +1837,8 @@ function scmi_systemd_get_template_unit_file_content ()
 			"${SOURCE_UNIT_FILE_NAME}"
 	)"
 
-	if [[ ! -f ${SOURCE_UNIT_FILE_PATH} ]]; then
+	if [[ ! -f ${SOURCE_UNIT_FILE_PATH} ]]
+	then
 		scmi_print_message "error" \
 			"Invalid template unit-file source path: ${SOURCE_UNIT_FILE_PATH}"
 		exit 1
@@ -1726,11 +1846,13 @@ function scmi_systemd_get_template_unit_file_content ()
 
 	# Set environment variables defined at install time.
 	if [[ ${SCMI_MANAGER_TYPE} == fleet ]] \
-		&& [[ -n ${!KEYS} ]]; then
+		&& [[ -n ${!KEYS} ]]
+	then
 		UNIT_FILE_KEY="Environment"
 
 		# Set each key and value - escaping any % characters.
-		for KEY in ${!KEYS}; do
+		for KEY in ${!KEYS}
+		do
 			# Escape % and leading and trailing " characters.
 			VALUE="$(
 				sed \
@@ -1749,7 +1871,8 @@ function scmi_systemd_get_template_unit_file_content ()
 		done
 	fi
 
-	if [[ -n ${SED_COMMAND_LIST} ]]; then
+	if [[ -n ${SED_COMMAND_LIST} ]]
+	then
 		# Output a normalised unit-file
 		eval "$(
 			printf -- \
@@ -1814,20 +1937,24 @@ function scmi_systemd_get_unit_file_path ()
 	 /etc/systemd/system
 	"
 
-	if [[ -z ${UNIT_FILE} ]]; then
+	if [[ -z ${UNIT_FILE} ]]
+	then
 		scmi_print_message "error" \
 			"Missing unit file name."
 		exit 1
 	fi
 
-	for TEMPLATE_PATH in ${TEMPLATE_PATHS}; do
-		if [[ -f ${TEMPLATE_PATH}/${UNIT_FILE} ]]; then
+	for TEMPLATE_PATH in ${TEMPLATE_PATHS}
+	do
+		if [[ -f ${TEMPLATE_PATH}/${UNIT_FILE} ]]
+		then
 			UNIT_FILE_PATH=${TEMPLATE_PATH}/${UNIT_FILE}
 			break
 		fi
 	done
 
-	if [[ -z ${UNIT_FILE_PATH} ]]; then
+	if [[ -z ${UNIT_FILE_PATH} ]]
+	then
 		exit 1
 	fi
 
@@ -1853,7 +1980,8 @@ function scmi_systemd_install ()
 	scmi_systemd_install_template_unit_files
 
 	# Purge register template unit-file when not required.
-	if [[ ${SCMI_REGISTER_ENABLED} != true ]]; then
+	if [[ ${SCMI_REGISTER_ENABLED} != true ]]
+	then
 		scmi_systemd_uninstall_template_unit_file \
 			"${DOCKER_IMAGE_NAME}.register@.service"
 		scmi_systemd_uninstall_template_unit_file_drop_in \
@@ -1866,12 +1994,14 @@ function scmi_systemd_install ()
 	scmi_run_step \
 		"${systemctl} enable -f ${SERVICE_UNIT_INSTANCE_NAME}"
 
-	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+	if [[ ${SCMI_REGISTER_ENABLED} == true ]]
+	then
 		scmi_print_message "sub_step_info" \
 			"Enabling ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 		scmi_run_step \
 			"${systemctl} enable -f ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
-	elif ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}; then
+	elif ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}
+	then
 		scmi_print_message "sub_step_info" \
 			"Disabling ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 		scmi_run_step \
@@ -1882,14 +2012,16 @@ function scmi_systemd_install ()
 			"${systemctl} stop ${SERVICE_UNIT_REGISTER_INSTANCE_NAME}"
 	fi
 
-	if [[ ${SCMI_CHROOT_PATH} != / ]]; then
+	if [[ ${SCMI_CHROOT_PATH} != / ]]
+	then
 		scmi_print_message "sub_step_info" \
 			"Releasing host mounted container"
 		scmi_docker_release_host_mounted_container
 	fi
 
 	# Tail the systemd unit logs unitl installation completes
-	if [[ ${SCMI_QUIET} != true ]]; then
+	if [[ ${SCMI_QUIET} != true ]]
+	then
 		${journalctl} -fn 0 -u ${SERVICE_UNIT_INSTANCE_NAME} &
 		PIDS[1]=${!}
 	fi
@@ -1914,7 +2046,8 @@ function scmi_systemd_install ()
 		&& ( \
 			[[ ${SCMI_REGISTER_ENABLED} != true ]] \
 			|| ${systemctl} -q is-active ${SERVICE_UNIT_REGISTER_INSTANCE_NAME} \
-		); then
+		)
+	then
 
 		scmi_print_message "step_info" \
 			"Service unit state         : $(
@@ -1922,7 +2055,8 @@ function scmi_systemd_install ()
 				| grep "^[ ]*${SERVICE_UNIT_INSTANCE_NAME}"
 			)"
 
-		if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+		if [[ ${SCMI_REGISTER_ENABLED} == true ]]
+		then
 			scmi_print_message "step_info" \
 				"Service register unit state: $(
 					${systemctl} list-units --type=service \
@@ -1959,7 +2093,8 @@ function scmi_systemd_install_template_unit_file ()
 			"${SOURCE_UNIT_FILE_NAME}"
 	)"
 
-	if [[ -z ${SOURCE_UNIT_FILE_PATH} ]]; then
+	if [[ -z ${SOURCE_UNIT_FILE_PATH} ]]
+	then
 		scmi_print_message "error" \
 			"Cannot locate template unit-file ${SOURCE_UNIT_FILE_NAME}"
 		exit 1
@@ -2016,14 +2151,17 @@ function scmi_systemd_install_template_unit_files ()
 	local SOURCE_UNIT_FILE_NAME
 	local SOURCE_UNIT_FILE_NAMES="${DOCKER_IMAGE_NAME}@.service"
 
-	if [[ ${SCMI_REGISTER_ENABLED} == true ]]; then
+	if [[ ${SCMI_REGISTER_ENABLED} == true ]]
+	then
 		SOURCE_UNIT_FILE_NAMES+=" ${DOCKER_IMAGE_NAME}.register@.service"
 	fi
 
-	for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}; do
+	for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}
+	do
 		scmi_systemd_install_template_unit_file \
 			"${SOURCE_UNIT_FILE_NAME}"
-		if [[ ${SCMI_MANAGER_TYPE} == systemd ]]; then
+		if [[ ${SCMI_MANAGER_TYPE} == systemd ]]
+		then
 			scmi_systemd_install_template_unit_file_drop_in \
 				"${SOURCE_UNIT_FILE_NAME}"
 		fi
@@ -2112,9 +2250,10 @@ function scmi_systemd_uninstall ()
 	scmi_run_step \
 		"${systemctl} disable -f ${SERVICE_UNIT_INSTANCE_NAME}" 2> /dev/null
 	if [[ ! -n $(
-		${systemctl} list-units --all type=service ${SERVICE_UNIT_INSTANCE_NAME} \
-		| grep '0 loaded units listed.'
-	) ]]; then
+			${systemctl} list-units --all type=service ${SERVICE_UNIT_INSTANCE_NAME} \
+			| grep '0 loaded units listed.'
+		) ]]
+	then
 		scmi_print_message "sub_step_info" \
 			"Stopping ${SERVICE_UNIT_INSTANCE_NAME}"
 		scmi_run_step \
@@ -2128,10 +2267,12 @@ function scmi_systemd_uninstall ()
 
 	# Before removing the template unit-files all units must first be disabled
 	if [[ -n $(
-		${systemctl} list-units --all type=service ${SERVICE_UNIT_NAME}@* \
-		| grep '0 loaded units listed.'
-	) ]]; then
-		for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}; do
+			${systemctl} list-units --all type=service ${SERVICE_UNIT_NAME}@* \
+			| grep '0 loaded units listed.'
+		) ]]
+	then
+		for SOURCE_UNIT_FILE_NAME in ${SOURCE_UNIT_FILE_NAMES}
+		do
 			scmi_systemd_uninstall_template_unit_file \
 				"${SOURCE_UNIT_FILE_NAME}"
 			scmi_systemd_uninstall_template_unit_file_drop_in \
@@ -2160,7 +2301,8 @@ function scmi_systemd_uninstall_template_unit_file ()
 			)"
 	)"
 
-	if [[ -f ${UNIT_FILE_INSTALL_PATH} ]]; then
+	if [[ -f ${UNIT_FILE_INSTALL_PATH} ]]
+	then
 		scmi_print_message "sub_step_info" \
 			"Removing template unit-file: ${UNIT_FILE_INSTALL_PATH}"
 		rm -f "${UNIT_FILE_INSTALL_PATH}"
@@ -2182,7 +2324,8 @@ function scmi_systemd_uninstall_template_unit_file_drop_in ()
 		)"
 	)"
 
-	if [[ -d ${UNIT_FILE_DROP_IN_DIRECTORY} ]]; then
+	if [[ -d ${UNIT_FILE_DROP_IN_DIRECTORY} ]]
+	then
 		scmi_print_message "sub_step_info" \
 			"Removing ${UNIT_FILE_DROP_IN_DIRECTORY}"
 		rm -rf "${UNIT_FILE_DROP_IN_DIRECTORY}"
