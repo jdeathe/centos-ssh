@@ -129,19 +129,19 @@ function test_basic_ssh_operations ()
 	local user_home=""
 
 	describe "Basic SSH operations"
-		trap "__terminate_container ssh.pool-1.1.1 &> /dev/null; \
+		trap "__terminate_container ssh.1 &> /dev/null; \
 			__destroy; \
 			exit 1" \
 			INT TERM EXIT
 
 		describe "Runs named container"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
@@ -149,7 +149,7 @@ function test_basic_ssh_operations ()
 			it "Can publish container port 22 to host port ${DOCKER_PORT_MAP_TCP_22}."
 				container_port_22="$(
 					__get_container_port \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 						22/tcp
 				)"
 
@@ -167,7 +167,7 @@ function test_basic_ssh_operations ()
 		end
 
 		if ! __is_container_ready \
-			ssh.pool-1.1.1 \
+			ssh.1 \
 			${STARTUP_TIME} \
 			"/usr/sbin/sshd " \
 			"grep \
@@ -180,7 +180,7 @@ function test_basic_ssh_operations ()
 		describe "SSH user's password"
 			password="$(
 				docker logs \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 				| awk '/^password :.*$/ { print $3; }'
 			)"
 
@@ -199,7 +199,7 @@ function test_basic_ssh_operations ()
 
 		describe "SSH connection"
 			# Prevent sudo lecture output when testing the sudo password
-			docker exec ssh.pool-1.1.1 \
+			docker exec ssh.1 \
 				bash -c 'echo "Defaults lecture_file = /dev/null" > /etc/sudoers.d/no_lecture'
 
 			it "Can connect using private key authentication."
@@ -240,12 +240,12 @@ function test_basic_ssh_operations ()
 			end
 
 			# Reset sudo configuration
-			docker exec ssh.pool-1.1.1 \
+			docker exec ssh.1 \
 				bash -c 'rm -f /etc/sudoers.d/no_lecture'
 		end
 
 		__terminate_container \
-			ssh.pool-1.1.1 \
+			ssh.1 \
 		&> /dev/null
 
 		trap - \
@@ -259,19 +259,19 @@ function test_basic_sftp_operations ()
 	local user_shell=""
 
 	describe "Basic SFTP operations"
-		trap "__terminate_container sftp.pool-1.1.1 &> /dev/null; \
+		trap "__terminate_container sftp.1 &> /dev/null; \
 			__destroy; \
 			exit 1" \
 			INT TERM EXIT
 
 		describe "Runs named container"
 			__terminate_container \
-				sftp.pool-1.1.1 \
+				sftp.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name sftp.pool-1.1.1 \
+				--name sftp.1 \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				--env SSH_USER_FORCE_SFTP=true \
 				jdeathe/centos-ssh:latest \
@@ -280,7 +280,7 @@ function test_basic_sftp_operations ()
 			it "Can publish container port 22 to host port ${DOCKER_PORT_MAP_TCP_22}."
 				container_port_22="$(
 					__get_container_port \
-						sftp.pool-1.1.1 \
+						sftp.1 \
 						22/tcp
 				)"
 
@@ -298,7 +298,7 @@ function test_basic_sftp_operations ()
 		end
 
 		if ! __is_container_ready \
-			sftp.pool-1.1.1 \
+			sftp.1 \
 			${STARTUP_TIME} \
 			"/usr/sbin/sshd " \
 			"grep \
@@ -340,7 +340,7 @@ function test_basic_sftp_operations ()
 			end
 
 			it "Jails the user into a chroot directory."
-				docker exec sftp.pool-1.1.1 \
+				docker exec sftp.1 \
 					touch /home/app-admin/root_test
 
 				sftp -q \
@@ -359,7 +359,7 @@ function test_basic_sftp_operations ()
 
 			it "Sets the /sbin/nologin shell."
 				user_shell="$(
-					docker exec sftp.pool-1.1.1 \
+					docker exec sftp.1 \
 						getent passwd app-admin \
 						| cut -d: -f7
 				)"
@@ -371,7 +371,7 @@ function test_basic_sftp_operations ()
 		end
 
 		__terminate_container \
-			sftp.pool-1.1.1 \
+			sftp.1 \
 		&> /dev/null
 
 		trap - \
@@ -399,19 +399,19 @@ function test_custom_ssh_configuration ()
 	local user_sudo=""
 
 	describe "Customised SSH configuration"
-		trap "__terminate_container ssh.pool-1.1.1 &> /dev/null; \
+		trap "__terminate_container ssh.1 &> /dev/null; \
 			__destroy; \
 			exit 1" \
 			INT TERM EXIT
 
 		describe "Configure password authentication"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_PASSWORD_AUTHENTICATION=true" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
@@ -419,12 +419,12 @@ function test_custom_ssh_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -437,7 +437,7 @@ function test_custom_ssh_configuration ()
 			it "Can connect using password authentication."
 				password="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^password :.*$/ { print $3; }'
 				)"
 
@@ -459,7 +459,7 @@ function test_custom_ssh_configuration ()
 
 			it "Removes insecure public key."
 				docker exec \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					bash -c \
 						"if [[ ! -s /home/app-admin/.ssh/authorized_keys ]]; \
 							then exit 0; \
@@ -476,7 +476,7 @@ function test_custom_ssh_configuration ()
 			it "Logs the setting value."
 				password_authentication="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^password authentication :.*$/ { print $0; }'
 				)"
 
@@ -486,12 +486,12 @@ function test_custom_ssh_configuration ()
 			end
 
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_PASSWORD_AUTHENTICATION=true" \
 				--env "SSH_AUTHORIZED_KEYS=${PUBLIC_KEY_ID_RSA_INSECURE}" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -500,12 +500,12 @@ function test_custom_ssh_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -535,12 +535,12 @@ function test_custom_ssh_configuration ()
 
 		describe "Configure sudo command"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
@@ -548,12 +548,12 @@ function test_custom_ssh_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -585,7 +585,7 @@ function test_custom_ssh_configuration ()
 			it "Logs the setting value."
 				user_sudo="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^sudo :.*$/ { print $0; }'
 				)"
 
@@ -597,12 +597,12 @@ function test_custom_ssh_configuration ()
 
 		describe "Configure username"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--env "SSH_USER=centos" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -611,12 +611,12 @@ function test_custom_ssh_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -647,7 +647,7 @@ function test_custom_ssh_configuration ()
 			it "Logs the setting value."
 				user="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^user :.*$/ { print $0; }'
 				)"
 
@@ -659,12 +659,12 @@ function test_custom_ssh_configuration ()
 
 		describe "Configure public key"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--env "SSH_AUTHORIZED_KEYS=${PUBLIC_KEY_ID_RSA_TEST_1}" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -673,12 +673,12 @@ function test_custom_ssh_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -709,7 +709,7 @@ function test_custom_ssh_configuration ()
 			it "Logs the key signature."
 				user_key_signature="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65$/ { print $1; }'
 				)"
 
@@ -720,7 +720,7 @@ function test_custom_ssh_configuration ()
 
 			it "Can append to key"
 				append_line="$(docker exec -t \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					bash -c "printf -- '#\n' \
 						>> /home/app-admin/.ssh/authorized_keys \
 						&& tail -n 1 \
@@ -737,12 +737,12 @@ function test_custom_ssh_configuration ()
 		describe "Configure multiple public keys"
 			describe "Base64 method"
 				__terminate_container \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 				&> /dev/null
 
 				docker run \
 					--detach \
-					--name ssh.pool-1.1.1 \
+					--name ssh.1 \
 					--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 					--env "SSH_AUTHORIZED_KEYS=${PUBLIC_KEY_ID_RSA_TEST_COMBINED_BASE64}" \
 					--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -751,12 +751,12 @@ function test_custom_ssh_configuration ()
 
 				container_port_22="$(
 					__get_container_port \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 						22/tcp
 				)"
 
 				if ! __is_container_ready \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					${STARTUP_TIME} \
 					"/usr/sbin/sshd " \
 					"grep \
@@ -801,7 +801,7 @@ function test_custom_ssh_configuration ()
 				it "Logs the key signatures."
 					user_key_signature="$(
 						docker logs \
-							ssh.pool-1.1.1 \
+							ssh.1 \
 						| awk '/^45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65$/ { print $1; }'
 					)"
 
@@ -809,7 +809,7 @@ function test_custom_ssh_configuration ()
 
 					user_key_signature+="$(
 						docker logs \
-							ssh.pool-1.1.1 \
+							ssh.1 \
 						| awk '/^b3:2e:5d:8c:76:d3:c7:24:13:a3:4f:6f:4d:a2:31:9c$/ { print $1; }'
 					)"
 
@@ -821,12 +821,12 @@ function test_custom_ssh_configuration ()
 
 			describe "File path method"
 				__terminate_container \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 				&> /dev/null
 
 				docker run \
 					--detach \
-					--name ssh.pool-1.1.1 \
+					--name ssh.1 \
 					--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 					--env "SSH_AUTHORIZED_KEYS=/var/run/config/authorized_keys" \
 					--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -836,12 +836,12 @@ function test_custom_ssh_configuration ()
 
 				container_port_22="$(
 					__get_container_port \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 						22/tcp
 				)"
 
 				if ! __is_container_ready \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					${STARTUP_TIME} \
 					"/usr/sbin/sshd " \
 					"grep \
@@ -886,7 +886,7 @@ function test_custom_ssh_configuration ()
 				it "Logs the key signatures."
 					user_key_signature="$(
 						docker logs \
-							ssh.pool-1.1.1 \
+							ssh.1 \
 						| awk '/^45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65$/ { print $1; }'
 					)"
 
@@ -894,7 +894,7 @@ function test_custom_ssh_configuration ()
 
 					user_key_signature+="$(
 						docker logs \
-							ssh.pool-1.1.1 \
+							ssh.1 \
 						| awk '/^b3:2e:5d:8c:76:d3:c7:24:13:a3:4f:6f:4d:a2:31:9c$/ { print $1; }'
 					)"
 
@@ -908,12 +908,12 @@ function test_custom_ssh_configuration ()
 		describe "Configure private key"
 			describe "Base64 method"
 				__terminate_container \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 				&> /dev/null
 
 				docker run \
 					--detach \
-					--name ssh.pool-1.1.1 \
+					--name ssh.1 \
 					--env "SSH_USER_PRIVATE_KEY=${PRIVATE_KEY_ID_RSA_TEST_1_BASE64}" \
 					--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 					jdeathe/centos-ssh:latest \
@@ -921,12 +921,12 @@ function test_custom_ssh_configuration ()
 
 				container_port_22="$(
 					__get_container_port \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 						22/tcp
 				)"
 
 				if ! __is_container_ready \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					${STARTUP_TIME} \
 					"/usr/sbin/sshd " \
 					"grep \
@@ -938,7 +938,7 @@ function test_custom_ssh_configuration ()
 
 				it "Can set the key."
 					user_private_key_md5sum="$(
-						docker exec ssh.pool-1.1.1 \
+						docker exec ssh.1 \
 							md5sum \
 							/home/app-admin/.ssh/id_rsa \
 							2> /dev/null \
@@ -953,7 +953,7 @@ function test_custom_ssh_configuration ()
 				it "Logs the key signature."
 					user_key_signature="$(
 						docker logs \
-							ssh.pool-1.1.1 \
+							ssh.1 \
 						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
 						| awk '{ print $1; }'
 					)"
@@ -966,12 +966,12 @@ function test_custom_ssh_configuration ()
 
 			describe "File path method"
 				__terminate_container \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 				&> /dev/null
 
 				docker run \
 					--detach \
-					--name ssh.pool-1.1.1 \
+					--name ssh.1 \
 					--env "SSH_USER_PRIVATE_KEY=/var/run/secrets/ssh_user_private_key" \
 					--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 					--volume ${PWD}/${TEST_DIRECTORY}/fixture/secrets:/var/run/secrets:ro \
@@ -980,12 +980,12 @@ function test_custom_ssh_configuration ()
 
 				container_port_22="$(
 					__get_container_port \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 						22/tcp
 				)"
 
 				if ! __is_container_ready \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					${STARTUP_TIME} \
 					"/usr/sbin/sshd " \
 					"grep \
@@ -997,7 +997,7 @@ function test_custom_ssh_configuration ()
 
 				it "Can set the key."
 					user_private_key_md5sum="$(
-						docker exec ssh.pool-1.1.1 \
+						docker exec ssh.1 \
 							md5sum \
 							/home/app-admin/.ssh/id_rsa \
 							2> /dev/null \
@@ -1012,7 +1012,7 @@ function test_custom_ssh_configuration ()
 				it "Logs the key signature."
 					user_key_signature="$(
 						docker logs \
-							ssh.pool-1.1.1 \
+							ssh.1 \
 						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
 						| awk '{ print $1; }'
 					)"
@@ -1026,12 +1026,12 @@ function test_custom_ssh_configuration ()
 
 		describe "Configure home"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--env "SSH_USER=app-1" \
 				--env "SSH_USER_HOME=/var/www/%u" \
@@ -1041,12 +1041,12 @@ function test_custom_ssh_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1077,7 +1077,7 @@ function test_custom_ssh_configuration ()
 			it "Logs the setting value."
 				user_home="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^home :.*$/ { print $0; }'
 				)"
 
@@ -1089,12 +1089,12 @@ function test_custom_ssh_configuration ()
 
 		describe "Configure id"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--env "SSH_USER_ID=1000:502" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -1103,12 +1103,12 @@ function test_custom_ssh_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1140,7 +1140,7 @@ function test_custom_ssh_configuration ()
 			it "Logs the setting value."
 				user_id="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^id :.*$/ { print $0; }'
 				)"
 
@@ -1152,12 +1152,12 @@ function test_custom_ssh_configuration ()
 
 		describe "Configure system id"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--env "SSH_USER_ID=499:33" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -1166,12 +1166,12 @@ function test_custom_ssh_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1203,7 +1203,7 @@ function test_custom_ssh_configuration ()
 			it "Logs the setting value."
 				user_id="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^id :.*$/ { print $0; }'
 				)"
 
@@ -1215,12 +1215,12 @@ function test_custom_ssh_configuration ()
 
 		describe "Configure shell"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--env "SSH_USER_SHELL=/bin/sh" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -1229,12 +1229,12 @@ function test_custom_ssh_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1267,7 +1267,7 @@ function test_custom_ssh_configuration ()
 			it "Logs the setting value."
 				user_shell="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^shell :.*$/ { print $0; }'
 				)"
 
@@ -1279,12 +1279,12 @@ function test_custom_ssh_configuration ()
 
 		describe "Configure environment"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
 				--env "SSH_INHERIT_ENVIRONMENT=true" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -1293,12 +1293,12 @@ function test_custom_ssh_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1329,29 +1329,29 @@ function test_custom_ssh_configuration ()
 
 		describe "Configure password"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_USER_PASSWORD=Insecure_Passw0rd£" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
 			# Prevent sudo lecture output when testing the sudo password
-			docker exec ssh.pool-1.1.1 \
+			docker exec ssh.1 \
 				bash -c 'echo "Defaults lecture_file = /dev/null" > /etc/sudoers.d/no_lecture'
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1384,7 +1384,7 @@ function test_custom_ssh_configuration ()
 			it "Logs a redacted value."
 				user_password="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^password :.*$/ { print $0; }'
 				)"
 
@@ -1394,18 +1394,18 @@ function test_custom_ssh_configuration ()
 			end
 
 			# Reset sudo configuration
-			docker exec ssh.pool-1.1.1 \
+			docker exec ssh.1 \
 				bash -c 'rm -f /etc/sudoers.d/no_lecture'
 		end
 
 		describe "Configure secret password"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_USER_PASSWORD=/var/run/secrets/ssh_user_password" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				--volume ${PWD}/${TEST_DIRECTORY}/fixture/secrets:/var/run/secrets:ro \
@@ -1413,17 +1413,17 @@ function test_custom_ssh_configuration ()
 			&> /dev/null
 
 			# Prevent sudo lecture output when testing the sudo password
-			docker exec ssh.pool-1.1.1 \
+			docker exec ssh.1 \
 				bash -c 'echo "Defaults lecture_file = /dev/null" > /etc/sudoers.d/no_lecture'
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1456,7 +1456,7 @@ function test_custom_ssh_configuration ()
 			it "Logs a redacted value."
 				user_password="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^password :.*$/ { print $0; }'
 				)"
 
@@ -1466,18 +1466,18 @@ function test_custom_ssh_configuration ()
 			end
 
 			# Reset sudo configuration
-			docker exec ssh.pool-1.1.1 \
+			docker exec ssh.1 \
 				bash -c 'rm -f /etc/sudoers.d/no_lecture'
 		end
 
 		describe "Configure hashed password"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env 'SSH_USER_PASSWORD=$6$pepper$g5/OhofGtHVo3wqRgVHFQrJDyK0mV9bDpF5HP964wuIkQ7MXuYq1KRTmShaUmTQW3ZRsjw2MjC1LNPh5HMcrY0' \
 				--env "SSH_USER_PASSWORD_HASHED=true" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -1485,17 +1485,17 @@ function test_custom_ssh_configuration ()
 			&> /dev/null
 
 			# Prevent sudo lecture output when testing the sudo password
-			docker exec ssh.pool-1.1.1 \
+			docker exec ssh.1 \
 				bash -c 'echo "Defaults lecture_file = /dev/null" > /etc/sudoers.d/no_lecture'
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1528,7 +1528,7 @@ function test_custom_ssh_configuration ()
 			it "Logs a redacted value."
 				user_password="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^password :.*$/ { print $0; }'
 				)"
 
@@ -1540,12 +1540,12 @@ function test_custom_ssh_configuration ()
 
 		describe "Configure secret hashed password"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_USER_PASSWORD=/var/run/secrets/ssh_user_password_hashed" \
 				--env "SSH_USER_PASSWORD_HASHED=true" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -1554,17 +1554,17 @@ function test_custom_ssh_configuration ()
 			&> /dev/null
 
 			# Prevent sudo lecture output when testing the sudo password
-			docker exec ssh.pool-1.1.1 \
+			docker exec ssh.1 \
 				bash -c 'echo "Defaults lecture_file = /dev/null" > /etc/sudoers.d/no_lecture'
 
 			container_port_22="$(
 				__get_container_port \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1597,7 +1597,7 @@ function test_custom_ssh_configuration ()
 			it "Logs a redacted value."
 				user_password="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^password :.*$/ { print $0; }'
 				)"
 
@@ -1609,19 +1609,19 @@ function test_custom_ssh_configuration ()
 
 		describe "Configure system timezone"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_TIMEZONE=Europe/London" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1634,7 +1634,7 @@ function test_custom_ssh_configuration ()
 			it "Can set timezone to Europe/London."
 				timezone="$(
 					docker exec \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 						find /etc/localtime -type l -ls \
 					| sed -e 's~^.*/usr/share/zoneinfo/~~'
 				)"
@@ -1647,7 +1647,7 @@ function test_custom_ssh_configuration ()
 			it "Logs the setting value."
 				timezone="$(
 					docker logs \
-						ssh.pool-1.1.1 \
+						ssh.1 \
 					| awk '/^timezone :.*$/ { print $0; }'
 				)"
 
@@ -1659,19 +1659,19 @@ function test_custom_ssh_configuration ()
 
 		describe "Configure autostart"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_AUTOSTART_SSHD_BOOTSTRAP=false" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
 			if ! __is_container_ready \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1683,7 +1683,7 @@ function test_custom_ssh_configuration ()
 
 			it "Can disable sshd-bootstrap."
 				docker logs \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 				| grep -qE 'INFO success: sshd-bootstrap entered RUNNING state'
 
 				assert equal \
@@ -1692,12 +1692,12 @@ function test_custom_ssh_configuration ()
 			end
 
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env "SSH_AUTOSTART_SSHD=false" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
@@ -1706,7 +1706,7 @@ function test_custom_ssh_configuration ()
 			sleep ${STARTUP_TIME}
 
 			it "Can disable sshd daemon."
-				docker top ssh.pool-1.1.1 \
+				docker top ssh.1 \
 					| grep -qE '/usr/sbin/sshd -D'
 
 				assert equal \
@@ -1716,7 +1716,7 @@ function test_custom_ssh_configuration ()
 		end
 
 		__terminate_container \
-			ssh.pool-1.1.1 \
+			ssh.1 \
 		&> /dev/null
 
 		trap - \
@@ -1733,7 +1733,7 @@ function test_custom_sftp_configuration ()
 	local user_shell=""
 
 	describe "Customised SFTP configuration"
-		trap "__terminate_container sftp.pool-1.1.1 &> /dev/null; \
+		trap "__terminate_container sftp.1 &> /dev/null; \
 			__terminate_container www-data.pool-1.1.1 &> /dev/null; \
 			docker volume rm www-data.pool-1.1.1 &> /dev/null; \
 			__destroy; \
@@ -1742,12 +1742,12 @@ function test_custom_sftp_configuration ()
 
 		describe "Configure password authentication"
 			__terminate_container \
-				sftp.pool-1.1.1 \
+				sftp.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name sftp.pool-1.1.1 \
+				--name sftp.1 \
 				--env "SSH_PASSWORD_AUTHENTICATION=true" \
 				--env "SSH_USER_FORCE_SFTP=true" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -1756,12 +1756,12 @@ function test_custom_sftp_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					sftp.pool-1.1.1 \
+					sftp.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				sftp.pool-1.1.1 \
+				sftp.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1774,7 +1774,7 @@ function test_custom_sftp_configuration ()
 			it "Can connect using password authentication."
 				password="$(
 					docker logs \
-						sftp.pool-1.1.1 \
+						sftp.1 \
 					| awk '/^password :.*$/ { print $3; }'
 				)"
 
@@ -1798,7 +1798,7 @@ function test_custom_sftp_configuration ()
 
 			it "Removes insecure public key."
 				docker exec \
-					sftp.pool-1.1.1 \
+					sftp.1 \
 					bash -c \
 						"if [[ ! -s /home/app-admin/.ssh/authorized_keys ]]; then \
 							exit 0; \
@@ -1815,7 +1815,7 @@ function test_custom_sftp_configuration ()
 			it "Logs the setting value."
 				password_authentication="$(
 					docker logs \
-						sftp.pool-1.1.1 \
+						sftp.1 \
 					| awk '/^password authentication :.*$/ { print $0; }'
 				)"
 
@@ -1827,12 +1827,12 @@ function test_custom_sftp_configuration ()
 
 		describe "Configure a ChrootDirectory"
 			__terminate_container \
-				sftp.pool-1.1.1 \
+				sftp.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name sftp.pool-1.1.1 \
+				--name sftp.1 \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				--env SSH_CHROOT_DIRECTORY="/chroot/%u" \
 				--env SSH_USER_FORCE_SFTP=true \
@@ -1841,12 +1841,12 @@ function test_custom_sftp_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					sftp.pool-1.1.1 \
+					sftp.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				sftp.pool-1.1.1 \
+				sftp.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -1857,9 +1857,9 @@ function test_custom_sftp_configuration ()
 			fi
 
 			it "Can replace %u with username in the path."
-				docker exec sftp.pool-1.1.1 \
+				docker exec sftp.1 \
 					touch /chroot/app-admin/home/app-admin/root_test
-				docker exec sftp.pool-1.1.1 \
+				docker exec sftp.1 \
 					chown app-admin:app-admin /chroot/app-admin/home/app-admin/root_test
 
 				sftp -q \
@@ -1879,7 +1879,7 @@ function test_custom_sftp_configuration ()
 			it "Logs the setting value."
 				chroot_path="$(
 					docker logs \
-						sftp.pool-1.1.1 \
+						sftp.1 \
 					| awk '/^chroot path :.*$/ { print $0; }'
 				)"
 
@@ -1907,12 +1907,12 @@ function test_custom_sftp_configuration ()
 		describe "Configure private key"
 			describe "Not permitted"
 				__terminate_container \
-					sftp.pool-1.1.1 \
+					sftp.1 \
 				&> /dev/null
 
 				docker run \
 					--detach \
-					--name sftp.pool-1.1.1 \
+					--name sftp.1 \
 					--env "SSH_USER_FORCE_SFTP=true" \
 					--env "SSH_USER_PRIVATE_KEY=${PRIVATE_KEY_ID_RSA_TEST_1_BASE64}" \
 					--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
@@ -1921,12 +1921,12 @@ function test_custom_sftp_configuration ()
 
 				container_port_22="$(
 					__get_container_port \
-						sftp.pool-1.1.1 \
+						sftp.1 \
 						22/tcp
 				)"
 
 				if ! __is_container_ready \
-					sftp.pool-1.1.1 \
+					sftp.1 \
 					${STARTUP_TIME} \
 					"/usr/sbin/sshd " \
 					"grep \
@@ -1937,7 +1937,7 @@ function test_custom_sftp_configuration ()
 				fi
 
 				it "Will not set the key."
-					docker exec sftp.pool-1.1.1 \
+					docker exec sftp.1 \
 						bash -c \
 							"if [[ ! -s /home/app-admin/.ssh/id_rsa ]]; then \
 								exit 0; \
@@ -1954,7 +1954,7 @@ function test_custom_sftp_configuration ()
 				it "Logs N/A key signature."
 					user_key_signature="$(
 						docker logs \
-							sftp.pool-1.1.1 \
+							sftp.1 \
 						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
 						| awk '{ print $1; }'
 					)"
@@ -1968,7 +1968,7 @@ function test_custom_sftp_configuration ()
 
 		describe "Cross container data volume"
 			__terminate_container \
-				sftp.pool-1.1.1 \
+				sftp.1 \
 			&> /dev/null
 
 			__terminate_container \
@@ -1999,7 +1999,7 @@ function test_custom_sftp_configuration ()
 
 			docker run \
 				--detach \
-				--name sftp.pool-1.1.1 \
+				--name sftp.1 \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				--env SSH_CHROOT_DIRECTORY="/var/www" \
 				--env SSH_USER_FORCE_SFTP=true \
@@ -2010,12 +2010,12 @@ function test_custom_sftp_configuration ()
 
 			container_port_22="$(
 				__get_container_port \
-					sftp.pool-1.1.1 \
+					sftp.1 \
 					22/tcp
 			)"
 
 			if ! __is_container_ready \
-				sftp.pool-1.1.1 \
+				sftp.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
 				"grep \
@@ -2041,7 +2041,7 @@ function test_custom_sftp_configuration ()
 			end
 
 			__terminate_container \
-				sftp.pool-1.1.1 \
+				sftp.1 \
 			&> /dev/null
 
 			__terminate_container \
@@ -2066,19 +2066,19 @@ function test_healthcheck ()
 	local health_status=""
 
 	describe "Healthcheck"
-		trap "__terminate_container ssh.pool-1.1.1 &> /dev/null; \
+		trap "__terminate_container ssh.1 &> /dev/null; \
 			__destroy; \
 			exit 1" \
 			INT TERM EXIT
 
 		describe "Default configuration"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
@@ -2086,7 +2086,7 @@ function test_healthcheck ()
 				health_status="$(
 					docker inspect \
 						--format='{{json .State.Health.Status}}' \
-						ssh.pool-1.1.1
+						ssh.1
 				)"
 
 				assert __shpec_matcher_egrep \
@@ -2105,7 +2105,7 @@ function test_healthcheck ()
 				health_status="$(
 					docker inspect \
 						--format='{{json .State.Health.Status}}' \
-						ssh.pool-1.1.1
+						ssh.1
 				)"
 
 				assert equal \
@@ -2116,12 +2116,12 @@ function test_healthcheck ()
 			it "Returns unhealthy on failure."
 				# sshd-wrapper failure
 				docker exec -t \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					bash -c "mv \
 						/usr/sbin/sshd \
 						/usr/sbin/sshd2" \
 				&& docker exec -t \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					bash -c "if [[ -n \$(pgrep -f '^/usr/sbin/sshd -D') ]]; then \
 						kill -9 \$(pgrep -f '^/usr/sbin/sshd -D'); \
 					fi"
@@ -2136,7 +2136,7 @@ function test_healthcheck ()
 				health_status="$(
 					docker inspect \
 						--format='{{json .State.Health.Status}}' \
-						ssh.pool-1.1.1
+						ssh.1
 				)"
 
 				assert equal \
@@ -2147,12 +2147,12 @@ function test_healthcheck ()
 
 		describe "Autostart false"
 			__terminate_container \
-				ssh.pool-1.1.1 \
+				ssh.1 \
 			&> /dev/null
 
 			docker run \
 				--detach \
-				--name ssh.pool-1.1.1 \
+				--name ssh.1 \
 				--env SSH_AUTOSTART_SSHD=false \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
@@ -2161,7 +2161,7 @@ function test_healthcheck ()
 				health_status="$(
 					docker inspect \
 						--format='{{json .State.Health.Status}}' \
-						ssh.pool-1.1.1
+						ssh.1
 				)"
 
 				assert __shpec_matcher_egrep \
@@ -2180,7 +2180,7 @@ function test_healthcheck ()
 				health_status="$(
 					docker inspect \
 						--format='{{json .State.Health.Status}}' \
-						ssh.pool-1.1.1
+						ssh.1
 				)"
 
 				assert equal \
@@ -2191,7 +2191,7 @@ function test_healthcheck ()
 			it "Returns unhealthy on failure."
 				# sshd-bootstrap failure
 				docker exec -t \
-					ssh.pool-1.1.1 \
+					ssh.1 \
 					bash -c "sed -i \
 						-e 's~# app-admin~~' \
 						/etc/sudoers"
@@ -2206,7 +2206,7 @@ function test_healthcheck ()
 				health_status="$(
 					docker inspect \
 						--format='{{json .State.Health.Status}}' \
-						ssh.pool-1.1.1
+						ssh.1
 				)"
 
 				assert equal \
@@ -2216,7 +2216,7 @@ function test_healthcheck ()
 		end
 
 		__terminate_container \
-			ssh.pool-1.1.1 \
+			ssh.1 \
 		&> /dev/null
 
 		trap - \

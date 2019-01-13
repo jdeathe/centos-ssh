@@ -14,7 +14,7 @@ function scmi ()
 	 service-unit.sh
 	"
 	local -r SCMI_MANAGER_TYPE_PATTERN='^(docker|systemd)$'
-	local -r SCMI_NAME_FORMAT='{<name>|<name>.[group]}.<instance>.<node>'
+	local -r SCMI_NAME_FORMAT='<name>.<instance>[.<node>]'
 	local -r SCMI_PACKAGE_NAME="scmi"
 
 	# Default settings
@@ -968,7 +968,7 @@ function scmi_info ()
 function scmi_is_valid_managed_docker_name ()
 {
 	local NAME="${1:-}"
-	local NAME_PATTERN='^[a-zA-Z0-9][a-zA-Z0-9_.-]*\.[0-9][0-9]*\.[0-9][0-9]*$'
+	local NAME_PATTERN='^[a-zA-Z0-9][a-zA-Z0-9_.-]*\.[0-9][0-9]*(\.[0-9][0-9]*)?$'
 
 	if [[ -z ${NAME} ]]
 	then
@@ -1644,26 +1644,11 @@ function scmi_systemd_prerequisites ()
 
 function scmi_systemd_set_service_unit_names ()
 {
-	SERVICE_UNIT_NAME=$(
-		expr \
-			"${DOCKER_NAME}" : \
-			'\([^\.]*\.*[^\.]*\)\.[0-9][0-9]*\.[0-9][0-9]*'
-	)
-	SERVICE_UNIT_INSTANCE=$(
-		expr \
-			"${DOCKER_NAME}" : \
-			'.*\.\([0-9][0-9]*\.[0-9][0-9]*\)'
-	)
-	SERVICE_UNIT_INSTANCE_LOCAL=$(
-		expr \
-			"${DOCKER_NAME}" : \
-			'.*\.\([0-9][0-9]*\)\.[0-9][0-9]*'
-	)
-	SERVICE_UNIT_INSTANCE_GLOBAL=$(
-		expr \
-			"${DOCKER_NAME}" : \
-			'.*\.[0-9][0-9]*\.\([0-9][0-9]*\)'
-	)
+	SERVICE_UNIT_INSTANCE="$(
+		grep -oE '([0-9]+)(\.[0-9]+)?$' \
+			<<< "${DOCKER_NAME}"
+	)"
+	SERVICE_UNIT_NAME="${DOCKER_NAME%.${SERVICE_UNIT_INSTANCE}}"
 
 	printf -v \
 		SERVICE_UNIT_TEMPLATE_NAME \
@@ -1824,9 +1809,8 @@ function scmi_usage ()
 	                             defaults to docker.
 	  --monochrome               Output colour is suppressed.
 	  -n, --name=NAME            Container name. The required format is as follows
-	                             where <instance> and <node> are required numeric
-	                             values.
-	                             {<name>|<name>.[group]}.<instance>.<node>
+	                             where <instance> and <node> are numeric values.
+	                             <name>.<instance>[.<node>]
 	  -q, --quiet                Display less message output except for errors.
 	  --register                 If manager is set to systemd use this to enable
 	                             the optional etcd registration service.
