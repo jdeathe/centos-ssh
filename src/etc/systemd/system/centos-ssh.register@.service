@@ -111,5 +111,5 @@ ExecStop=/bin/bash -c \
   fi"
 
 [Install]
-DefaultInstance=1.1
+DefaultInstance=1
 RequiredBy={{SERVICE_UNIT_NAME}}@%i.service
