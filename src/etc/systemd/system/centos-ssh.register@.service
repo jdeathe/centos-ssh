@@ -24,7 +24,8 @@
 #
 # To install:
 #     sudo sed -e "s~{{SERVICE_UNIT_NAME}}~{service-unit-name}~g" \
-#       {service-unit-install-template-name} > /etc/systemd/system/{service-unit-template-name}
+#       {service-unit-install-template-name} \
+#       > /etc/systemd/system/{service-unit-template-name}
 #     sudo systemctl daemon-reload
 #     sudo systemctl enable -f {service-unit-instance-name}
 #
@@ -55,7 +56,12 @@ Environment="REGISTER_UPDATE_INTERVAL=55"
 
 # Unregister service
 ExecStartPre=/bin/bash -c \
-  "if /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} ls ${REGISTER_KEY_ROOT} &> /dev/null; then \
+  "if /usr/bin/etcdctl \
+    ${REGISTER_ETCD_PARAMETERS} \
+    ls \
+    ${REGISTER_KEY_ROOT} \
+  &> /dev/null; \
+  then \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
       rm \
@@ -65,13 +71,23 @@ ExecStartPre=/bin/bash -c \
 
 # Register service
 ExecStart=/bin/bash -c \
-  "until /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} get ${REGISTER_KEY_ROOT}/ports/tcp/22 &> /dev/null; do \
-    if /usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22 &> /dev/null; then \
+  "until /usr/bin/etcdctl \
+    ${REGISTER_ETCD_PARAMETERS} \
+    get \
+    ${REGISTER_KEY_ROOT}/ports/tcp/22 \
+  &> /dev/null; \
+  do \
+    if /usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22 &> /dev/null; \
+    then \
       /usr/bin/etcdctl \
         ${REGISTER_ETCD_PARAMETERS} \
         mk \
         ${REGISTER_KEY_ROOT}/ports/tcp/22 \
-        \"$(/usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22 | /usr/bin/sed 's~^[0-9.]*:~~')\" \
+        \"$(/usr/bin/docker port \
+            {{SERVICE_UNIT_NAME}}.%i \
+            22 \
+          | /usr/bin/sed 's~^[0-9.]*:~~' \
+        )\" \
         --ttl ${REGISTER_TTL} 2> /dev/null; \
     fi; \
     sleep 0.5; \
@@ -82,19 +98,43 @@ ExecStart=/bin/bash -c \
     ${REGISTER_KEY_ROOT}/hostname \
     %H \
     --ttl ${REGISTER_TTL}; \
-  while true; do \
+  while true; \
+  do \
     sleep ${REGISTER_UPDATE_INTERVAL}; \
-    if /usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22 &> /dev/null; then \
+    if /usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22 &> /dev/null; \
+    then \
       /usr/bin/etcdctl \
         ${REGISTER_ETCD_PARAMETERS} \
-        $(if ! /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} get ${REGISTER_KEY_ROOT}/ports/tcp/22 &> /dev/null; then echo set; else echo update; fi) \
+        $(if ! /usr/bin/etcdctl \
+            ${REGISTER_ETCD_PARAMETERS} \
+            get \
+            ${REGISTER_KEY_ROOT}/ports/tcp/22 \
+          &> /dev/null; \
+        then \
+          echo set; \
+        else \
+          echo update; \
+        fi) \
         ${REGISTER_KEY_ROOT}/ports/tcp/22 \
-        \"$(/usr/bin/docker port {{SERVICE_UNIT_NAME}}.%i 22 | /usr/bin/sed 's~^[0-9.]*:~~')\" \
+        \"$(/usr/bin/docker port \
+            {{SERVICE_UNIT_NAME}}.%i \
+            22 \
+          | /usr/bin/sed 's~^[0-9.]*:~~' \
+        )\" \
         --ttl ${REGISTER_TTL}; \
     fi; \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
-      $(if ! /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} get ${REGISTER_KEY_ROOT}/hostname &> /dev/null; then echo set; else echo update; fi) \
+      $(if ! /usr/bin/etcdctl \
+          ${REGISTER_ETCD_PARAMETERS} \
+          get \
+          ${REGISTER_KEY_ROOT}/hostname \
+        &> /dev/null; \
+      then \
+        echo set; \
+      else \
+        echo update; \
+      fi) \
       ${REGISTER_KEY_ROOT}/hostname \
       %H \
       --ttl ${REGISTER_TTL}; \
@@ -102,7 +142,12 @@ ExecStart=/bin/bash -c \
 
 # Unregister service
 ExecStop=/bin/bash -c \
-  "if /usr/bin/etcdctl ${REGISTER_ETCD_PARAMETERS} ls ${REGISTER_KEY_ROOT} &> /dev/null; then \
+  "if /usr/bin/etcdctl \
+    ${REGISTER_ETCD_PARAMETERS} \
+    ls \
+    ${REGISTER_KEY_ROOT} \
+  &> /dev/null; \
+  then \
     /usr/bin/etcdctl \
       ${REGISTER_ETCD_PARAMETERS} \
       rm \
