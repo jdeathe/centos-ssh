@@ -5,11 +5,11 @@
 # Check status: 
 #     docker-compose ps
 #
-# View logs of service ssh.pool-1.1.1: 
-#     docker-compose logs ssh.pool-1.1.1
+# View logs of service ssh.1: 
+#     docker-compose logs ssh.1
 # -----------------------------------------------------------------------------
-ssh.pool-1.1.1:
+ssh.1:
   image: "jdeathe/centos-ssh:2.4.0"
-  container_name: "ssh.pool-1.1.1"
+  container_name: "ssh.1"
   ports:
     - "2020:22"

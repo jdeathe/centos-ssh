@@ -36,11 +36,11 @@ For cases where access to docker exec is not possible the preferred method is to
 
 ### SSH Mode
 
-Run up an SSH container named 'ssh.pool-1.1.1' from the docker image 'jdeathe/centos-ssh' on port 2020 of your docker host.
+Run up an SSH container named 'ssh.1' from the docker image 'jdeathe/centos-ssh' on port 2020 of your docker host.
 
 ```
 $ docker run -d \
-  --name ssh.pool-1.1.1 \
+  --name ssh.1 \
   -p 2020:22 \
   jdeathe/centos-ssh:centos-7
 ```
@@ -48,7 +48,7 @@ $ docker run -d \
 Check the logs for the password (required for sudo).
 
 ```
-$ docker logs ssh.pool-1.1.1
+$ docker logs ssh.1
 ```
 
 Download the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant) and set permissions to 600.
@@ -69,11 +69,11 @@ $ ssh -p 2020 -i id_rsa_insecure \
 
 ### SFTP Mode
 
-Run up an SFTP container named 'sftp.pool-1.1.1' from the docker image 'jdeathe/centos-ssh' on port 2021 of your docker host.
+Run up an SFTP container named 'sftp.1' from the docker image 'jdeathe/centos-ssh' on port 2021 of your docker host.
 
 ```
 $ docker run -d \
-  --name sftp.pool-1.1.1 \
+  --name sftp.1 \
   -p 2021:22 \
   -e SSH_USER_FORCE_SFTP=true \
   jdeathe/centos-ssh:centos-7
@@ -96,7 +96,7 @@ To run the a docker container from this image you can use the standard docker co
 
 #### SCMI Installation Examples
 
-The following example uses docker to run the SCMI install command to create and start a container named `ssh.pool-1.1.1`. To use SCMI it requires the use of the `--privileged` docker run parameter and the docker host's root directory mounted as a volume with the container's mount directory also being set in the `scmi` `--chroot` option. The `--setopt` option is used to add extra parameters to the default docker run command template; in the following example a named configuration volume is added which allows the SSH host keys to persist after the first container initialisation. Not that the placeholder `{{NAME}}` can be used in this option and is replaced with the container's name.
+The following example uses docker to run the SCMI install command to create and start a container named `ssh.1`. To use SCMI it requires the use of the `--privileged` docker run parameter and the docker host's root directory mounted as a volume with the container's mount directory also being set in the `scmi` `--chroot` option. The `--setopt` option is used to add extra parameters to the default docker run command template; in the following example a named configuration volume is added which allows the SSH host keys to persist after the first container initialisation. Not that the placeholder `{{NAME}}` can be used in this option and is replaced with the container's name.
 
 ##### SCMI Install
 
@@ -109,7 +109,7 @@ $ docker run \
   /usr/sbin/scmi install \
     --chroot=/media/root \
     --tag=2.4.1 \
-    --name=ssh.pool-1.1.1 \
+    --name=ssh.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
 
@@ -126,7 +126,7 @@ $ docker run \
   /usr/sbin/scmi uninstall \
     --chroot=/media/root \
     --tag=2.4.1 \
-    --name=ssh.pool-1.1.1 \
+    --name=ssh.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
 
@@ -143,7 +143,7 @@ $ docker run \
   /usr/sbin/scmi install \
     --chroot=/media/root \
     --tag=2.4.1 \
-    --name=ssh.pool-1.1.1 \
+    --name=ssh.1 \
     --manager=systemd \
     --register \
     --env='SSH_SUDO="ALL=(ALL) NOPASSWD:ALL"' \
@@ -171,14 +171,14 @@ $ eval "sudo -E $(
   ) --info"
 ```
 
-To perform an installation using the docker name `ssh.pool-1.2.1` simply use the `--name` or `-n` option.
+To perform an installation using the docker name `ssh.2` simply use the `--name` or `-n` option.
 
 ```
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
     jdeathe/centos-ssh:2.4.1
-  ) --name=ssh.pool-1.2.1"
+  ) --name=ssh.2"
 ```
 
 To uninstall use the *same command* that was used to install but with the `uninstall` Label.
@@ -188,7 +188,7 @@ $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.uninstall}}" \
     jdeathe/centos-ssh:2.4.1
-  ) --name=ssh.pool-1.2.1"
+  ) --name=ssh.2"
 ```
 
 ##### SCMI on Atomic Host
@@ -199,16 +199,16 @@ To see detailed information about the image run `scmi` with the `--info` option.
 
 ```
 $ sudo -E atomic install \
-  -n ssh.pool-1.3.1 \
+  -n ssh.3 \
   jdeathe/centos-ssh:2.4.1 \
   --info
 ```
 
-To perform an installation using the docker name `ssh.pool-1.3.1` simply use the `-n` option of the `atomic install` command.
+To perform an installation using the docker name `ssh.3` simply use the `-n` option of the `atomic install` command.
 
 ```
 $ sudo -E atomic install \
-  -n ssh.pool-1.3.1 \
+  -n ssh.3 \
   jdeathe/centos-ssh:2.4.1
 ```
 
@@ -217,14 +217,14 @@ Alternatively, you could use the `scmi` options `--name` or `-n` for naming the 
 ```
 $ sudo -E atomic install \
   jdeathe/centos-ssh:2.4.1 \
-  --name ssh.pool-1.3.1
+  --name ssh.3
 ```
 
 To uninstall use the *same command* that was used to install but with the `uninstall` Label.
 
 ```
 $ sudo -E atomic uninstall \
-  -n ssh.pool-1.3.1 \
+  -n ssh.3 \
   jdeathe/centos-ssh:2.4.1
 ```
 
@@ -235,10 +235,10 @@ The following example overrides the default "app-admin" SSH username and home di
 *Note:* Settings applied by environment variables will override those set within configuration volumes from release 1.3.1. Existing installations that use the sshd-bootstrap.conf saved on a configuration "data" volume will not allow override by the environment variables. Also users can update sshd-bootstrap.conf to prevent the value being replaced by that set using the environment variable.
 
 ```
-$ docker stop ssh.pool-1.1.1 \
-  && docker rm ssh.pool-1.1.1 \
+$ docker stop ssh.1 \
+  && docker rm ssh.1 \
   ; docker run -d \
-  --name ssh.pool-1.1.1 \
+  --name ssh.1 \
   -p :22 \
   --env "SSH_USER=app-user" \
   jdeathe/centos-ssh:centos-7
@@ -247,7 +247,7 @@ $ docker stop ssh.pool-1.1.1 \
 Now you can find out the app-admin, (sudoer), user's password by inspecting the container's logs
 
 ```
-$ docker logs ssh.pool-1.1.1
+$ docker logs ssh.1
 ```
 
 The output of the logs should show the auto-generated password for the app-admin and root users, (if not try again after a few seconds).
@@ -519,7 +519,7 @@ If the command ran successfully you should now have a new private SSH key instal
 Next, unless we specified one, we need to determine what port to connect to on the docker host. You can do this with either `docker ps` or `docker inspect` but the simplest method is to use `docker port`.
 
 ```
-$ docker port ssh.pool-1.1.1 22
+$ docker port ssh.1 22
 ```
 
 To connect to the running container use:

@@ -3,24 +3,24 @@
 #
 #    centos-ssh@.service = {service-unit-install-template-name}
 #        |
-#        +---------------------- {image-name}
+#        +---------------- {image-name}
 #
-#    ssh.pool-1.register@.service = {service-unit-template-name}
-#       Y         |
-#       |         +------------- {service-unit-companion-name}
-#       +----------------------- {service-unit-name}
+#    ssh.register@.service = {service-unit-template-name}
+#     |     |
+#     |     +--------------- {service-unit-companion-name}
+#     +--------------------- {service-unit-name}
 #
-#    ssh.pool-1.register@1.1.service = {service-unit-instance-name}
-#       Y          |      Y
-#       |          |      +----- {service-unit-instance}
-#       |          +------------ {service-unit-companion-name}
-#       +----------------------- {service-unit-name}
+#    ssh.register@1.service = {service-unit-instance-name}
+#     |     |     |
+#     |     |     +---------- {service-unit-instance}
+#     |     +---------------- {service-unit-companion-name}
+#     +---------------------- {service-unit-name}
 #
-#    ssh.pool-1.1.1.register = {service-unit-long-name}
-#       Y        Y     |
-#       |        |     +-------- {service-unit-companion-name}
-#       |        +-------------- {service-unit-instance}
-#       +----------------------- {service-unit-name}
+#    ssh.1.register = {service-unit-long-name}
+#     |  |    |
+#     |  |    +------ {service-unit-companion-name}
+#     |  +----------- {service-unit-instance}
+#     +-------------- {service-unit-name}
 #
 # To install:
 #     sudo sed -e "s~{{SERVICE_UNIT_NAME}}~{service-unit-name}~g" \

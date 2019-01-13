@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
-### 2.4.2 - Unreleased
+### 2.5.0 - Unreleased
 
 - Updates `openssl` package to 1.0.2k-16.el7.
 - Updates `sudo` package to 1.8.23-3.el7.
@@ -12,6 +12,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Updates supervisor to 3.3.5.
 - Updates validation for `SSH_USER_ID` to allow values in the system ID range.
 - Updates and restructures Dockerfile to reduce number of layers in image.
+- Updates container naming conventions for `scmi` making the node element optional.
 - Fixes bootstrap errors regarding readonly `PASSWORD_LENGTH`.
 - Fixes issue with redacted password when using `SSH_PASSWORD_AUTHENTICATION` in combination with `SSH_USER_FORCE_SFTP`.
 - Adds `SSH_USER_PRIVATE_KEY` to allow configuration of an RSA private key for `SSH_USER`.
@@ -20,6 +21,8 @@ Summary of release changes for Version 2 - CentOS-7
 - Removes use of `/etc/services-config` paths.
 - Removes fleet `--manager` option in the `scmi` installer.
 - Removes X-Fleet section from etcd register template unit-file.
+- Removes the unused group element from the default container name.
+- Removes the node element from the default container name.
 
 ### 2.4.1 - 2018-11-10
 
