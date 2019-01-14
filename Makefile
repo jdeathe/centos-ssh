@@ -181,7 +181,7 @@ ifeq ($(get-docker-info),)
 endif
 
 _require-docker-container:
-	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" ) ]]; \
+	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; \
 	then \
 		echo "$(PREFIX_STEP_NEGATIVE)This operation requires the $(DOCKER_NAME) docker container."; \
 		echo "$(PREFIX_SUB_STEP)Try installing it with: make install"; \
@@ -189,7 +189,7 @@ _require-docker-container:
 	fi
 
 _require-docker-container-not:
-	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)" ) ]]; \
+	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; \
 	then \
 		echo "$(PREFIX_STEP_NEGATIVE)This operation requires the $(DOCKER_NAME) docker container be removed (or renamed)."; \
 		echo "$(PREFIX_SUB_STEP)Try removing it with: make rm"; \
