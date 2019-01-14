@@ -9,7 +9,7 @@
 #     docker-compose logs ssh.1
 # -----------------------------------------------------------------------------
 ssh.1:
-  image: "jdeathe/centos-ssh:2.4.0"
+  image: "jdeathe/centos-ssh:2.4.1"
   container_name: "ssh.1"
   ports:
     - "2020:22"
