@@ -722,7 +722,7 @@ rmi: \
 	_prerequisites \
 	_require-docker-image-tag \
 	_require-docker-container-not
-	@ if [[ -n $$(printf -- '%s' $(call get-docker-image-id,$(DOCKER_IMAGE_TAG))) ]]; \
+	@ if [[ -n $(call get-docker-image-id,$(DOCKER_IMAGE_TAG)) ]]; \
 	then \
 		printf -- '%s%s\n' \
 			"$(PREFIX_STEP)" \
@@ -915,7 +915,7 @@ terminate: \
 
 test: \
 	_test-prerequisites
-	@ if [[ -z $$(printf -- '%s' $(call get-docker-image-id,latest)) ]]; \
+	@ if [[ -z $(call get-docker-image-id,latest) ]]; \
 	then \
 		DOCKER_IMAGE_TAG=latest $(MAKE) build; \
 	fi
