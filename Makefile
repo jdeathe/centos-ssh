@@ -127,6 +127,23 @@ get-docker-info := $(shell \
 	$(docker) info \
 )
 
+define get-docker-image-id
+$$(if [[ -n $$($(docker) images -q \
+		$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(1) \
+	) ]]; \
+then \
+	printf -- '%s\n' \
+		"$$($(docker) images -q \
+			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(1) \
+		)"; \
+else \
+	printf -- '%s\n' \
+		"$$($(docker) images -q \
+			docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(1) \
+		)"; \
+fi)
+endef
+
 .PHONY: \
 	_prerequisites \
 	_require-docker-container \
@@ -455,10 +472,15 @@ dist: \
 	$(eval $@_dist_path := $(realpath \
 		$(DIST_PATH) \
 	))
+	$(eval $@_dist_file := $(shell \
+		printf -- '%s.%s.tar.xz' \
+			"$(DOCKER_IMAGE_NAME)" \
+			"$(DOCKER_IMAGE_TAG)" \
+	))
 	@ printf -- '%s%s\n' \
 		"$(PREFIX_STEP)" \
 		"Saving package"
-	@ if [[ -s $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; \
+	@ if [[ -s $($@_dist_path)/$($@_dist_file) ]]; \
 	then \
 		printf -- '%sPackage path: %s/%s.%s.tar.xz\n' \
 			"$(PREFIX_SUB_STEP)" \
@@ -472,7 +494,7 @@ dist: \
 		$(docker) save \
 			$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
 			| $(xz) -9 \
-			> $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz; \
+			> $($@_dist_path)/$($@_dist_file); \
 		if [[ $${?} -eq 0 ]]; \
 		then \
 			printf -- '%sPackage path: %s/%s.%s.tar.xz\n' \
@@ -501,7 +523,12 @@ distclean: \
 	$(eval $@_dist_path := $(realpath \
 		$(DIST_PATH) \
 	))
-	@ if [[ -e $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; \
+	$(eval $@_dist_file := $(shell \
+		printf -- '%s.%s.tar.xz' \
+			"$(DOCKER_IMAGE_NAME)" \
+			"$(DOCKER_IMAGE_TAG)" \
+	))
+	@ if [[ -e $($@_dist_path)/$($@_dist_file) ]]; \
 	then \
 		printf -- '%s%s\n' \
 			"$(PREFIX_STEP)" \
@@ -512,9 +539,9 @@ distclean: \
 			"$(DOCKER_IMAGE_NAME)" \
 			"$(DOCKER_IMAGE_TAG)"; \
 		find $($@_dist_path) \
-			-name $(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz \
+			-name $($@_dist_file) \
 			-delete; \
-		if [[ ! -e $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; \
+		if [[ ! -e $($@_dist_path)/$($@_dist_file) ]]; \
 		then \
 			printf -- '%s%s\n' \
 				"$(PREFIX_SUB_STEP_POSITIVE)" \
@@ -566,6 +593,11 @@ load: \
 	$(eval $@_dist_path := $(realpath \
 		$(DIST_PATH) \
 	))
+	$(eval $@_dist_file := $(shell \
+		printf -- '%s.%s.tar.xz' \
+			"$(DOCKER_IMAGE_NAME)" \
+			"$(DOCKER_IMAGE_TAG)" \
+	))
 	@ printf -- '%s%s\n' \
 		"$(PREFIX_STEP)" \
 		"Loading image from package"; \
@@ -574,7 +606,7 @@ load: \
 		"$($@_dist_path)" \
 		"$(DOCKER_IMAGE_NAME)" \
 		"$(DOCKER_IMAGE_TAG)"; \
-	if [[ ! -s $($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz ]]; \
+	if [[ ! -s $($@_dist_path)/$($@_dist_file) ]]; \
 	then \
 		printf -- '%s%s\n' \
 			"$(PREFIX_SUB_STEP_NEGATIVE)" \
@@ -588,26 +620,11 @@ load: \
 		exit 1; \
 	else \
 		$(xz) -dc \
-			$($@_dist_path)/$(DOCKER_IMAGE_NAME).$(DOCKER_IMAGE_TAG).tar.xz \
+			$($@_dist_path)/$($@_dist_file) \
 			| $(docker) load; \
 		printf -- '%s%s\n' \
 			"$(PREFIX_SUB_STEP)" \
-			"$$( \
-				if [[ -n $$($(docker) images -q \
-						$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-					) ]]; \
-				then \
-					printf -- '%s\n' \
-						"$$($(docker) images -q \
-							$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-						)"; \
-				else \
-					printf -- '%s\n' \
-						"$$($(docker) images -q \
-							docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-						)"; \
-				fi; \
-			)"; \
+			"$(call get-docker-image-id,$(DOCKER_IMAGE_TAG))"; \
 		printf -- '%s%s\n' \
 			"$(PREFIX_SUB_STEP_POSITIVE)" \
 			"Image loaded"; \
@@ -638,22 +655,7 @@ pull: \
 	then \
 		printf -- '%s%s\n' \
 			"$(PREFIX_SUB_STEP)" \
-			"$$( \
-				if [[ -n $$($(docker) images -q \
-						$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-					) ]]; \
-				then \
-					printf -- '%s\n' \
-						"$$($(docker) images -q \
-							$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-						)"; \
-				else \
-					printf -- '%s\n' \
-						"$$($(docker) images -q \
-							docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-						)"; \
-				fi; \
-			)"; \
+			"$(call get-docker-image-id,$(DOCKER_IMAGE_TAG))"; \
 		printf -- '%s%s\n' \
 			"$(PREFIX_SUB_STEP_POSITIVE)" \
 			"Image pulled"; \
@@ -720,44 +722,14 @@ rmi: \
 	_prerequisites \
 	_require-docker-image-tag \
 	_require-docker-container-not
-	@ if [[ -n $$( \
-			if [[ -n $$($(docker) images -q \
-					$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-				) ]]; \
-			then \
-				printf -- '%s\n' \
-					"$$($(docker) images -q \
-						$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-					)"; \
-			else \
-				printf -- '%s\n' \
-					"$$($(docker) images -q \
-						docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-					)"; \
-			fi; \
-		) ]]; \
+	@ if [[ -n $$(printf -- '%s' $(call get-docker-image-id,$(DOCKER_IMAGE_TAG))) ]]; \
 	then \
 		printf -- '%s%s\n' \
 			"$(PREFIX_STEP)" \
 			"Untagging image"; \
 		printf -- '%s%s : %s/%s:%s\n' \
 			"$(PREFIX_SUB_STEP)" \
-			"$$( \
-				if [[ -n $$($(docker) images -q \
-						$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-					) ]]; \
-				then \
-					printf -- '%s\n' \
-						"$$($(docker) images -q \
-							$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-						)"; \
-				else \
-					printf -- '%s\n' \
-						"$$($(docker) images -q \
-							docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG) \
-						)"; \
-				fi; \
-			)" \
+			"$(call get-docker-image-id,$(DOCKER_IMAGE_TAG))" \
 			"$(DOCKER_USER)" \
 			"$(DOCKER_IMAGE_NAME)" \
 			"$(DOCKER_IMAGE_TAG)"; \
@@ -943,22 +915,7 @@ terminate: \
 
 test: \
 	_test-prerequisites
-	@ if [[ -z $$( \
-			if [[ -n $$($(docker) images -q \
-					$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):latest \
-				) ]]; \
-			then \
-				printf -- '%s\n' \
-					"$$($(docker) images -q \
-						$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):latest \
-					)"; \
-			else \
-				printf -- '%s\n' \
-					"$$($(docker) images -q \
-						docker.io/$(DOCKER_USER)/$(DOCKER_IMAGE_NAME):latest \
-					)"; \
-			fi; \
-		) ]]; \
+	@ if [[ -z $$(printf -- '%s' $(call get-docker-image-id,latest)) ]]; \
 	then \
 		$(MAKE) build; \
 	fi
