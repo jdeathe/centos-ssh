@@ -21,5 +21,9 @@ define DOCKER_CONTAINER_PARAMETERS
 endef
 
 DOCKER_PUBLISH := $(shell \
-	if [[ $(DOCKER_PORT_MAP_TCP_22) != NULL ]]; then printf -- '--publish %s:22\n' $(DOCKER_PORT_MAP_TCP_22); fi; \
+	if [[ $(DOCKER_PORT_MAP_TCP_22) != NULL ]]; \
+	then \
+		printf -- '--publish %s:22\n' \
+			$(DOCKER_PORT_MAP_TCP_22); \
+	fi; \
 )
