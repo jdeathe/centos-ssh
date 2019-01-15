@@ -917,7 +917,7 @@ test: \
 	_test-prerequisites
 	@ if [[ -z $$(printf -- '%s' $(call get-docker-image-id,latest)) ]]; \
 	then \
-		$(MAKE) build; \
+		DOCKER_IMAGE_TAG=latest $(MAKE) build; \
 	fi
 	@ printf -- '%s%s\n' \
 		"$(PREFIX_STEP)" \
