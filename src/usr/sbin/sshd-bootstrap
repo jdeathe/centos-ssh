@@ -21,14 +21,9 @@ source /etc/sshd-bootstrap.conf
 function is_sudo_no_password_all ()
 {
 	local -r sudo="${1}"
+	local -r pattern=' ?NOPASSWD:ALL$'
 
-	if [[ -z ${sudo} ]]
-	then
-		return 1
-	fi
-
-	if [[ -n $(echo "${sudo}" \
-		| awk -v pattern="NOPASSWD:ALL" '$NF ~ pattern { print $0; }') ]]
+	if [[ ${sudo} =~ ${pattern} ]]
 	then
 		return 0
 	fi
