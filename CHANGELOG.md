@@ -20,7 +20,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Adds `SSH_USER_PRIVATE_KEY` to allow configuration of an RSA private key for `SSH_USER`.
 - Adds placeholder replacement of `RELEASE_VERSION` docker argument to systemd service unit template.
 - Adds error messages to healthcheck script and includes supervisord check.
-- Adds `PYTHONUNBUFFERED=true` to the supervisord eventlistener `supervisor_stdout`.
+- Adds `-u` option to supervisord's eventlistener `supervisor_stdout`.
 - Removes use of `/etc/services-config` paths.
 - Removes fleet `--manager` option in the `scmi` installer.
 - Removes X-Fleet section from etcd register template unit-file.
