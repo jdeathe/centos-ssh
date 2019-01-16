@@ -735,7 +735,7 @@ if [[ ${SSH_INHERIT_ENVIRONMENT} == true ]] \
 then
 	grep -Ev "${ENV_EXCLUDE_PATTERN}" \
 		/etc/sshd-bootstrap.env \
-		> /etc/environment
+		>> /etc/environment
 fi
 
 OPTS_SSH_USER_HOME="$(
