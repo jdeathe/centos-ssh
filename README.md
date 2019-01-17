@@ -42,7 +42,7 @@ Run up an SSH container named 'ssh.1' from the docker image 'jdeathe/centos-ssh'
 $ docker run -d \
   --name ssh.1 \
   -p 2020:22 \
-  jdeathe/centos-ssh:centos-7
+  jdeathe/centos-ssh:2.4.1
 ```
 
 Check the logs for the password (required for sudo).
@@ -76,7 +76,7 @@ $ docker run -d \
   --name sftp.1 \
   -p 2021:22 \
   -e SSH_USER_FORCE_SFTP=true \
-  jdeathe/centos-ssh:centos-7
+  jdeathe/centos-ssh:2.4.1
 ```
 
 Connect using the `sftp` command line client with the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant).
@@ -230,7 +230,7 @@ $ sudo -E atomic uninstall \
 
 #### Using environment variables
 
-The following example overrides the default "app-admin" SSH username and home directory path with "app-user" and "/home/app-user" respectively. The same technique could also be applied to set the SSH_USER_PASSWORD value.
+The following example overrides the default "app-admin" SSH username, (and corresponding home directory path), with "centos" and "/home/centos" respectively via the `SSH_USER` environment variable.
 
 *Note:* Settings applied by environment variables will override those set within configuration volumes from release 1.3.1. Existing installations that use the sshd-bootstrap.conf saved on a configuration "data" volume will not allow override by the environment variables. Also users can update sshd-bootstrap.conf to prevent the value being replaced by that set using the environment variable.
 
@@ -240,54 +240,55 @@ $ docker stop ssh.1 \
   ; docker run -d \
   --name ssh.1 \
   -p :22 \
-  --env "SSH_USER=app-user" \
-  jdeathe/centos-ssh:centos-7
+  --env "SSH_USER=centos" \
+  jdeathe/centos-ssh:2.4.1
 ```
 
-Now you can find out the app-admin, (sudoer), user's password by inspecting the container's logs
+To identify the `SSH_USER` user's sudoer password, inspect the container's logs as follows:
 
 ```
 $ docker logs ssh.1
 ```
 
-The output of the logs should show the auto-generated password for the app-admin and root users, (if not try again after a few seconds).
+The output of the logs will show the auto-generated password for the user specified by `SSH_USER` on first run.
 
 ```
-2019-01-17 18:40:20,873 WARN No file matches via include "/etc/supervisord.d/*.ini"
-2019-01-17 18:40:20,873 INFO Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
-2019-01-17 18:40:20,874 INFO Included extra file "/etc/supervisord.d/sshd-wrapper.conf" during parsing
-2019-01-17 18:40:20,874 INFO Set uid to user 0 succeeded
-2019-01-17 18:40:20,876 INFO supervisord started with pid 1
-2019-01-17 18:40:21,881 INFO spawned: 'supervisor_stdout' with pid 16
-2019-01-17 18:40:21,883 INFO spawned: 'sshd-bootstrap' with pid 17
-2019-01-17 18:40:21,886 INFO spawned: 'sshd-wrapper' with pid 18
-2019-01-17 18:40:21,922 INFO success: supervisor_stdout entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-2019-01-17 18:40:21,922 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-2019-01-17 18:40:21,922 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-01-17 18:56:09,093 WARN No file matches via include "/etc/supervisord.d/*.ini"
+2019-01-17 18:56:09,093 INFO Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
+2019-01-17 18:56:09,093 INFO Included extra file "/etc/supervisord.d/sshd-wrapper.conf" during parsing
+2019-01-17 18:56:09,093 INFO Set uid to user 0 succeeded
+2019-01-17 18:56:09,098 INFO supervisord started with pid 1
+2019-01-17 18:56:10,064 INFO spawned: 'supervisor_stdout' with pid 16
+2019-01-17 18:56:10,066 INFO spawned: 'sshd-bootstrap' with pid 17
+2019-01-17 18:56:10,067 INFO spawned: 'sshd-wrapper' with pid 18
+2019-01-17 18:56:10,089 INFO success: supervisor_stdout entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-01-17 18:56:10,089 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-01-17 18:56:10,089 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+sshd-bootstrap stdout | /usr/sbin/sshd-bootstrap: line 164: local: PASSWORD_LENGTH: readonly variable
 sshd-bootstrap stdout | Initialising SSH.
+sshd-bootstrap stdout | /usr/sbin/sshd-bootstrap: line 546: local: PASSWORD_LENGTH: readonly variable
+sshd-bootstrap stdout | /usr/sbin/sshd-bootstrap: line 164: local: PASSWORD_LENGTH: readonly variable
 sshd-bootstrap stdout |
 ================================================================================
 SSH Details
 --------------------------------------------------------------------------------
-user : app-admin
-password : jZDebMmQKCnk3y6q
+user : centos
+password : YNT8fPEbpqrMJdpx
 password authentication : no
 id : 500:500
-home : /home/app-admin
+home : /home/centos
 chroot path : N/A
 shell : /bin/bash
 sudo : ALL=(ALL) ALL
 key fingerprints :
 dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6 (insecure key)
-rsa private key fingerprint :
-N/A
 rsa host key fingerprint :
-2b:28:e3:e6:ac:9e:7e:e2:8b:88:0b:55:55:13:0a:56
+d0:8e:c7:b4:9b:ce:10:a6:a0:38:78:74:c5:68:cc:a8
 timezone : UTC
 --------------------------------------------------------------------------------
-0.533066
+0.485003
 
-2019-01-17 18:40:22,433 INFO exited: sshd-bootstrap (exit status 0; expected)
+2019-01-17 18:56:10,568 INFO exited: sshd-bootstrap (exit status 0; expected)
 ```
 
 #### Environment Variables
@@ -392,7 +393,7 @@ On first run the SSH user is created with the default username of "app-admin". I
 
 ```
 ...
-  --env "SSH_USER=app-1" \
+  --env "SSH_USER=centos" \
 ...
 ```
 
@@ -412,7 +413,7 @@ On first run the SSH user is created with the default HOME directory of `/home/%
 
 ```
 ...
-  --env "SSH_USER_HOME=/home/app-1" \
+  --env "SSH_USER_HOME=/home/centos" \
 ...
 ```
 
@@ -497,7 +498,7 @@ This may be useful when running an SFTP container and mounting data volumes from
 
 ```
 ...
-  --env "SSH_USER_ID=500:500" \
+  --env "SSH_USER_ID=1000:1000" \
 ...
 ```
 
@@ -525,7 +526,7 @@ Next, unless we specified one, we need to determine what port to connect to on t
 $ docker port ssh.1 22
 ```
 
-To connect to the running container use:
+To connect to the running container use the following where "app-admin" is the default `SSH_USER` value.
 
 ```
 $ ssh -p {container-port} \
