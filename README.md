@@ -253,38 +253,41 @@ $ docker logs ssh.1
 The output of the logs should show the auto-generated password for the app-admin and root users, (if not try again after a few seconds).
 
 ```
-2016-02-01 02:26:51,420 CRIT Supervisor running as root (no user in config file)
-2016-02-01 02:26:51,420 WARN Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
-2016-02-01 02:26:51,420 WARN Included extra file "/etc/supervisord.d/sshd.conf" during parsing
-2016-02-01 02:26:51,420 WARN No file matches via include "/etc/supervisord.d/*.ini"
-2016-02-01 02:26:51,422 INFO supervisord started with pid 1
-2016-02-01 02:26:52,425 INFO spawned: 'supervisor_stdout' with pid 7
-2016-02-01 02:26:52,427 INFO spawned: 'sshd-bootstrap' with pid 8
-2016-02-01 02:26:52,429 INFO spawned: 'sshd' with pid 9
-2016-02-01 02:26:52,458 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-2016-02-01 02:26:53,956 INFO success: supervisor_stdout entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
-2016-02-01 02:26:53,957 INFO success: sshd entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)
+2019-01-17 18:40:20,873 WARN No file matches via include "/etc/supervisord.d/*.ini"
+2019-01-17 18:40:20,873 INFO Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
+2019-01-17 18:40:20,874 INFO Included extra file "/etc/supervisord.d/sshd-wrapper.conf" during parsing
+2019-01-17 18:40:20,874 INFO Set uid to user 0 succeeded
+2019-01-17 18:40:20,876 INFO supervisord started with pid 1
+2019-01-17 18:40:21,881 INFO spawned: 'supervisor_stdout' with pid 16
+2019-01-17 18:40:21,883 INFO spawned: 'sshd-bootstrap' with pid 17
+2019-01-17 18:40:21,886 INFO spawned: 'sshd-wrapper' with pid 18
+2019-01-17 18:40:21,922 INFO success: supervisor_stdout entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-01-17 18:40:21,922 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-01-17 18:40:21,922 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
 sshd-bootstrap stdout | Initialising SSH.
 sshd-bootstrap stdout |
 ================================================================================
 SSH Details
 --------------------------------------------------------------------------------
-user : app-user
-password : QDQE12uVMyagLEsQ
+user : app-admin
+password : jZDebMmQKCnk3y6q
+password authentication : no
 id : 500:500
-home : /home/app-user
+home : /home/app-admin
 chroot path : N/A
 shell : /bin/bash
 sudo : ALL=(ALL) ALL
 key fingerprints :
 dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6 (insecure key)
+rsa private key fingerprint :
+N/A
 rsa host key fingerprint :
-96:a3:f6:d7:32:d7:a5:38:f8:49:2c:5e:53:e4:86:30
+2b:28:e3:e6:ac:9e:7e:e2:8b:88:0b:55:55:13:0a:56
+timezone : UTC
 --------------------------------------------------------------------------------
+0.533066
 
-sshd stdout | Server listening on 0.0.0.0 port 22.
-sshd stdout | Server listening on :: port 22.
-2016-02-01 02:26:54,464 INFO exited: sshd-bootstrap (exit status 0; expected)
+2019-01-17 18:40:22,433 INFO exited: sshd-bootstrap (exit status 0; expected)
 ```
 
 #### Environment Variables
