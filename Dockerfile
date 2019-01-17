@@ -40,9 +40,6 @@ RUN rpm --rebuilddb \
 	&& easy_install \
 		'supervisor == 3.3.5' \
 		'supervisor-stdout == 0.1.1' \
-	&& sed -r -i \
-		-e 's~^(#!/usr/bin/python)~\1 -u~' \
-		/usr/bin/supervisor_stdout \
 	&& mkdir -p \
 		/var/log/supervisor/ \
 	&& rm -rf /etc/ld.so.cache \
