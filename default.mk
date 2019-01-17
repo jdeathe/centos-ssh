@@ -1,6 +1,5 @@
 
 # Handle incrementing the docker host port for instances unless a port range is defined.
-
 DOCKER_PUBLISH := $(shell \
 	if [[ "$(DOCKER_PORT_MAP_TCP_22)" != NULL ]]; \
 	then \
