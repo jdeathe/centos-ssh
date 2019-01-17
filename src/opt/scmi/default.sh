@@ -3,9 +3,11 @@
 DOCKER_PUBLISH=
 if [[ ${DOCKER_PORT_MAP_TCP_22} != NULL ]]
 then
-	if grep -qE '^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:)?[0-9]+$' \
+	if grep -qE \
+			'^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:)?[0-9]+$' \
 			<<< "${DOCKER_PORT_MAP_TCP_22}" \
-		&& grep -qE '^.+\.[0-9]+(\.[0-9]+)?$' \
+		&& grep -qE \
+			'^.+\.[0-9]+(\.[0-9]+)?$' \
 			<<< "${DOCKER_NAME}"
 	then
 		printf -v \
@@ -13,18 +15,22 @@ then
 			-- '%s --publish %s%s:22' \
 			"${DOCKER_PUBLISH}" \
 			"$(
-				grep -o '^[0-9\.]*:' \
+				grep -o \
+					'^[0-9\.]*:' \
 					<<< "${DOCKER_PORT_MAP_TCP_22}"
 			)" \
 			"$(( 
 				$(
-					grep -oE '[0-9]+$' \
+					grep -oE \
+						'[0-9]+$' \
 						<<< "${DOCKER_PORT_MAP_TCP_22}"
 				) \
 				+ $(
-					grep -oE '([0-9]+)(\.[0-9]+)?$' \
+					grep -oE \
+						'([0-9]+)(\.[0-9]+)?$' \
 						<<< "${DOCKER_NAME}" \
-					| awk -F. '{ print $1; }'
+					| awk -F. \
+						'{ print $1; }'
 				) \
 				- 1
 			))"
