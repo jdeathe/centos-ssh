@@ -48,7 +48,7 @@ Variables:
   - DOCKER_IMAGE_TAG        Defines the image tag name.
   - DOCKER_NAME             Container name. The required format is as follows
                             where <instance> and <node> are numeric values.
-                            <name>.<instance>[.<node>]
+                            <name>[.<instance>[.<node>]]
   - DOCKER_PORT_MAP_TCP_*   The port map variable is used to define the initial
                             port mapping to use for the docker host value where
                             "*" corresponds to an exposed port on the container.
