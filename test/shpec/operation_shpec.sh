@@ -20,6 +20,34 @@ function __destroy ()
 	:
 }
 
+function __docker_logs_match ()
+{
+	local -r pattern="${2:-'INFO exited: *expected'}"
+
+	local counter="${3:-${STARTUP_TIME}}"
+	local value=""
+
+	until (( counter == 0 ))
+	do
+		sleep 1
+
+		value="$(
+			docker logs ${1:-}
+		)"
+
+		if [[ ${value} =~ ${pattern} ]]
+		then
+			break
+		fi
+
+		(( counter -= 1 ))
+	done
+
+	printf -- \
+		'%s' \
+		"${value}"
+}
+
 function __get_container_port ()
 {
 	local container="${1:-}"
@@ -436,7 +464,7 @@ function test_custom_ssh_configuration ()
 
 			it "Can connect using password authentication."
 				password="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^password :.*$/ { print $3; }'
 				)"
@@ -708,7 +736,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the key signature."
 				user_key_signature="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65$/ { print $1; }'
 				)"
@@ -1773,7 +1801,7 @@ function test_custom_sftp_configuration ()
 
 			it "Can connect using password authentication."
 				password="$(
-					docker logs \
+					__docker_logs_match \
 						sftp.1 \
 					| awk '/^password :.*$/ { print $3; }'
 				)"
@@ -1953,7 +1981,7 @@ function test_custom_sftp_configuration ()
 
 				it "Logs N/A key signature."
 					user_key_signature="$(
-						docker logs \
+						__docker_logs_match \
 							sftp.1 \
 						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
 						| awk '{ print $1; }'
