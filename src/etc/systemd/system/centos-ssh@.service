@@ -153,17 +153,31 @@ ExecStart=/bin/bash -c \
     --env \"SSH_USER_SHELL=${SSH_USER_SHELL}\" \
     $(if [[ ${DOCKER_PORT_MAP_TCP_22} != NULL ]]; \
     then \
-      if /usr/bin/grep \
-          -qE '^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:)?[0-9]+$' \
+      if /usr/bin/grep -qE \
+          '^([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}:)?[1-9][0-9]*$' \
           <<< \"${DOCKER_PORT_MAP_TCP_22}\"; \
+        && /usr/bin/grep -qE \
+          '^.+\.[0-9]+(\.[0-9]+)?$' \
+          <<< "${DOCKER_NAME}"
       then \
         printf -- '--publish %%s%%s:22' \
-          $(/usr/bin/grep -o '^[0-9\.]*:' <<< \"${DOCKER_PORT_MAP_TCP_22}\") \
-          $(( $(/usr/bin/grep -oE '[0-9]+$' \
-                  <<< \"${DOCKER_PORT_MAP_TCP_22}\" \
-              ) \
-              + $(/usr/bin/grep -oE '^[0-9]+' <<< %i) \
-              - 1 \
+          $(\
+            /usr/bin/grep -o \
+              '^[0-9\.]*:' \
+              <<< \"${DOCKER_PORT_MAP_TCP_22}\" \
+          ) \
+          $(( \
+            $(\
+              /usr/bin/grep -oE \
+                '[0-9]+$' \
+                <<< \"${DOCKER_PORT_MAP_TCP_22}\" \
+            ) \
+            + $(\
+              /usr/bin/grep -oE \
+                '^[0-9]+' \
+                <<< %i \
+            ) \
+            - 1 \
           )); \
       else \
         printf -- '--publish %%s:22' \
