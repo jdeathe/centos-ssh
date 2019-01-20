@@ -2125,7 +2125,7 @@ function test_healthcheck ()
 					-v event_lag="${event_lag_seconds}" \
 					-v interval="${interval_seconds}" \
 					-v startup_time="${STARTUP_TIME}" \
-					'BEGIN { print startup_time + interval; }'
+					'BEGIN { print event_lag + startup_time + interval; }'
 			)
 
 			it "Returns healthy after startup."
@@ -2202,7 +2202,7 @@ function test_healthcheck ()
 					-v event_lag="${event_lag_seconds}" \
 					-v interval="${interval_seconds}" \
 					-v startup_time="${STARTUP_TIME}" \
-					'BEGIN { print startup_time + interval; }'
+					'BEGIN { print event_lag + startup_time + interval; }'
 			)
 
 			it "Returns healthy after startup."
