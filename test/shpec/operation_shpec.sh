@@ -2087,7 +2087,7 @@ function test_custom_sftp_configuration ()
 function test_healthcheck ()
 {
 	local -r event_lag_seconds=2
-	local -r interval_seconds=0.5
+	local -r interval_seconds=1
 	local -r retries=5
 	local health_status=""
 
@@ -2125,7 +2125,7 @@ function test_healthcheck ()
 					-v event_lag="${event_lag_seconds}" \
 					-v interval="${interval_seconds}" \
 					-v startup_time="${STARTUP_TIME}" \
-					'BEGIN { print event_lag + startup_time + interval; }'
+					'BEGIN { print startup_time + interval; }'
 			)
 
 			it "Returns healthy after startup."
@@ -2202,7 +2202,7 @@ function test_healthcheck ()
 					-v event_lag="${event_lag_seconds}" \
 					-v interval="${interval_seconds}" \
 					-v startup_time="${STARTUP_TIME}" \
-					'BEGIN { print event_lag + startup_time + interval; }'
+					'BEGIN { print startup_time + interval; }'
 			)
 
 			it "Returns healthy after startup."

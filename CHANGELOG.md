@@ -16,6 +16,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Updates container naming conventions and readability of `Makefile`.
 - Updates `docker logs` output example in README document.
 - Updates README instructions following review.
+- Updates default HEALTHCHECK interval to 1 second from 0.5.
 - Replaces awk with native bash regex when testing sudo user's have `NOPASSWD:ALL`.
 - Fixes bootstrap errors regarding readonly `PASSWORD_LENGTH`.
 - Fixes issue with redacted password when using `SSH_PASSWORD_AUTHENTICATION` in combination with `SSH_USER_FORCE_SFTP`.
