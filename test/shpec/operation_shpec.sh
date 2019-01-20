@@ -22,17 +22,23 @@ function __destroy ()
 
 function __docker_logs_match ()
 {
-	local -r pattern="${2:-'INFO exited: *expected'}"
+	local -r container="${1:-}"
+	local -r pattern="${2:-"INFO exited: .*expected"}"
 
 	local counter="${3:-${STARTUP_TIME}}"
-	local value=""
+	local value
+
+	if [[ -z ${container} ]]
+	then
+		return 1
+	fi
 
 	until (( counter == 0 ))
 	do
 		sleep 1
 
 		value="$(
-			docker logs ${1:-}
+			docker logs "${container}"
 		)"
 
 		if [[ ${value} =~ ${pattern} ]]
@@ -980,7 +986,7 @@ function test_custom_ssh_configuration ()
 
 				it "Logs the key signature."
 					user_key_signature="$(
-						docker logs \
+						__docker_logs_match \
 							ssh.1 \
 						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
 						| awk '{ print $1; }'
@@ -1039,7 +1045,7 @@ function test_custom_ssh_configuration ()
 
 				it "Logs the key signature."
 					user_key_signature="$(
-						docker logs \
+						__docker_logs_match \
 							ssh.1 \
 						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
 						| awk '{ print $1; }'
