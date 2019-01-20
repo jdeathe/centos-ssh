@@ -25,6 +25,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Adds error messages to healthcheck script and includes supervisord check.
 - Adds `__docker_logs_match` function to test cases to work-around output delays on CI service's host.
 - Adds port incrementation to Makefile's run template for container names with an instance suffix.
+- Adds consideration for event lag into test cases for unhealthy health_status events.
 - Removes use of `/etc/services-config` paths.
 - Removes fleet `--manager` option in the `scmi` installer.
 - Removes X-Fleet section from etcd register template unit-file.

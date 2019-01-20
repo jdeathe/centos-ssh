@@ -2080,6 +2080,7 @@ function test_custom_sftp_configuration ()
 
 function test_healthcheck ()
 {
+	local -r event_lag_seconds=2
 	local -r interval_seconds=0.5
 	local -r retries=5
 	local health_status=""
@@ -2115,9 +2116,10 @@ function test_healthcheck ()
 
 			sleep $(
 				awk \
-					-v interval_seconds="${interval_seconds}" \
+					-v event_lag="${event_lag_seconds}" \
+					-v interval="${interval_seconds}" \
 					-v startup_time="${STARTUP_TIME}" \
-					'BEGIN { print 1 + interval_seconds + startup_time; }'
+					'BEGIN { print startup_time + interval; }'
 			)
 
 			it "Returns healthy after startup."
@@ -2147,9 +2149,10 @@ function test_healthcheck ()
 
 				sleep $(
 					awk \
-						-v interval_seconds="${interval_seconds}" \
+						-v event_lag="${event_lag_seconds}" \
+						-v interval="${interval_seconds}" \
 						-v retries="${retries}" \
-						'BEGIN { print 1 + interval_seconds * retries; }'
+						'BEGIN { print event_lag + (interval * retries); }'
 				)
 
 				health_status="$(
@@ -2190,9 +2193,10 @@ function test_healthcheck ()
 
 			sleep $(
 				awk \
-					-v interval_seconds="${interval_seconds}" \
+					-v event_lag="${event_lag_seconds}" \
+					-v interval="${interval_seconds}" \
 					-v startup_time="${STARTUP_TIME}" \
-					'BEGIN { print 1 + interval_seconds + startup_time; }'
+					'BEGIN { print startup_time + interval; }'
 			)
 
 			it "Returns healthy after startup."
@@ -2217,9 +2221,10 @@ function test_healthcheck ()
 
 				sleep $(
 					awk \
-						-v interval_seconds="${interval_seconds}" \
+						-v event_lag="${event_lag_seconds}" \
+						-v interval="${interval_seconds}" \
 						-v retries="${retries}" \
-						'BEGIN { print 1 + interval_seconds * retries; }'
+						'BEGIN { print event_lag + (interval * retries); }'
 				)
 
 				health_status="$(
