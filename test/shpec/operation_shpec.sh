@@ -1703,7 +1703,16 @@ function test_custom_ssh_configuration ()
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
-			sleep ${STARTUP_TIME}
+			if ! __is_container_ready \
+				ssh.1 \
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
+				exit 1
+			fi
 
 			it "Can disable sshd-bootstrap."
 				docker logs \
