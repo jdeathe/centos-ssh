@@ -1,0 +1,264 @@
+#!/usr/bin/env bash
+
+function __cleanup ()
+{
+	local -r fifo_path="${1:-}"
+	local -r pid="${2:-0}"
+
+	if [[ -p ${fifo_path} ]]
+	then
+		rm -f "${fifo_path}"
+	fi
+
+	if (( ${pid} <= 1 ))
+	then
+		return 0
+	fi
+
+	kill \
+		-15 \
+		-- ${pid} \
+		> /dev/null \
+		2>&1
+}
+
+function __print_status ()
+{
+	local -r character_positive='✓'
+	local -r character_negative='✗'
+	local colour_negative='\033[1;31m'
+	local colour_positive='\033[1;32m'
+	local colour_reset='\033[0m'
+	local type="${1:-}"
+	local message="${2:-${type}}"
+
+	if [[ ${option_quiet} == true ]]
+	then
+		return 0
+	fi
+
+	# Allow for uncolourised output
+	if [[ ${option_monochrome} == true ]]
+	then
+		unset \
+			colour_negative \
+			colour_notice \
+			colour_positive \
+			colour_reset
+	fi
+
+	case "${type}" in
+		healthy|starting)
+			printf -- \
+				'%b%s%b %s\n' \
+				"${colour_positive}" \
+				"${character_positive}" \
+				"${colour_reset}" \
+				"${message}"
+			;;
+		timeout|unhealthy)
+			printf -- \
+				'%b%s%b %s\n' \
+				"${colour_negative}" \
+				"${character_negative}" \
+				"${colour_reset}" \
+				"${message}" \
+				>&2
+			;;
+	esac
+}
+
+function __usage()
+{
+	cat <<-EOF
+	Usage: $(basename ${0}) -c <name or id> [OPTIONS]
+	       $(basename ${0}) --container=<name or id> [OPTIONS]
+	       $(basename ${0}) [-h|--help]
+
+	Gets health_status events and returns the status.
+
+	Options:
+	  -c, --container=NAME       Container name or id.
+	  -h, --help                 Show this help and exit.
+	  --monochrome               Output colour is suppressed.
+	  -q, --quiet                Display less message output except for errors.
+	  --since=TIMESTAMP          Unix timestamp from which to limit events.
+	                             Defaults to start time.
+	  -t, --timeout=SECONDS      Timeout value in seconds. Defaults to 10.
+	                             Set to 0 for no timeout.
+	EOF
+
+	exit 1
+}
+
+function health_status ()
+{
+	local -r fifo_path="$(
+		mktemp -u
+	)"
+	local -r pattern_healthy='^health_status: healthy$'
+	local -r pattern_starting='^health_status: starting$'
+	local -r pattern_timeout='^[0-9]+$'
+	local -r pattern_timestamp='^[0-9]{10}$'
+	local -r pattern_unhealthy='^health_status: unhealthy$'
+
+	option_monochrome=false
+	option_quiet=false
+	local container
+	local events_command
+	local health_status
+	local pid
+	local since
+	local since_timestamp="$(
+		date +%s
+	)"
+	local timeout=10
+	local until_timestamp
+	local until
+
+	# Parse install options
+	while [[ "${#}" -gt 0 ]]
+	do
+		case "${1}" in
+			-h|--help)
+				__usage
+				break
+				;;
+			--monochrome)
+				option_monochrome=true
+				shift 1
+				;;
+			-c)
+				if [[ -z ${2:-} ]]
+				then
+					__usage
+				fi
+				container="${2:-}"
+				shift 2
+				;;
+			--container=*)
+				container="${1#*=}"
+				shift 1
+				;;
+			-q|--quiet)
+				option_quiet=true
+				shift 1
+				;;
+			--since=*)
+				since_timestamp="${1#*=}"
+				shift 1
+				;;
+			-t)
+				if [[ -z ${2:-} ]]
+				then
+					__usage
+				fi
+				timeout="${2:-}"
+				shift 2
+				;;
+			--timeout=*)
+				timeout="${1#*=}"
+				shift 1
+				;;
+			*)
+				__usage
+				;;
+		esac
+	done
+
+	if [[ -z ${container} ]]
+	then
+		__usage
+	fi
+
+	if ! [[ ${timeout} =~ ${pattern_timeout} ]]
+	then
+		printf -- \
+			'[ERROR] Invalid --time value.\n' \
+			>&2
+		__usage
+	fi
+
+	# Set end time limit
+	until=""
+	if (( timeout > 0 ))
+	then
+		until_timestamp="$((
+			$(
+				date +%s
+			)
+			+ ${timeout}
+		))"
+
+		until="$(
+			printf -- \
+				'--until %s' \
+				"${until_timestamp}"
+		)"
+	fi
+
+	# Fail if operator attempts start time limit before end limit.
+	if ! [[ ${since_timestamp} =~ ${pattern_timestamp} ]] \
+		|| (( since_timestamp > until_timestamp ))
+	then
+		printf -- \
+			'[ERROR] Invalid --since value.\n' \
+			>&2
+		__usage
+	fi
+
+	# Set start time limit
+	since="$(
+		printf -- \
+			'--since %s' \
+			"${since_timestamp}"
+	)"
+
+	trap \
+		"__cleanup \"${fifo_path}\"" \
+		INT TERM EXIT
+
+	mkfifo \
+		-m 0600 \
+		"${fifo_path}"
+
+	docker events \
+		--format '{{.Status}}' \
+		--filter "event=health_status" \
+		--filter "container=${container}" \
+		${since} \
+		${until} \
+		> "${fifo_path}" \
+	&
+	pid="${!}"
+	disown
+
+	trap \
+		"__cleanup \"${fifo_path}\" \"${pid}\"" \
+		INT TERM EXIT
+
+	while IFS= read -r health_status || [[ -n ${health_status} ]]
+	do
+		if [[ ${health_status} =~ ${pattern_starting} ]]
+		then
+			__print_status "starting"
+		fi
+
+		if [[ ${health_status} =~ ${pattern_healthy} ]]
+		then
+			__print_status "healthy"
+			return 0
+		fi
+	
+		if [[ ${health_status} =~ ${pattern_unhealthy} ]]
+		then
+			__print_status "unhealthy"
+			return 1
+		fi
+	done < "${fifo_path}"
+
+	__print_status "timeout"
+	return 1
+}
+
+health_status "${@}"
