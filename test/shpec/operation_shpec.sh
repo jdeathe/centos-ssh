@@ -22,10 +22,14 @@ function __destroy ()
 
 function __docker_logs_match ()
 {
+	local -r logs_lag_seconds=2
 	local -r container="${1:-}"
 	local -r pattern="${2:-"INFO exited: .*expected"}"
 
-	local counter="${3:-${STARTUP_TIME}}"
+	local counter="$((
+		${logs_lag_seconds}
+		+ ${3:-${STARTUP_TIME}}
+	))"
 	local value
 
 	if [[ -z ${container} ]]
