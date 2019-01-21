@@ -22,15 +22,10 @@ function __destroy ()
 
 function __docker_logs_match ()
 {
-	local -r logs_lag_seconds=3
-	local -r container="${1:-}"
-	local -r pattern="${2:-"INFO exited: .*expected"}"
+	local -r pattern="${2:-'INFO exited: .*expected'}"
 
-	local counter="$((
-		${logs_lag_seconds}
-		+ ${3:-${STARTUP_TIME}}
-	))"
-	local value
+	local counter="${3:-${STARTUP_TIME}}"
+	local value=""
 
 	if [[ -z ${container} ]]
 	then
@@ -42,7 +37,7 @@ function __docker_logs_match ()
 		sleep 1
 
 		value="$(
-			docker logs "${container}"
+			docker logs ${1:-}
 		)"
 
 		if [[ ${value} =~ ${pattern} ]]
@@ -217,7 +212,7 @@ function test_basic_ssh_operations ()
 
 		describe "SSH user's password"
 			password="$(
-				__docker_logs_match \
+				docker logs \
 					ssh.1 \
 				| awk '/^password :.*$/ { print $3; }'
 			)"
@@ -622,7 +617,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				user_sudo="$(
-					__docker_logs_match \
+					docker logs \
 						ssh.1 \
 					| awk '/^sudo :.*$/ { print $0; }'
 				)"
@@ -684,7 +679,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				user="$(
-					__docker_logs_match \
+					docker logs \
 						ssh.1 \
 					| awk '/^user :.*$/ { print $0; }'
 				)"
@@ -838,7 +833,7 @@ function test_custom_ssh_configuration ()
 
 				it "Logs the key signatures."
 					user_key_signature="$(
-						__docker_logs_match \
+						docker logs \
 							ssh.1 \
 						| awk '/^45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65$/ { print $1; }'
 					)"
@@ -923,7 +918,7 @@ function test_custom_ssh_configuration ()
 
 				it "Logs the key signatures."
 					user_key_signature="$(
-						__docker_logs_match \
+						docker logs \
 							ssh.1 \
 						| awk '/^45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65$/ { print $1; }'
 					)"
@@ -990,7 +985,7 @@ function test_custom_ssh_configuration ()
 
 				it "Logs the key signature."
 					user_key_signature="$(
-						__docker_logs_match \
+						docker logs \
 							ssh.1 \
 						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
 						| awk '{ print $1; }'
@@ -1049,7 +1044,7 @@ function test_custom_ssh_configuration ()
 
 				it "Logs the key signature."
 					user_key_signature="$(
-						__docker_logs_match \
+						docker logs \
 							ssh.1 \
 						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
 						| awk '{ print $1; }'
@@ -1114,7 +1109,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				user_home="$(
-					__docker_logs_match \
+					docker logs \
 						ssh.1 \
 					| awk '/^home :.*$/ { print $0; }'
 				)"
@@ -1177,7 +1172,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				user_id="$(
-					__docker_logs_match \
+					docker logs \
 						ssh.1 \
 					| awk '/^id :.*$/ { print $0; }'
 				)"
@@ -1240,7 +1235,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				user_id="$(
-					__docker_logs_match \
+					docker logs \
 						ssh.1 \
 					| awk '/^id :.*$/ { print $0; }'
 				)"
@@ -1304,7 +1299,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				user_shell="$(
-					__docker_logs_match \
+					docker logs \
 						ssh.1 \
 					| awk '/^shell :.*$/ { print $0; }'
 				)"
@@ -1421,7 +1416,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs a redacted value."
 				user_password="$(
-					__docker_logs_match \
+					docker logs \
 						ssh.1 \
 					| awk '/^password :.*$/ { print $0; }'
 				)"
@@ -1493,7 +1488,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs a redacted value."
 				user_password="$(
-					__docker_logs_match \
+					docker logs \
 						ssh.1 \
 					| awk '/^password :.*$/ { print $0; }'
 				)"
@@ -1565,7 +1560,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs a redacted value."
 				user_password="$(
-					__docker_logs_match \
+					docker logs \
 						ssh.1 \
 					| awk '/^password :.*$/ { print $0; }'
 				)"
@@ -1634,7 +1629,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs a redacted value."
 				user_password="$(
-					__docker_logs_match \
+					docker logs \
 						ssh.1 \
 					| awk '/^password :.*$/ { print $0; }'
 				)"
@@ -1684,7 +1679,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				timezone="$(
-					__docker_logs_match \
+					docker logs \
 						ssh.1 \
 					| awk '/^timezone :.*$/ { print $0; }'
 				)"
@@ -1708,19 +1703,10 @@ function test_custom_ssh_configuration ()
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
-			if ! __is_container_ready \
-				ssh.1 \
-				${STARTUP_TIME} \
-				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
-			then
-				exit 1
-			fi
+			sleep ${STARTUP_TIME}
 
 			it "Can disable sshd-bootstrap."
-				__docker_logs_match \
+				docker logs \
 					ssh.1 \
 				| grep -qE 'INFO success: sshd-bootstrap entered RUNNING state'
 
@@ -1852,7 +1838,7 @@ function test_custom_sftp_configuration ()
 
 			it "Logs the setting value."
 				password_authentication="$(
-					__docker_logs_match \
+					docker logs \
 						sftp.1 \
 					| awk '/^password authentication :.*$/ { print $0; }'
 				)"
@@ -1916,7 +1902,7 @@ function test_custom_sftp_configuration ()
 
 			it "Logs the setting value."
 				chroot_path="$(
-					__docker_logs_match \
+					docker logs \
 						sftp.1 \
 					| awk '/^chroot path :.*$/ { print $0; }'
 				)"
