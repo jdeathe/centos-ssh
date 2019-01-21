@@ -2055,6 +2055,7 @@ function test_healthcheck ()
 	local -r event_lag_seconds=2
 	local -r interval_seconds=1
 	local -r retries=5
+	local container_id
 	local events_since_timestamp
 	local health_status
 
@@ -2077,6 +2078,12 @@ function test_healthcheck ()
 
 			events_since_timestamp="$(
 				date +%s
+			)"
+
+			container_id="$(
+				docker ps \
+					--quiet \
+					--filter "name=ssh.1"
 			)"
 
 			it "Returns a valid status on starting."
@@ -2102,7 +2109,7 @@ function test_healthcheck ()
 
 				health_status="$(
 					test/health_status \
-						--container=ssh.1 \
+						--container="${container_id}" \
 						--since="${events_since_timestamp}" \
 						--timeout="${events_timeout}" \
 						--monochrome \
@@ -2141,7 +2148,7 @@ function test_healthcheck ()
 
 				health_status="$(
 					test/health_status \
-						--container=ssh.1 \
+						--container="${container_id}" \
 						--since="$(( ${event_lag_seconds} + ${events_since_timestamp} ))" \
 						--timeout="${events_timeout}" \
 						--monochrome \
@@ -2170,6 +2177,12 @@ function test_healthcheck ()
 				date +%s
 			)"
 
+			container_id="$(
+				docker ps \
+					--quiet \
+					--filter "name=ssh.1"
+			)"
+
 			it "Returns a valid status on starting."
 				health_status="$(
 					docker inspect \
@@ -2193,7 +2206,7 @@ function test_healthcheck ()
 
 				health_status="$(
 					test/health_status \
-						--container=ssh.1 \
+						--container="${container_id}" \
 						--since="${events_since_timestamp}" \
 						--timeout="${events_timeout}" \
 						--monochrome \
@@ -2227,7 +2240,7 @@ function test_healthcheck ()
 
 				health_status="$(
 					test/health_status \
-						--container=ssh.1 \
+						--container="${container_id}" \
 						--since="$(( ${event_lag_seconds} + ${events_since_timestamp} ))" \
 						--timeout="${events_timeout}" \
 						--monochrome \
