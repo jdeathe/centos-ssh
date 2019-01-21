@@ -27,11 +27,6 @@ function __docker_logs_match ()
 	local counter="${3:-${STARTUP_TIME}}"
 	local value=""
 
-	if [[ -z ${container} ]]
-	then
-		return 1
-	fi
-
 	until (( counter == 0 ))
 	do
 		sleep 1
