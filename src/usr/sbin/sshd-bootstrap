@@ -328,6 +328,7 @@ function get_ssh_host_key_fingerprint ()
 				printf -- \
 					'ERROR: invalid host key\n' \
 					>&2
+				sleep 0.1
 
 				return 1
 			fi
@@ -336,6 +337,7 @@ function get_ssh_host_key_fingerprint ()
 			printf -- \
 				'ERROR: invalid key type\n' \
 				>&2
+			sleep 0.1
 
 			return 1
 			;;
@@ -609,6 +611,7 @@ function generate_ssh_host_keys ()
 		printf -- \
 			"ERROR: Unknown EL release.\n" \
 			>&2
+		sleep 0.1
 
 		return 1
 	fi
@@ -1090,6 +1093,9 @@ then
 		${TIMER_TOTAL}
 
 	EOT
+
+	# Attempt to force output flush
+	sleep 0.1
 fi
 
 # Release lock file
