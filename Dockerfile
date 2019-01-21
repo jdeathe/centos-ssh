@@ -160,7 +160,7 @@ jdeathe/centos-ssh:${RELEASE_VERSION} \
 	org.deathe.description="CentOS-6 6.10 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
 
 HEALTHCHECK \
-	--interval=0.5s \
+	--interval=1s \
 	--timeout=1s \
 	--retries=5 \
 	CMD ["/usr/bin/healthcheck"]

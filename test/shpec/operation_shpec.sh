@@ -22,17 +22,27 @@ function __destroy ()
 
 function __docker_logs_match ()
 {
-	local -r pattern="${2:-'INFO exited: *expected'}"
+	local -r logs_lag_seconds=2
+	local -r container="${1:-}"
+	local -r pattern="${2:-"INFO exited: .*expected"}"
 
-	local counter="${3:-${STARTUP_TIME}}"
-	local value=""
+	local counter="$((
+		${logs_lag_seconds}
+		+ ${3:-${STARTUP_TIME}}
+	))"
+	local value
+
+	if [[ -z ${container} ]]
+	then
+		return 1
+	fi
 
 	until (( counter == 0 ))
 	do
 		sleep 1
 
 		value="$(
-			docker logs ${1:-}
+			docker logs "${container}"
 		)"
 
 		if [[ ${value} =~ ${pattern} ]]
@@ -207,7 +217,7 @@ function test_basic_ssh_operations ()
 
 		describe "SSH user's password"
 			password="$(
-				docker logs \
+				__docker_logs_match \
 					ssh.1 \
 				| awk '/^password :.*$/ { print $3; }'
 			)"
@@ -612,7 +622,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				user_sudo="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^sudo :.*$/ { print $0; }'
 				)"
@@ -674,7 +684,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				user="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^user :.*$/ { print $0; }'
 				)"
@@ -828,7 +838,7 @@ function test_custom_ssh_configuration ()
 
 				it "Logs the key signatures."
 					user_key_signature="$(
-						docker logs \
+						__docker_logs_match \
 							ssh.1 \
 						| awk '/^45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65$/ { print $1; }'
 					)"
@@ -913,7 +923,7 @@ function test_custom_ssh_configuration ()
 
 				it "Logs the key signatures."
 					user_key_signature="$(
-						docker logs \
+						__docker_logs_match \
 							ssh.1 \
 						| awk '/^45:46:b0:ef:a5:e3:c9:6f:1e:66:94:ba:e1:fd:df:65$/ { print $1; }'
 					)"
@@ -980,7 +990,7 @@ function test_custom_ssh_configuration ()
 
 				it "Logs the key signature."
 					user_key_signature="$(
-						docker logs \
+						__docker_logs_match \
 							ssh.1 \
 						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
 						| awk '{ print $1; }'
@@ -1039,7 +1049,7 @@ function test_custom_ssh_configuration ()
 
 				it "Logs the key signature."
 					user_key_signature="$(
-						docker logs \
+						__docker_logs_match \
 							ssh.1 \
 						| sed -n -e '/^rsa private key fingerprint :$/{ n; p; }' \
 						| awk '{ print $1; }'
@@ -1104,7 +1114,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				user_home="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^home :.*$/ { print $0; }'
 				)"
@@ -1167,7 +1177,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				user_id="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^id :.*$/ { print $0; }'
 				)"
@@ -1230,7 +1240,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				user_id="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^id :.*$/ { print $0; }'
 				)"
@@ -1294,7 +1304,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				user_shell="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^shell :.*$/ { print $0; }'
 				)"
@@ -1411,7 +1421,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs a redacted value."
 				user_password="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^password :.*$/ { print $0; }'
 				)"
@@ -1483,7 +1493,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs a redacted value."
 				user_password="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^password :.*$/ { print $0; }'
 				)"
@@ -1555,7 +1565,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs a redacted value."
 				user_password="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^password :.*$/ { print $0; }'
 				)"
@@ -1624,7 +1634,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs a redacted value."
 				user_password="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^password :.*$/ { print $0; }'
 				)"
@@ -1674,7 +1684,7 @@ function test_custom_ssh_configuration ()
 
 			it "Logs the setting value."
 				timezone="$(
-					docker logs \
+					__docker_logs_match \
 						ssh.1 \
 					| awk '/^timezone :.*$/ { print $0; }'
 				)"
@@ -1710,7 +1720,7 @@ function test_custom_ssh_configuration ()
 			fi
 
 			it "Can disable sshd-bootstrap."
-				docker logs \
+				__docker_logs_match \
 					ssh.1 \
 				| grep -qE 'INFO success: sshd-bootstrap entered RUNNING state'
 
@@ -1842,7 +1852,7 @@ function test_custom_sftp_configuration ()
 
 			it "Logs the setting value."
 				password_authentication="$(
-					docker logs \
+					__docker_logs_match \
 						sftp.1 \
 					| awk '/^password authentication :.*$/ { print $0; }'
 				)"
@@ -1906,7 +1916,7 @@ function test_custom_sftp_configuration ()
 
 			it "Logs the setting value."
 				chroot_path="$(
-					docker logs \
+					__docker_logs_match \
 						sftp.1 \
 					| awk '/^chroot path :.*$/ { print $0; }'
 				)"
@@ -2089,9 +2099,11 @@ function test_custom_sftp_configuration ()
 
 function test_healthcheck ()
 {
-	local -r interval_seconds=0.5
+	local -r event_lag_seconds=2
+	local -r interval_seconds=1
 	local -r retries=5
-	local health_status=""
+	local events_since_timestamp
+	local health_status
 
 	describe "Healthcheck"
 		trap "__terminate_container ssh.1 &> /dev/null; \
@@ -2110,6 +2122,10 @@ function test_healthcheck ()
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
+			events_since_timestamp="$(
+				date +%s
+			)"
+
 			it "Returns a valid status on starting."
 				health_status="$(
 					docker inspect \
@@ -2122,23 +2138,27 @@ function test_healthcheck ()
 					"\"(starting|healthy|unhealthy)\""
 			end
 
-			sleep $(
-				awk \
-					-v interval_seconds="${interval_seconds}" \
-					-v startup_time="${STARTUP_TIME}" \
-					'BEGIN { print 1 + interval_seconds + startup_time; }'
-			)
-
 			it "Returns healthy after startup."
+				events_timeout="$(
+					awk \
+						-v event_lag="${event_lag_seconds}" \
+						-v interval="${interval_seconds}" \
+						-v startup_time="${STARTUP_TIME}" \
+						'BEGIN { print event_lag + startup_time + interval; }'
+				)"
+
 				health_status="$(
-					docker inspect \
-						--format='{{json .State.Health.Status}}' \
-						ssh.1
+					test/health_status \
+						--container=ssh.1 \
+						--since="${events_since_timestamp}" \
+						--timeout="${events_timeout}" \
+						--monochrome \
+					2>&1
 				)"
 
 				assert equal \
 					"${health_status}" \
-					"\"healthy\""
+					"✓ healthy"
 			end
 
 			it "Returns unhealthy on failure."
@@ -2154,22 +2174,30 @@ function test_healthcheck ()
 						kill -9 \$(pgrep -f '^/usr/sbin/sshd -D'); \
 					fi"
 
-				sleep $(
+				events_since_timestamp="$(
+					date +%s
+				)"
+
+				events_timeout="$(
 					awk \
-						-v interval_seconds="${interval_seconds}" \
+						-v event_lag="${event_lag_seconds}" \
+						-v interval="${interval_seconds}" \
 						-v retries="${retries}" \
-						'BEGIN { print 1 + interval_seconds * retries; }'
-				)
+						'BEGIN { print event_lag + (interval * retries); }'
+				)"
 
 				health_status="$(
-					docker inspect \
-						--format='{{json .State.Health.Status}}' \
-						ssh.1
+					test/health_status \
+						--container=ssh.1 \
+						--since="$(( ${event_lag_seconds} + ${events_since_timestamp} ))" \
+						--timeout="${events_timeout}" \
+						--monochrome \
+					2>&1
 				)"
 
 				assert equal \
 					"${health_status}" \
-					"\"unhealthy\""
+					"✗ unhealthy"
 			end
 		end
 
@@ -2185,6 +2213,10 @@ function test_healthcheck ()
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
+			events_since_timestamp="$(
+				date +%s
+			)"
+
 			it "Returns a valid status on starting."
 				health_status="$(
 					docker inspect \
@@ -2197,23 +2229,27 @@ function test_healthcheck ()
 					"\"(starting|healthy|unhealthy)\""
 			end
 
-			sleep $(
-				awk \
-					-v interval_seconds="${interval_seconds}" \
-					-v startup_time="${STARTUP_TIME}" \
-					'BEGIN { print 1 + interval_seconds + startup_time; }'
-			)
-
 			it "Returns healthy after startup."
+				events_timeout="$(
+					awk \
+						-v event_lag="${event_lag_seconds}" \
+						-v interval="${interval_seconds}" \
+						-v startup_time="${STARTUP_TIME}" \
+						'BEGIN { print event_lag + startup_time + interval; }'
+				)"
+
 				health_status="$(
-					docker inspect \
-						--format='{{json .State.Health.Status}}' \
-						ssh.1
+					test/health_status \
+						--container=ssh.1 \
+						--since="${events_since_timestamp}" \
+						--timeout="${events_timeout}" \
+						--monochrome \
+					2>&1
 				)"
 
 				assert equal \
 					"${health_status}" \
-					"\"healthy\""
+					"✓ healthy"
 			end
 
 			it "Returns unhealthy on failure."
@@ -2224,22 +2260,30 @@ function test_healthcheck ()
 						-e 's~# app-admin~~' \
 						/etc/sudoers"
 
-				sleep $(
+				events_since_timestamp="$(
+					date +%s
+				)"
+
+				events_timeout="$(
 					awk \
-						-v interval_seconds="${interval_seconds}" \
+						-v event_lag="${event_lag_seconds}" \
+						-v interval="${interval_seconds}" \
 						-v retries="${retries}" \
-						'BEGIN { print 1 + interval_seconds * retries; }'
-				)
+						'BEGIN { print event_lag + (interval * retries); }'
+				)"
 
 				health_status="$(
-					docker inspect \
-						--format='{{json .State.Health.Status}}' \
-						ssh.1
+					test/health_status \
+						--container=ssh.1 \
+						--since="$(( ${event_lag_seconds} + ${events_since_timestamp} ))" \
+						--timeout="${events_timeout}" \
+						--monochrome \
+					2>&1
 				)"
 
 				assert equal \
 					"${health_status}" \
-					"\"unhealthy\""
+					"✗ unhealthy"
 			end
 		end
 
