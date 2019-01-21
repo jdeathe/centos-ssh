@@ -2089,7 +2089,8 @@ function test_healthcheck ()
 	local -r event_lag_seconds=2
 	local -r interval_seconds=1
 	local -r retries=5
-	local health_status=""
+	local events_since_timestamp
+	local health_status
 
 	describe "Healthcheck"
 		trap "__terminate_container ssh.1 &> /dev/null; \
@@ -2108,6 +2109,10 @@ function test_healthcheck ()
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
+			events_since_timestamp="$(
+				date +%s
+			)"
+
 			it "Returns a valid status on starting."
 				health_status="$(
 					docker inspect \
@@ -2120,24 +2125,27 @@ function test_healthcheck ()
 					"\"(starting|healthy|unhealthy)\""
 			end
 
-			sleep $(
-				awk \
-					-v event_lag="${event_lag_seconds}" \
-					-v interval="${interval_seconds}" \
-					-v startup_time="${STARTUP_TIME}" \
-					'BEGIN { print startup_time + interval; }'
-			)
-
 			it "Returns healthy after startup."
+				events_timeout="$(
+					awk \
+						-v event_lag="${event_lag_seconds}" \
+						-v interval="${interval_seconds}" \
+						-v startup_time="${STARTUP_TIME}" \
+						'BEGIN { print event_lag + startup_time + interval; }'
+				)"
+
 				health_status="$(
-					docker inspect \
-						--format='{{json .State.Health.Status}}' \
-						ssh.1
+					test/health_status \
+						--container=ssh.1 \
+						--since="${events_since_timestamp}" \
+						--timeout="${events_timeout}" \
+						--monochrome \
+					2>&1
 				)"
 
 				assert equal \
 					"${health_status}" \
-					"\"healthy\""
+					"✓ healthy"
 			end
 
 			it "Returns unhealthy on failure."
@@ -2153,23 +2161,30 @@ function test_healthcheck ()
 						kill -9 \$(pgrep -f '^/usr/sbin/sshd -D'); \
 					fi"
 
-				sleep $(
+				events_since_timestamp="$(
+					date +%s
+				)"
+
+				events_timeout="$(
 					awk \
 						-v event_lag="${event_lag_seconds}" \
 						-v interval="${interval_seconds}" \
 						-v retries="${retries}" \
 						'BEGIN { print event_lag + (interval * retries); }'
-				)
+				)"
 
 				health_status="$(
-					docker inspect \
-						--format='{{json .State.Health.Status}}' \
-						ssh.1
+					test/health_status \
+						--container=ssh.1 \
+						--since="$(( ${event_lag_seconds} + ${events_since_timestamp} ))" \
+						--timeout="${events_timeout}" \
+						--monochrome \
+					2>&1
 				)"
 
 				assert equal \
 					"${health_status}" \
-					"\"unhealthy\""
+					"✗ unhealthy"
 			end
 		end
 
@@ -2185,6 +2200,10 @@ function test_healthcheck ()
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
+			events_since_timestamp="$(
+				date +%s
+			)"
+
 			it "Returns a valid status on starting."
 				health_status="$(
 					docker inspect \
@@ -2197,24 +2216,27 @@ function test_healthcheck ()
 					"\"(starting|healthy|unhealthy)\""
 			end
 
-			sleep $(
-				awk \
-					-v event_lag="${event_lag_seconds}" \
-					-v interval="${interval_seconds}" \
-					-v startup_time="${STARTUP_TIME}" \
-					'BEGIN { print startup_time + interval; }'
-			)
-
 			it "Returns healthy after startup."
+				events_timeout="$(
+					awk \
+						-v event_lag="${event_lag_seconds}" \
+						-v interval="${interval_seconds}" \
+						-v startup_time="${STARTUP_TIME}" \
+						'BEGIN { print event_lag + startup_time + interval; }'
+				)"
+
 				health_status="$(
-					docker inspect \
-						--format='{{json .State.Health.Status}}' \
-						ssh.1
+					test/health_status \
+						--container=ssh.1 \
+						--since="${events_since_timestamp}" \
+						--timeout="${events_timeout}" \
+						--monochrome \
+					2>&1
 				)"
 
 				assert equal \
 					"${health_status}" \
-					"\"healthy\""
+					"✓ healthy"
 			end
 
 			it "Returns unhealthy on failure."
@@ -2225,23 +2247,30 @@ function test_healthcheck ()
 						-e 's~# app-admin~~' \
 						/etc/sudoers"
 
-				sleep $(
+				events_since_timestamp="$(
+					date +%s
+				)"
+
+				events_timeout="$(
 					awk \
 						-v event_lag="${event_lag_seconds}" \
 						-v interval="${interval_seconds}" \
 						-v retries="${retries}" \
 						'BEGIN { print event_lag + (interval * retries); }'
-				)
+				)"
 
 				health_status="$(
-					docker inspect \
-						--format='{{json .State.Health.Status}}' \
-						ssh.1
+					test/health_status \
+						--container=ssh.1 \
+						--since="$(( ${event_lag_seconds} + ${events_since_timestamp} ))" \
+						--timeout="${events_timeout}" \
+						--monochrome \
+					2>&1
 				)"
 
 				assert equal \
 					"${health_status}" \
-					"\"unhealthy\""
+					"✗ unhealthy"
 			end
 		end
 
