@@ -22,7 +22,7 @@ function __destroy ()
 
 function __docker_logs_match ()
 {
-	local -r logs_lag_seconds=3
+	local -r logs_lag_seconds=6
 	local -r container="${1:-}"
 	local -r pattern="${2:-"INFO exited: .*expected"}"
 
@@ -36,7 +36,7 @@ function __docker_logs_match ()
 	then
 		return 1
 	fi
-
+set -x
 	until (( counter == 0 ))
 	do
 		sleep 1
@@ -52,7 +52,7 @@ function __docker_logs_match ()
 
 		(( counter -= 1 ))
 	done
-
+set +x
 	printf -- \
 		'%s' \
 		"${value}"
