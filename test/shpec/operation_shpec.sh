@@ -22,7 +22,7 @@ function __destroy ()
 
 function __docker_logs_match ()
 {
-	local -r logs_lag_seconds=2
+	local -r logs_lag_seconds=3
 	local -r container="${1:-}"
 	local -r pattern="${2:-"INFO exited: .*expected"}"
 
