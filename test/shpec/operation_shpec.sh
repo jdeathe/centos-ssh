@@ -482,7 +482,7 @@ function test_custom_ssh_configuration ()
 
 				assert equal \
 					"${password_authentication/password authentication : /}" \
-					"yes"
+					"true"
 			end
 
 			__terminate_container \
@@ -1812,7 +1812,7 @@ function test_custom_sftp_configuration ()
 
 				assert equal \
 					"${password_authentication/password authentication : /}" \
-					"yes"
+					"true"
 			end
 		end
 
