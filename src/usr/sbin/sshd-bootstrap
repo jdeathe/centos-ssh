@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 readonly DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
+readonly DEFAULT_SSH_SHELL="/bin/bash"
 readonly ENV_EXCLUDE_PATTERN="^([.]*SSH_USER_PASSWORD|_|HOME|HOSTNAME|PATH|PWD|SHLVL|SUPERVISOR_ENABLED|SUPERVISOR_GROUP_NAME|SUPERVISOR_PROCESS_NAME|TERM)="
 readonly LOCK_FILE="/var/lock/subsys/sshd-bootstrap"
 readonly PASSWORD_LENGTH=16
@@ -985,9 +986,12 @@ then
 
 	if [[ ${OPTS_SSH_USER} == root ]]
 	then
-		usermod \
-			-s "${OPTS_SSH_USER_SHELL}" \
-			"${OPTS_SSH_USER}"
+		if [[ ${OPTS_SSH_USER_SHELL} != "${DEFAULT_SSH_SHELL}" ]]
+		then
+			usermod \
+				-s "${OPTS_SSH_USER_SHELL}" \
+				"${OPTS_SSH_USER}"
+		fi
 	else
 		# Create base directory for home
 		if [[ -n ${OPTS_SSH_USER_HOME%/*} ]] \
