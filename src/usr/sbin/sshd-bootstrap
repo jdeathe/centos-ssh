@@ -816,7 +816,7 @@ function set_ssh_user_password ()
 
 	# Get password from file
 	if [[ -n ${password} ]] \
-		&& [[ -s ${password} ]]
+		&& [[ -f ${password} ]]
 	then
 		password="$(< "${password}")"
 	fi
@@ -1030,31 +1030,15 @@ then
 		PIDS[1]="${!}"
 	fi
 
-	# Get password from file
-	if [[ -n ${SSH_USER_PASSWORD} ]] \
-		&& [[ -s ${SSH_USER_PASSWORD} ]]
-	then
-		SSH_USER_PASSWORD="$(< "${SSH_USER_PASSWORD}")"
-		OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD}"
-	fi
-
-	# Hashed password must use SHA-512 hashing algorithm
-	if [[ ${OPTS_SSH_USER_PASSWORD_HASHED} == true ]] \
-		&& ! is_valid_ssh_user_password_hash "${OPTS_SSH_USER_PASSWORD}"
+	if ! set_ssh_user_password "${OPTS_SSH_USER_PASSWORD}"
 	then
 		printf -- \
-			"ERROR: Password hash not SHA-512 - setting new password.\n" \
+			"ERROR: Could not set password - aborting.\n" \
 			>&2
 		sleep 0.1
 
-		SSH_USER_PASSWORD=""
-		OPTS_SSH_USER_PASSWORD="$(
-			get_password "${PASSWORD_LENGTH}"
-		)"
-		OPTS_SSH_USER_PASSWORD_HASHED="false"
+		exit 1
 	fi
-
-	set_ssh_user_password "${OPTS_SSH_USER_PASSWORD}"
 
 	# SFTP users
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
