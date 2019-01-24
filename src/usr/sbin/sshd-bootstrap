@@ -1214,7 +1214,8 @@ then
 	then
 		OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
 	elif [[ ${OPTS_SSH_PASSWORD_AUTHENTICATION} == false ]] \
-		&& is_sudo_no_password_all "${OPTS_SSH_SUDO}"
+		&& is_sudo_no_password_all "${OPTS_SSH_SUDO}" \
+		|| [[ ${OPTS_SSH_USER} == root ]]
 	then
 		OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
 	fi
