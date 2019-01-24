@@ -247,7 +247,7 @@ function is_valid_ssh_user_id ()
 
 	if [[ ${user} == root ]]
 	then
-		id_pattern="${root_directory}"
+		id_pattern="${root_id_pattern}"
 	fi
 
 	if [[ ${id} =~ ${id_pattern} ]]
@@ -644,12 +644,21 @@ function get_ssh_user_uid ()
 function get_ssh_user_id ()
 {
 	local -r default_value="${1:-500:500}"
+	local -r root_value="0:0"
+	local -r user="${2:-"$(
+		get_ssh_user
+	)"}"
 
 	local value="${SSH_USER_ID:-}"
 
 	if [[ -z ${value} ]] || ! is_valid_ssh_user_id "${value}"
 	then
-		value="${default_value}"
+		if [[ ${user} == root ]]
+		then
+			value="${root_value}"
+		else
+			value="${default_value}"
+		fi
 	fi
 
 	printf -- "%s" "${value}"
