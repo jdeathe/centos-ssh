@@ -707,7 +707,8 @@ function generate_ssh_host_key ()
 				public_key_path=/etc/ssh/ssh_host_key.pub
 			fi
 
-			echo -e "${response}" \
+			printf -- \
+				"${response}" \
 			| ssh-keygen \
 				-q \
 				-C "" \
@@ -1221,11 +1222,11 @@ then
 
 	TIMER_TOTAL="$(
 		awk \
-			"BEGIN { \
-				T1=\"${TIMER_START}\"; \
-				T2=\"$(date +%s.%N)\"; \
-				print T2 - T1; \
-			}"
+			-v timer_end="$(date +%s.%N)" \
+			-v timer_start="${TIMER_START}" \
+			'BEGIN { print \
+				timer_end - timer_start;
+			}'
 	)"
 
 	cat <<-EOT
