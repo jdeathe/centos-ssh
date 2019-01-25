@@ -268,7 +268,7 @@ function get_password ()
 		| cut -c1-"${password_length}"
 	)"
 
-	printf -- "%s" "${password}"
+	printf -- '%s' "${password}"
 }
 
 function get_ssh_authorized_keys ()
@@ -301,7 +301,7 @@ function get_ssh_authorized_keys ()
 		value="${default_value}"
 	fi
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_password_authentication ()
@@ -316,7 +316,7 @@ function get_ssh_password_authentication ()
 		value="${default_value}"
 	fi
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_authorized_key_fingerprints ()
@@ -346,7 +346,7 @@ function get_ssh_authorized_key_fingerprints ()
 		done <<< "${authorized_keys}"
 	fi
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_chroot_directory ()
@@ -360,7 +360,7 @@ function get_ssh_chroot_directory ()
 		value="${default_value}"
 	fi
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_chroot_directory_path ()
@@ -389,7 +389,7 @@ function get_ssh_chroot_directory_path ()
 	# Replace %u with SSH_USER
 	value="${value//'%u'/${user}}"
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_host_key_fingerprint ()
@@ -439,7 +439,7 @@ function get_ssh_key_fingerprint ()
 	local public_key
 
 	printf -- \
-		"%s\n" \
+		'%s\n' \
 		"${ssh_key}" \
 	> "${ssh_key_file}"
 
@@ -455,7 +455,7 @@ function get_ssh_key_fingerprint ()
 		)"
 
 		printf -- \
-			"%s\n" \
+			'%s\n' \
 			"${public_key}" \
 		> "${ssh_key_file}"
 	fi
@@ -470,7 +470,7 @@ function get_ssh_key_fingerprint ()
 
 	rm -f "${ssh_key_file}"
 
-	printf -- "%s" "${fingerprint}"
+	printf -- '%s' "${fingerprint}"
 }
 
 function get_ssh_key_fingerprint_hash_output ()
@@ -502,7 +502,7 @@ function get_ssh_key_fingerprint_hash_output ()
 			"${value}"
 	fi
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_user_password_hashed ()
@@ -517,7 +517,7 @@ function get_ssh_user_password_hashed ()
 		value="${default_value}"
 	fi
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_user_private_key ()
@@ -539,7 +539,7 @@ function get_ssh_user_private_key ()
 		value="$(< "${value}")"
 	fi
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_user ()
@@ -553,7 +553,7 @@ function get_ssh_user ()
 		value="${default_value}"
 	fi
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_user_force_sftp ()
@@ -568,7 +568,7 @@ function get_ssh_user_force_sftp ()
 		value="${default_value}"
 	fi
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_user_home ()
@@ -594,7 +594,7 @@ function get_ssh_user_home ()
 	# Replace %u with SSH_USER
 	value="${value//'%u'/${user}}"
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_user_shell ()
@@ -620,7 +620,7 @@ function get_ssh_user_shell ()
 		value="/sbin/nologin"
 	fi
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_user_uid ()
@@ -638,7 +638,7 @@ function get_ssh_user_uid ()
 		value="${BASH_REMATCH[1]}"
 	fi
 
-	printf -- "%d" "${value}"
+	printf -- '%d' "${value}"
 }
 
 function get_ssh_user_id ()
@@ -661,7 +661,7 @@ function get_ssh_user_id ()
 		fi
 	fi
 
-	printf -- "%s" "${value}"
+	printf -- '%s' "${value}"
 }
 
 function get_ssh_user_gid ()
@@ -679,7 +679,7 @@ function get_ssh_user_gid ()
 		value="${BASH_REMATCH[2]}"
 	fi
 
-	printf -- "%d" "${value}"
+	printf -- '%d' "${value}"
 }
 
 function generate_ssh_host_key ()
@@ -745,7 +745,7 @@ function generate_ssh_host_keys ()
 		)"
 	else
 		printf -- \
-			"ERROR: Unknown EL release.\n" \
+			'ERROR: Unknown EL release.\n' \
 			>&2
 		sleep 0.1
 
@@ -767,7 +767,7 @@ function generate_ssh_host_keys ()
 			;;
 		*)
 			printf -- \
-				"Unknown EL release %s - skipping.\n" \
+				'Unknown EL release %s - skipping.\n' \
 				"${version}"
 			;;
 	esac
@@ -1030,7 +1030,7 @@ then
 	if ! set_ssh_user_password "${OPTS_SSH_USER_PASSWORD}"
 	then
 		printf -- \
-			"ERROR: Could not set password - aborting.\n" \
+			'ERROR: Could not set password - aborting.\n' \
 			>&2
 		sleep 0.1
 
