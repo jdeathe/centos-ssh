@@ -1220,10 +1220,12 @@ then
 	fi
 
 	TIMER_TOTAL="$(
-		echo - | awk "\
-		{ T1=\"${TIMER_START}\" } \
-		{ T2=\"$(date +%s.%N)\" } \
-		{ print T2 - T1; }"
+		awk \
+			"BEGIN { \
+				T1=\"${TIMER_START}\"; \
+				T2=\"$(date +%s.%N)\"; \
+				print T2 - T1; \
+			}"
 	)"
 
 	cat <<-EOT
