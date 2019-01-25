@@ -1222,7 +1222,9 @@ then
 
 	TIMER_TOTAL="$(
 		awk \
-			-v timer_end="$(date +%s.%N)" \
+			-v timer_end="$(
+				date +%s.%N
+			)" \
 			-v timer_start="${TIMER_START}" \
 			'BEGIN { print \
 				timer_end - timer_start;
