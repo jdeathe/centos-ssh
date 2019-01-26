@@ -1207,7 +1207,8 @@ then
 	EOT
 
 	# Wait for background processes - Host key generation
-	if [[ -v ${PIDS[0]} ]]
+	if [[ -n ${PIDS[0]+~} ]] \
+		&& [[ ${PIDS[0]} -gt 1 ]]
 	then
 		wait ${PIDS[0]}
 	fi
@@ -1217,7 +1218,8 @@ then
 	)"
 
 	# Wait for background processes - Set password for root user
-	if [[ -v ${PIDS[1]} ]]
+	if [[ -n ${PIDS[1]+~} ]] \
+		&& [[ ${PIDS[1]} -gt 1 ]]
 	then
 		wait ${PIDS[1]}
 	fi
