@@ -1206,11 +1206,21 @@ then
 		Defaults:root secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
 	EOT
 
-	# Wait for background processes
-	wait ${PIDS[0]} && SSH_HOST_KEY_FINGERPRINT_RSA="$(
+	# Wait for background processes - Host key generation
+	if [[ -v ${PIDS[0]} ]]
+	then
+		wait ${PIDS[0]}
+	fi
+
+	SSH_HOST_KEY_FINGERPRINT_RSA="$(
 		get_ssh_host_key_fingerprint rsa
 	)"
-	wait ${PIDS[1]}
+
+	# Wait for background processes - Set password for root user
+	if [[ -v ${PIDS[1]} ]]
+	then
+		wait ${PIDS[1]}
+	fi
 
 	# Only show user password if auto-generated and password is required for
 	# password authentication or sudo.
