@@ -697,7 +697,7 @@ function generate_ssh_host_key ()
 	local public_key_path
 	local response='n\n'
 
-	if [[ ${replace} == true ]] || [[ ${replace} == 'y' ]]
+	if [[ ${replace} == true ]]
 	then
 		response='y\n'
 	fi
