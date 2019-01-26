@@ -355,7 +355,8 @@ function get_ssh_chroot_directory ()
 
 	local value="${SSH_CHROOT_DIRECTORY:-}"
 
-	if [[ -z ${value} ]] || ! is_valid_ssh_chroot_directory "${value}"
+	if [[ -z ${value} ]] \
+		|| ! is_valid_ssh_chroot_directory "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -468,7 +469,8 @@ function get_ssh_key_fingerprint ()
 		| sed 's~MD5:~~'
 	)"
 
-	rm -f "${ssh_key_file}"
+	rm -f \
+		"${ssh_key_file}"
 
 	printf -- '%s' "${fingerprint}"
 }
@@ -548,7 +550,8 @@ function get_ssh_user ()
 
 	local value="${SSH_USER:-}"
 
-	if [[ -z ${value} ]] || ! is_valid_ssh_user "${value}"
+	if [[ -z ${value} ]] \
+		|| ! is_valid_ssh_user "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -581,7 +584,8 @@ function get_ssh_user_home ()
 
 	local value="${SSH_USER_HOME:-}"
 
-	if [[ -z ${value} ]] || ! is_valid_ssh_user_home "${value}"
+	if [[ -z ${value} ]] \
+		|| ! is_valid_ssh_user_home "${value}"
 	then
 		if [[ ${user} == root ]]
 		then
@@ -609,7 +613,8 @@ function get_ssh_user_shell ()
 
 	local value="${SSH_USER_SHELL:-}"
 
-	if [[ -z ${value} ]] || ! is_valid_ssh_user_shell "${value}"
+	if [[ -z ${value} ]] \
+		|| ! is_valid_ssh_user_shell "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -651,7 +656,8 @@ function get_ssh_user_id ()
 
 	local value="${SSH_USER_ID:-}"
 
-	if [[ -z ${value} ]] || ! is_valid_ssh_user_id "${value}"
+	if [[ -z ${value} ]] \
+		|| ! is_valid_ssh_user_id "${value}"
 	then
 		if [[ ${user} == root ]]
 		then
@@ -737,7 +743,8 @@ function generate_ssh_host_keys ()
 
 	local version="${2:-}"
 
-	if [[ -z ${version} ]] && [[ -e /etc/redhat-release ]]
+	if [[ -z ${version} ]] \
+		&& [[ -e /etc/redhat-release ]]
 	then
 		version="$(
 			rpm -q \
@@ -998,7 +1005,8 @@ then
 			printf -- \
 				'Creating home base directory.\n'
 
-			mkdir -pm 755 "${OPTS_SSH_USER_HOME%/*}"
+			mkdir -pm 755 \
+				"${OPTS_SSH_USER_HOME%/*}"
 		fi
 
 		groupadd \
@@ -1057,18 +1065,23 @@ then
 				"${SSH_CHROOT_DIRECTORY_PATH}" \
 				"${OPTS_SSH_USER_HOME}"
 
-			mkdir -pm 711 "${SSH_CHROOT_DIRECTORY_PATH}"
-			mkdir -pm 755 "${SSH_CHROOT_HOME_DIRECTORY_PATH}"
+			mkdir -pm 711 \
+				"${SSH_CHROOT_DIRECTORY_PATH}"
+			mkdir -pm 755 \
+				"${SSH_CHROOT_HOME_DIRECTORY_PATH}"
 		else
 			# ChrootDirectory %h
 			SSH_CHROOT_HOME_DIRECTORY_PATH="${OPTS_SSH_USER_HOME}"
 
-			chmod 750 "${OPTS_SSH_USER_HOME}"
+			chmod 750 \
+				"${OPTS_SSH_USER_HOME}"
 		fi
 
 		# Create a user writeable data directory if no other directories are
 		# mounted.
-		if ! grep -q '^d' <<< "$(ls -l "${SSH_CHROOT_HOME_DIRECTORY_PATH}"/)"
+		if ! grep -q '^d' <<< "$(
+				ls -l "${SSH_CHROOT_HOME_DIRECTORY_PATH}"/
+			)"
 		then
 			# Make and set user permissions on new _data directory
 			mkdir -m 700 \
