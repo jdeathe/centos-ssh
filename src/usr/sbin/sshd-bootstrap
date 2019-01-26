@@ -1207,19 +1207,14 @@ then
 	EOT
 
 	# Wait for background processes - Host key generation
-	if [[ -n ${PIDS[0]+~} ]] \
-		&& [[ ${PIDS[0]} -gt 1 ]]
-	then
-		wait ${PIDS[0]}
-	fi
+	wait ${PIDS[0]}
 
 	SSH_HOST_KEY_FINGERPRINT_RSA="$(
 		get_ssh_host_key_fingerprint rsa
 	)"
 
 	# Wait for background processes - Set password for root user
-	if [[ -n ${PIDS[1]+~} ]] \
-		&& [[ ${PIDS[1]} -gt 1 ]]
+	if [[ -n ${PIDS[1]+isset} ]]
 	then
 		wait ${PIDS[1]}
 	fi
