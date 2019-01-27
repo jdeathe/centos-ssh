@@ -264,10 +264,7 @@ The output of the logs will show the auto-generated password for the user specif
 2019-01-17 18:56:10,089 INFO success: supervisor_stdout entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
 2019-01-17 18:56:10,089 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
 2019-01-17 18:56:10,089 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-sshd-bootstrap stdout | /usr/sbin/sshd-bootstrap: line 164: local: PASSWORD_LENGTH: readonly variable
 sshd-bootstrap stdout | Initialising SSH.
-sshd-bootstrap stdout | /usr/sbin/sshd-bootstrap: line 546: local: PASSWORD_LENGTH: readonly variable
-sshd-bootstrap stdout | /usr/sbin/sshd-bootstrap: line 164: local: PASSWORD_LENGTH: readonly variable
 sshd-bootstrap stdout |
 ================================================================================
 SSH Details
