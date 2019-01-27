@@ -496,6 +496,21 @@ function get_ssh_password_authentication ()
 	printf -- '%s' "${value}"
 }
 
+function get_ssh_timezone ()
+{
+	local -r default_value="${1:-UTC}"
+
+	local value="${SSH_TIMEZONE:-}"
+
+	if [[ -z ${value} ]] \
+		|| ! is_valid_ssh_timezone "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
 function get_ssh_user ()
 {
 	local -r default_value="${1:-app-admin}"
@@ -882,6 +897,7 @@ then
 	declare -A ENV_VALIDATION_WITH_DEFAULTS=(
 		[SSH_CHROOT_DIRECTORY]=is_valid_ssh_chroot_directory
 		[SSH_PASSWORD_AUTHENTICATION]=is_valid_ssh_password_authentication
+		[SSH_TIMEZONE]=is_valid_ssh_timezone
 		[SSH_USER]=is_valid_ssh_user
 		[SSH_USER_FORCE_SFTP]=is_valid_ssh_user_force_sftp
 		[SSH_USER_HOME]=is_valid_ssh_user_home
@@ -896,7 +912,9 @@ then
 		get_ssh_password_authentication
 	)"
 	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
-	OPTS_SSH_TIMEZONE="${SSH_TIMEZONE:-UTC}"
+	OPTS_SSH_TIMEZONE="$(
+		get_ssh_timezone
+	)"
 	OPTS_SSH_USER="$(
 		get_ssh_user
 	)"
@@ -972,7 +990,15 @@ then
 		fi
 	done
 
-	set_ssh_timezone "${OPTS_SSH_TIMEZONE}"
+	if ! set_ssh_timezone "${OPTS_SSH_TIMEZONE}"
+	then
+		printf -- \
+			'ERROR: Could not set timezone - aborting.\n' \
+			>&2
+		sleep 0.1
+
+		exit 1
+	fi
 
 	$(
 		generate_ssh_host_keys
