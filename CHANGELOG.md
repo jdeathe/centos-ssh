@@ -25,11 +25,13 @@ Summary of release changes for Version 1 - CentOS-6
 - Adds a short sleep after bootstrap Details to work-around missing output on CI service's host.
 - Adds port incrementation to Makefile's run template for container names with an instance suffix.
 - Adds consideration for event lag into test cases for unhealthy health_status events.
+- Adds feature to allow configuration of "root" `SSH_USER`.
 - Removes use of `/etc/services-config` paths.
 - Removes fleet `--manager` option in the `scmi` installer.
 - Removes X-Fleet section from etcd register template unit-file.
 - Removes the unused group element from the default container name.
 - Removes the node element from the default container name.
+- Removes undocumented `SSH_ROOT_PASSWORD` from bootstrap process.
 
 ### 1.9.1 - 2018-11-10
 
