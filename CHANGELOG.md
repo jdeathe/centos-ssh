@@ -22,6 +22,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Fixes issue with redacted password when using `SSH_PASSWORD_AUTHENTICATION` in combination with `SSH_USER_FORCE_SFTP`.
 - Fixes issue with unexpected published port in run templates when `DOCKER_PORT_MAP_TCP_22` is set to an empty string or 0.
 - Fixes missing `SSH_TIMEZONE` from Makefile's install run template.
+- Fixes validation of `SSH_TIMEZONE` values - set to defaults with warning and abort on error.
 - Adds `SSH_USER_PRIVATE_KEY` to allow configuration of an RSA private key for `SSH_USER`.
 - Adds placeholder replacement of `RELEASE_VERSION` docker argument to systemd service unit template.
 - Adds error messages to healthcheck script and includes supervisord check.
