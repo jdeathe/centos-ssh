@@ -924,6 +924,7 @@ then
 
 	if [[ ${OPTS_SSH_PASSWORD_AUTHENTICATION} == true ]]
 	then
+		PASSWORD_AUTHENTICATION="yes"
 		if [[ ${OPTS_SSH_USER} == root ]]
 		then
 			sed -i \
@@ -1248,7 +1249,7 @@ then
 		--------------------------------------------------------------------------------
 		user : ${OPTS_SSH_USER}
 		password : ${OPTS_SSH_USER_PASSWORD}
-		password authentication : ${OPTS_SSH_PASSWORD_AUTHENTICATION}
+		password authentication : ${PASSWORD_AUTHENTICATION:-no}
 		id : ${OPTS_SSH_USER_UID}:${OPTS_SSH_USER_GID}
 		home : ${OPTS_SSH_USER_HOME}
 		chroot path : ${SSH_CHROOT_DIRECTORY_PATH:-N/A}
