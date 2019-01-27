@@ -138,20 +138,9 @@ function is_valid_ssh_user ()
 function is_valid_ssh_user_force_sftp ()
 {
 	local -r boolean_value='^(true|false)$'
-	local -r root_value='^false$'
 	local -r value="${1}"
-	local -r user="${2:-"$(
-		get_ssh_user
-	)"}"
 
-	local valid_value="${boolean_value}"
-
-	if [[ ${user} == root ]]
-	then
-		valid_value="${root_value}"
-	fi
-
-	if [[ ${value} =~ ${valid_value} ]]
+	if [[ ${value} =~ ${boolean_value} ]]
 	then
 		return 0
 	fi
@@ -1116,7 +1105,7 @@ then
 		# Add group specific sshd configuration
 		tee -a /etc/ssh/sshd_config > /dev/null <<-EOT
 			# Force SFTP
-			Match group ${SSH_USER_GROUPS}
+			Match User ${SSH_USER}
 			AllowTcpForwarding no
 			X11Forwarding no
 			ChrootDirectory ${OPTS_SSH_CHROOT_DIRECTORY}
@@ -1229,8 +1218,12 @@ then
 	then
 		OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
 	elif [[ ${OPTS_SSH_PASSWORD_AUTHENTICATION} == false ]] \
-		&& is_sudo_no_password_all "${OPTS_SSH_SUDO}" \
-		|| [[ ${OPTS_SSH_USER} == root ]]
+		&& [[ ${OPTS_SSH_USER} != root ]] \
+		&& is_sudo_no_password_all "${OPTS_SSH_SUDO}"
+	then
+		OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
+	elif [[ ${OPTS_SSH_PASSWORD_AUTHENTICATION} == false ]] \
+		&& [[ ${OPTS_SSH_USER} == root ]]
 	then
 		OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
 	fi
