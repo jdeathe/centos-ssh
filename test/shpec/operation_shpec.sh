@@ -1616,7 +1616,6 @@ function test_custom_ssh_configuration ()
 				--detach \
 				--name ssh.1 \
 				--env "SSH_USER=root" \
-				--env "SSH_USER_FORCE_SFTP=true" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
