@@ -922,6 +922,7 @@ then
 		get_ssh_user_gid
 	)"
 
+	PASSWORD_AUTHENTICATION="no"
 	if [[ ${OPTS_SSH_PASSWORD_AUTHENTICATION} == true ]]
 	then
 		PASSWORD_AUTHENTICATION="yes"

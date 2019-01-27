@@ -271,7 +271,7 @@ SSH Details
 --------------------------------------------------------------------------------
 user : centos
 password : YNT8fPEbpqrMJdpx
-password authentication : false
+password authentication : no
 id : 500:500
 home : /home/centos
 chroot path : N/A
