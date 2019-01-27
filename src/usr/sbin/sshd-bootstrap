@@ -58,19 +58,6 @@ function is_valid_ssh_authorized_keys ()
 	return 0
 }
 
-function is_valid_ssh_password_authentication ()
-{
-	local -r boolean_value='^(true|false)$'
-	local -r value="${1}"
-
-	if [[ ${value} =~ ${boolean_value} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
 function is_valid_ssh_chroot_directory ()
 {
 	local -r chroot_directory="${1:-}"
@@ -103,6 +90,19 @@ function is_valid_ssh_key ()
 	fi
 
 	return 0
+}
+
+function is_valid_ssh_password_authentication ()
+{
+	local -r boolean_value='^(true|false)$'
+	local -r value="${1}"
+
+	if [[ ${value} =~ ${boolean_value} ]]
+	then
+		return 0
+	fi
+
+	return 1
 }
 
 function is_valid_ssh_timezone ()
@@ -172,6 +172,30 @@ function is_valid_ssh_user_home ()
 	return 1
 }
 
+function is_valid_ssh_user_id ()
+{
+	local -r id="${1}"
+	local -r user_id_pattern='^[1-9][0-9]*:[1-9][0-9]*$'
+	local -r root_id_pattern='^0:0$'
+	local -r user="${2:-"$(
+		get_ssh_user
+	)"}"
+
+	local id_pattern="${user_id_pattern}"
+
+	if [[ ${user} == root ]]
+	then
+		id_pattern="${root_id_pattern}"
+	fi
+
+	if [[ ${id} =~ ${id_pattern} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
 function is_valid_ssh_user_password_hash ()
 {
 	local -r password_hash="${1}"
@@ -223,30 +247,6 @@ function is_valid_ssh_user_shell ()
 	return 1
 }
 
-function is_valid_ssh_user_id ()
-{
-	local -r id="${1}"
-	local -r user_id_pattern='^[1-9][0-9]*:[1-9][0-9]*$'
-	local -r root_id_pattern='^0:0$'
-	local -r user="${2:-"$(
-		get_ssh_user
-	)"}"
-
-	local id_pattern="${user_id_pattern}"
-
-	if [[ ${user} == root ]]
-	then
-		id_pattern="${root_id_pattern}"
-	fi
-
-	if [[ ${id} =~ ${id_pattern} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
 function get_password ()
 {
 	local -r password_length="${1:-16}"
@@ -286,21 +286,6 @@ function get_ssh_authorized_keys ()
 	# the original behaviour.
 	if [[ ${password_authentication} == false ]] \
 		&& [[ -z ${value} ]]
-	then
-		value="${default_value}"
-	fi
-
-	printf -- '%s' "${value}"
-}
-
-function get_ssh_password_authentication ()
-{
-	local -r default_value="${1:-false}"
-
-	local value="${SSH_PASSWORD_AUTHENTICATION:-}"
-
-	if [[ -z ${value} ]] \
-		|| ! is_valid_ssh_password_authentication "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -496,6 +481,36 @@ function get_ssh_key_fingerprint_hash_output ()
 	printf -- '%s' "${value}"
 }
 
+function get_ssh_password_authentication ()
+{
+	local -r default_value="${1:-false}"
+
+	local value="${SSH_PASSWORD_AUTHENTICATION:-}"
+
+	if [[ -z ${value} ]] \
+		|| ! is_valid_ssh_password_authentication "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function get_ssh_user ()
+{
+	local -r default_value="${1:-app-admin}"
+
+	local value="${SSH_USER:-}"
+
+	if [[ -z ${value} ]] \
+		|| ! is_valid_ssh_user "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
 function get_ssh_user_password_hashed ()
 {
 	local -r default_value="${1:-false}"
@@ -533,21 +548,6 @@ function get_ssh_user_private_key ()
 	printf -- '%s' "${value}"
 }
 
-function get_ssh_user ()
-{
-	local -r default_value="${1:-app-admin}"
-
-	local value="${SSH_USER:-}"
-
-	if [[ -z ${value} ]] \
-		|| ! is_valid_ssh_user "${value}"
-	then
-		value="${default_value}"
-	fi
-
-	printf -- '%s' "${value}"
-}
-
 function get_ssh_user_force_sftp ()
 {
 	local -r default_value="${1:-false}"
@@ -561,6 +561,24 @@ function get_ssh_user_force_sftp ()
 	fi
 
 	printf -- '%s' "${value}"
+}
+
+function get_ssh_user_gid ()
+{
+	local -r default_value="${1:-500}"
+	local -r id="$(
+		get_ssh_user_id
+	)"
+	local -r id_pattern='^([0-9]{1,}):([0-9]{1,})$'
+
+	local value="${default_value}"
+
+	if [[ ${id} =~ ${id_pattern} ]]
+	then
+		value="${BASH_REMATCH[2]}"
+	fi
+
+	printf -- '%d' "${value}"
 }
 
 function get_ssh_user_home ()
@@ -586,6 +604,30 @@ function get_ssh_user_home ()
 
 	# Replace %u with SSH_USER
 	value="${value//'%u'/${user}}"
+
+	printf -- '%s' "${value}"
+}
+
+function get_ssh_user_id ()
+{
+	local -r default_value="${1:-500:500}"
+	local -r root_value="0:0"
+	local -r user="${2:-"$(
+		get_ssh_user
+	)"}"
+
+	local value="${SSH_USER_ID:-}"
+
+	if [[ -z ${value} ]] \
+		|| ! is_valid_ssh_user_id "${value}"
+	then
+		if [[ ${user} == root ]]
+		then
+			value="${root_value}"
+		else
+			value="${default_value}"
+		fi
+	fi
 
 	printf -- '%s' "${value}"
 }
@@ -627,48 +669,6 @@ function get_ssh_user_uid ()
 	if [[ ${id} =~ ${id_pattern} ]]
 	then
 		value="${BASH_REMATCH[1]}"
-	fi
-
-	printf -- '%d' "${value}"
-}
-
-function get_ssh_user_id ()
-{
-	local -r default_value="${1:-500:500}"
-	local -r root_value="0:0"
-	local -r user="${2:-"$(
-		get_ssh_user
-	)"}"
-
-	local value="${SSH_USER_ID:-}"
-
-	if [[ -z ${value} ]] \
-		|| ! is_valid_ssh_user_id "${value}"
-	then
-		if [[ ${user} == root ]]
-		then
-			value="${root_value}"
-		else
-			value="${default_value}"
-		fi
-	fi
-
-	printf -- '%s' "${value}"
-}
-
-function get_ssh_user_gid ()
-{
-	local -r default_value="${1:-500}"
-	local -r id="$(
-		get_ssh_user_id
-	)"
-	local -r id_pattern='^([0-9]{1,}):([0-9]{1,})$'
-
-	local value="${default_value}"
-
-	if [[ ${id} =~ ${id_pattern} ]]
-	then
-		value="${BASH_REMATCH[2]}"
 	fi
 
 	printf -- '%d' "${value}"
