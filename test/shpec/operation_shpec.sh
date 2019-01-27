@@ -1607,6 +1607,127 @@ function test_custom_ssh_configuration ()
 			end
 		end
 
+		describe "Configure root user"
+			__terminate_container \
+				ssh.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.1 \
+				--env "SSH_USER=root" \
+				--env "SSH_USER_FORCE_SFTP=true" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			container_port_22="$(
+				__get_container_port \
+					ssh.1 \
+					22/tcp
+			)"
+
+			if ! __is_container_ready \
+				ssh.1 \
+				${STARTUP_TIME} \
+				"/usr/sbin/sshd " \
+				"grep \
+					'^Server listening on 0\.0\.0\.0 port 22\.' \
+					/var/log/secure"
+			then
+				exit 1
+			fi
+
+			it "Can set the username."
+				user="$(
+					ssh -q \
+					-p ${container_port_22} \
+					-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
+					-o StrictHostKeyChecking=no \
+					-o LogLevel=error \
+					root@${DOCKER_HOSTNAME} \
+					-- whoami
+				)"
+
+				assert equal \
+					"${user}" \
+					"root"
+			end
+
+			it "Logs the setting value."
+				user="$(
+					docker logs \
+						ssh.1 \
+					| awk '/^user :.*$/ { print $0; }'
+				)"
+
+				assert equal \
+					"${user/user : /}" \
+					"root"
+			end
+
+			it "Sets root uid:gid to 0:0."
+				user_id="$(
+					ssh -q \
+					-p ${container_port_22} \
+					-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
+					-o StrictHostKeyChecking=no \
+					-o LogLevel=error \
+					root@${DOCKER_HOSTNAME} \
+					-- printf \
+						'%s:%s\\n' \
+						"\$(id --user)" \
+						"\$(id --group)"
+				)"
+
+				assert equal \
+					"${user_id}" \
+					"0:0"
+			end
+
+			it "Logs the setting value."
+				user_id="$(
+					docker logs \
+						ssh.1 \
+					| awk '/^id :.*$/ { print $0; }'
+				)"
+
+				assert equal \
+					"${user_id/id : /}" \
+					"0:0"
+			end
+
+			it "Sets root HOME to /root."
+				user_home="$(
+					ssh -q \
+					-p ${container_port_22} \
+					-i ${TEST_DIRECTORY}/fixture/id_rsa_insecure \
+					-o StrictHostKeyChecking=no \
+					-o LogLevel=error \
+					root@${DOCKER_HOSTNAME} \
+					-- printf \
+						'%s\\n' \
+						"\${HOME}"
+				)"
+
+				assert equal \
+					"${user_home}" \
+					"/root"
+			end
+
+			it "Logs the setting value."
+				user_home="$(
+					docker logs \
+						ssh.1 \
+					| awk '/^home :.*$/ { print $0; }'
+				)"
+
+				assert equal \
+					"${user_home/home : /}" \
+					"/root"
+			end
+		end
+
 		describe "Configure system timezone"
 			__terminate_container \
 				ssh.1 \
