@@ -596,9 +596,6 @@ function get_ssh_user_shell ()
 	local -r force_sftp="$(
 		get_ssh_user_force_sftp
 	)"
-	local -r user="${2:-"$(
-		get_ssh_user
-	)"}"
 
 	local value="${SSH_USER_SHELL:-}"
 
