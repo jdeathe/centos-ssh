@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-readonly DEFAULT_SSH_SUDO="ALL=(ALL) ALL"
 readonly ENV_EXCLUDE_PATTERN="^([.]*SSH_USER_PASSWORD|_|HOME|HOSTNAME|PATH|PWD|SHLVL|SUPERVISOR_ENABLED|SUPERVISOR_GROUP_NAME|SUPERVISOR_PROCESS_NAME|TERM)="
 readonly LOCK_FILE="/var/lock/subsys/sshd-bootstrap"
 readonly PASSWORD_LENGTH=16
@@ -98,6 +97,34 @@ function is_valid_ssh_password_authentication ()
 	local -r value="${1}"
 
 	if [[ ${value} =~ ${boolean_value} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function is_valid_ssh_sudo ()
+{
+	local -r temp_path="$(
+		mktemp -u
+	)"
+	local -r sudo_cmd="${1:-}"
+
+	trap \
+		"rm -f \"${temp_path}\"" \
+		EXIT INT RETURN TERM
+
+	printf -- \
+		'%%wheel %s\n' \
+		"${sudo_cmd}" \
+		> "${temp_path}"
+
+	if visudo \
+		-c \
+		-q \
+		-f "${temp_path}" \
+		&> /dev/null
 	then
 		return 0
 	fi
@@ -487,6 +514,21 @@ function get_ssh_password_authentication ()
 
 	if [[ -z ${value} ]] \
 		|| ! is_valid_ssh_password_authentication "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function get_ssh_sudo ()
+{
+	local -r default_value="${1:-"ALL=(ALL) ALL"}"
+
+	local value="${SSH_SUDO:-}"
+
+	if [[ -z ${value} ]] \
+		|| ! is_valid_ssh_sudo "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -895,6 +937,7 @@ then
 	declare -A ENV_VALIDATION_WITH_DEFAULTS=(
 		[SSH_CHROOT_DIRECTORY]=is_valid_ssh_chroot_directory
 		[SSH_PASSWORD_AUTHENTICATION]=is_valid_ssh_password_authentication
+		[SSH_SUDO]=is_valid_ssh_sudo
 		[SSH_TIMEZONE]=is_valid_ssh_timezone
 		[SSH_USER]=is_valid_ssh_user
 		[SSH_USER_FORCE_SFTP]=is_valid_ssh_user_force_sftp
@@ -909,7 +952,9 @@ then
 	OPTS_SSH_PASSWORD_AUTHENTICATION="$(
 		get_ssh_password_authentication
 	)"
-	OPTS_SSH_SUDO="${SSH_SUDO:-${DEFAULT_SSH_SUDO}}"
+	OPTS_SSH_SUDO="$(
+		get_ssh_sudo
+	)"
 	OPTS_SSH_TIMEZONE="$(
 		get_ssh_timezone
 	)"
@@ -1253,7 +1298,9 @@ then
 
 	if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
 	then
-		unset OPTS_SSH_SUDO
+		OPTS_SSH_SUDO="N/A"
+	else
+		SSH_CHROOT_DIRECTORY_PATH="N/A"
 	fi
 
 	TIMER_TOTAL="$(
@@ -1274,12 +1321,12 @@ then
 		--------------------------------------------------------------------------------
 		user : ${OPTS_SSH_USER}
 		password : ${OPTS_SSH_USER_PASSWORD}
-		password authentication : ${PASSWORD_AUTHENTICATION:-no}
+		password authentication : ${PASSWORD_AUTHENTICATION}
 		id : ${OPTS_SSH_USER_UID}:${OPTS_SSH_USER_GID}
 		home : ${OPTS_SSH_USER_HOME}
-		chroot path : ${SSH_CHROOT_DIRECTORY_PATH:-N/A}
+		chroot path : ${SSH_CHROOT_DIRECTORY_PATH}
 		shell : ${OPTS_SSH_USER_SHELL}
-		sudo : ${OPTS_SSH_SUDO:-N/A}
+		sudo : ${OPTS_SSH_SUDO}
 		key fingerprints :
 		${SSH_KEY_FINGERPRINTS}
 		rsa private key fingerprint :
