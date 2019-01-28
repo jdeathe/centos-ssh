@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
-### 2.5.0 - Unreleased
+### 2.5.0 - 2019-01-28
 
 - Updates `openssl` package to 1.0.2k-16.el7.
 - Updates `sudo` package to 1.8.23-3.el7.

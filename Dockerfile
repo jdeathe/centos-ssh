@@ -1,6 +1,6 @@
 FROM centos:7.5.1804
 
-ARG RELEASE_VERSION="2.4.1"
+ARG RELEASE_VERSION="2.5.0"
 
 # -----------------------------------------------------------------------------
 # - Import the RPM GPG keys for repositories
