@@ -30,6 +30,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Adds port incrementation to Makefile's run template for container names with an instance suffix.
 - Adds consideration for event lag into test cases for unhealthy health_status events.
 - Adds feature to allow configuration of "root" `SSH_USER`.
+- Adds validation of `SSH_SUDO` values.
 - Removes use of `/etc/services-config` paths.
 - Removes fleet `--manager` option in the `scmi` installer.
 - Removes X-Fleet section from etcd register template unit-file.
