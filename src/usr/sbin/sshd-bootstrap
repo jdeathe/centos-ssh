@@ -121,9 +121,10 @@ function is_valid_ssh_sudo ()
 		> "${temp_path}"
 
 	if visudo \
-		--quiet \
-		--check \
-		--file "${temp_path}"
+		-c \
+		-q \
+		-f "${temp_path}" \
+		&> /dev/null
 	then
 		return 0
 	fi
