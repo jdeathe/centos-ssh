@@ -4,6 +4,37 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.10.0 - 2019-01-28
+
+- Updates supervisor to 3.3.5.
+- Updates validation for `SSH_USER_ID` to allow values in the system ID range.
+- Updates and restructures Dockerfile to reduce number of layers in image.
+- Updates container naming conventions for `scmi` making the node element optional.
+- Updates container naming conventions and readability of `Makefile`.
+- Updates `docker logs` output example in README document.
+- Updates README instructions following review.
+- Updates default HEALTHCHECK interval to 1 second from 0.5.
+- Replaces awk with native bash regex when testing sudo user's have `NOPASSWD:ALL`.
+- Fixes bootstrap errors regarding readonly `PASSWORD_LENGTH`.
+- Fixes issue with redacted password when using `SSH_PASSWORD_AUTHENTICATION` in combination with `SSH_USER_FORCE_SFTP`.
+- Fixes issue with unexpected published port in run templates when `DOCKER_PORT_MAP_TCP_22` is set to an empty string or 0.
+- Fixes missing `SSH_TIMEZONE` from Makefile's install run template.
+- Fixes validation of `SSH_TIMEZONE` values - set to defaults with warning and abort on error.
+- Adds `SSH_USER_PRIVATE_KEY` to allow configuration of an RSA private key for `SSH_USER`.
+- Adds placeholder replacement of `RELEASE_VERSION` docker argument to systemd service unit template.
+- Adds error messages to healthcheck script and includes supervisord check.
+- Adds a short sleep after bootstrap Details to work-around missing output on CI service's host.
+- Adds port incrementation to Makefile's run template for container names with an instance suffix.
+- Adds consideration for event lag into test cases for unhealthy health_status events.
+- Adds feature to allow configuration of "root" `SSH_USER`.
+- Adds validation of `SSH_SUDO` values.
+- Removes use of `/etc/services-config` paths.
+- Removes fleet `--manager` option in the `scmi` installer.
+- Removes X-Fleet section from etcd register template unit-file.
+- Removes the unused group element from the default container name.
+- Removes the node element from the default container name.
+- Removes undocumented `SSH_ROOT_PASSWORD` from bootstrap process.
+
 ### 1.9.1 - 2018-11-10
 
 - Adds feature to set system time zone via `SSH_TIMEZONE`.

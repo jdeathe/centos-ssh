@@ -1,13 +1,13 @@
-# =============================================================================
-# jdeathe/centos-ssh
-#
-# CentOS-6 6.10 x86_64 - SCL/EPEL/IUS Repos. / Supervisor / OpenSSH.
-# 
-# =============================================================================
 FROM centos:centos6.10
 
+ARG RELEASE_VERSION="1.10.0"
+
 # -----------------------------------------------------------------------------
-# Base Install + Import the RPM GPG keys for Repositories
+# - Import the RPM GPG keys for repositories
+# - Base install of required packages
+# - Install supervisord (used to run more than a single process)
+# - Install supervisor-stdout to allow output of services started by
+#  supervisord to be easily inspected with "docker logs".
 # -----------------------------------------------------------------------------
 RUN rpm --rebuilddb \
 	&& rpm --import \
@@ -44,6 +44,11 @@ RUN rpm --rebuilddb \
 		policycoreutils \
 		sysvinit-tools \
 	&& yum clean all \
+	&& easy_install \
+		'supervisor == 3.3.5' \
+		'supervisor-stdout == 0.1.1' \
+	&& mkdir -p \
+		/var/log/supervisor/ \
 	&& find /usr/share \
 		-type f \
 		-regextype posix-extended \
@@ -56,44 +61,6 @@ RUN rpm --rebuilddb \
 	&& > /etc/sysconfig/i18n
 
 # -----------------------------------------------------------------------------
-# Install supervisord (required to run more than a single process in a container)
-# Note: EPEL package lacks /usr/bin/pidproxy
-# We require supervisor-stdout to allow output of services started by 
-# supervisord to be easily inspected with "docker logs".
-# -----------------------------------------------------------------------------
-RUN easy_install \
-		'supervisor == 3.3.4' \
-		'supervisor-stdout == 0.1.1' \
-	&& mkdir -p \
-		/var/log/supervisor/
-
-# -----------------------------------------------------------------------------
-# UTC Timezone & Networking
-# -----------------------------------------------------------------------------
-RUN ln -sf \
-		/usr/share/zoneinfo/UTC \
-		/etc/localtime \
-	&& echo "NETWORKING=yes" > /etc/sysconfig/network
-
-# -----------------------------------------------------------------------------
-# Configure SSH for non-root public key authentication
-# -----------------------------------------------------------------------------
-RUN sed -i \
-	-e 's~^PasswordAuthentication yes~PasswordAuthentication no~g' \
-	-e 's~^#PermitRootLogin yes~PermitRootLogin no~g' \
-	-e 's~^#UseDNS yes~UseDNS no~g' \
-	-e 's~^\(.*\)/usr/libexec/openssh/sftp-server$~\1internal-sftp~g' \
-	/etc/ssh/sshd_config
-
-# -----------------------------------------------------------------------------
-# Enable the wheel sudoers group
-# -----------------------------------------------------------------------------
-RUN sed -i \
-	-e 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' \
-	-e 's~\(.*\) requiretty$~#\1requiretty~' \
-	/etc/sudoers
-
-# -----------------------------------------------------------------------------
 # Copy files into place
 # -----------------------------------------------------------------------------
 ADD src/usr/bin \
@@ -102,40 +69,38 @@ ADD src/usr/sbin \
 	/usr/sbin/
 ADD src/opt/scmi \
 	/opt/scmi/
-ADD src/etc/systemd/system \
-	/etc/systemd/system/
-ADD src/etc/services-config/ssh/authorized_keys \
-	src/etc/services-config/ssh/sshd-bootstrap.conf \
-	src/etc/services-config/ssh/sshd-bootstrap.env \
-	/etc/services-config/ssh/
-ADD src/etc/services-config/supervisor/supervisord.conf \
-	/etc/services-config/supervisor/
-ADD src/etc/services-config/supervisor/supervisord.d \
-	/etc/services-config/supervisor/supervisord.d/
+ADD src/etc \
+	/etc/
 
-RUN mkdir -p \
-		/etc/supervisord.d/ \
-	&& cp -pf \
+# -----------------------------------------------------------------------------
+# Provisioning
+# - UTC Timezone
+# - Networking
+# - Configure SSH defaults for non-root public key authentication
+# - Enable the wheel sudoers group
+# - Replace placeholders with values in systemd service unit template
+# - Set permissions
+# -----------------------------------------------------------------------------
+RUN ln -sf \
+		/usr/share/zoneinfo/UTC \
+		/etc/localtime \
+	&& echo "NETWORKING=yes" \
+		> /etc/sysconfig/network \
+	&& sed -i \
+		-e 's~^PasswordAuthentication yes~PasswordAuthentication no~g' \
+		-e 's~^#PermitRootLogin yes~PermitRootLogin no~g' \
+		-e 's~^#UseDNS yes~UseDNS no~g' \
+		-e 's~^\(.*\)/usr/libexec/openssh/sftp-server$~\1internal-sftp~g' \
 		/etc/ssh/sshd_config \
-		/etc/services-config/ssh/ \
-	&& ln -sf \
-		/etc/services-config/ssh/sshd_config \
-		/etc/ssh/sshd_config \
-	&& ln -sf \
-		/etc/services-config/ssh/sshd-bootstrap.conf \
-		/etc/sshd-bootstrap.conf \
-	&& ln -sf \
-		/etc/services-config/ssh/sshd-bootstrap.env \
-		/etc/sshd-bootstrap.env \
-	&& ln -sf \
-		/etc/services-config/supervisor/supervisord.conf \
-		/etc/supervisord.conf \
-	&& ln -sf \
-		/etc/services-config/supervisor/supervisord.d/sshd-wrapper.conf \
-		/etc/supervisord.d/sshd-wrapper.conf \
-	&& ln -sf \
-		/etc/services-config/supervisor/supervisord.d/sshd-bootstrap.conf \
-		/etc/supervisord.d/sshd-bootstrap.conf \
+	&& sed -i \
+		-e 's~^# %wheel\tALL=(ALL)\tALL~%wheel\tALL=(ALL) ALL~g' \
+		-e 's~\(.*\) requiretty$~#\1requiretty~' \
+		/etc/sudoers \
+	&& sed -i \
+		-e "s~{{RELEASE_VERSION}}~${RELEASE_VERSION}~g" \
+		/etc/systemd/system/centos-ssh@.service \
+	&& chmod 644 \
+		/etc/{sshd-bootstrap.{conf,env},supervisord.conf,supervisord.d/sshd-{bootstrap,wrapper}.conf} \
 	&& chmod 700 \
 		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper}}}
 
@@ -158,12 +123,12 @@ ENV SSH_AUTHORIZED_KEYS="" \
 	SSH_USER_ID="500:500" \
 	SSH_USER_PASSWORD="" \
 	SSH_USER_PASSWORD_HASHED="false" \
+	SSH_USER_PRIVATE_KEY="" \
 	SSH_USER_SHELL="/bin/bash"
 
 # -----------------------------------------------------------------------------
 # Set image metadata
 # -----------------------------------------------------------------------------
-ARG RELEASE_VERSION="1.9.1"
 LABEL \
 	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \
@@ -195,7 +160,7 @@ jdeathe/centos-ssh:${RELEASE_VERSION} \
 	org.deathe.description="CentOS-6 6.10 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
 
 HEALTHCHECK \
-	--interval=0.5s \
+	--interval=1s \
 	--timeout=1s \
 	--retries=5 \
 	CMD ["/usr/bin/healthcheck"]
