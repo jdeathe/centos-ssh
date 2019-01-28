@@ -82,9 +82,10 @@ $ docker run -d \
 Connect using the `sftp` command line client with the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant).
 
 ```
-$ sftp -i id_rsa_insecure \
+$ sftp \
   -o Port=2021 \
   -o StrictHostKeyChecking=no \
+  -i id_rsa_insecure \
   app-admin@{docker-host-ip}
 ```
 
@@ -501,13 +502,17 @@ This may be useful when running an SFTP container and mounting data volumes from
 
 ### Connect to the running container using SSH
 
-If you have not already got one, create the .ssh directory in your home directory with the permissions required by SSH.
+#### PasswordAuthentication disabled (default)
+
+*NOTE:* This documents the process of connecting with a known private key which is insecure but the default. It is recommended that an alternative private/public key pair is created and used in place of the default value if running a container outside of a local test environment.
+
+Create the .ssh directory in your home directory with the permissions required by SSH.
 
 ```
 $ mkdir -pm 700 ~/.ssh
 ```
 
-Get the [Vagrant](http://www.vagrantup.com/) insecure public key using curl (you could also use wget if you have that installed).
+Get the [Vagrant](http://www.vagrantup.com/) insecure public key using curl.
 
 ```
 $ curl -LsSO https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant && \
@@ -515,19 +520,32 @@ $ curl -LsSO https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vag
   chmod 600 ~/.ssh/id_rsa_insecure
 ```
 
-If the command ran successfully you should now have a new private SSH key installed in your home "~/.ssh" directory called "id_rsa_insecure"
+There should now be a new private SSH key installed in the path `~/.ssh/id_rsa_insecure`.
 
-Next, unless we specified one, we need to determine what port to connect to on the docker host. You can do this with either `docker ps` or `docker inspect` but the simplest method is to use `docker port`.
+Next, unless specified in the run command, it is necessary to determine what port to connect to on the docker host. For a container named "ssh.1" use the following command:
 
 ```
 $ docker port ssh.1 22
 ```
 
-To connect to the running container use the following where "app-admin" is the default `SSH_USER` value.
+To connect to the running container use the following, where "app-admin" is the default `SSH_USER` value.
 
 ```
-$ ssh -p {container-port} \
+$ ssh \
+  -o Port={container-port} \
+  -o StrictHostKeyChecking=no \
   -i ~/.ssh/id_rsa_insecure \
-  app-admin@{docker-host-ip} \
-  -o StrictHostKeyChecking=no
+  app-admin@{docker-host-ip}
+```
+
+#### PasswordAuthentication enabled
+
+If connecting to a container running with `SSH_PASSWORD_AUTHENTICATION` set to "true" the process of connecting is simplified and the command used differs slightly.
+
+```
+$ ssh \
+  -o Port={container-port} \
+  -o StrictHostKeyChecking=no \
+  -o UserKnownHostsFile=/dev/null \
+  app-admin@{docker-host-ip}
 ```
