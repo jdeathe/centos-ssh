@@ -990,6 +990,7 @@ function scmi_manager_type_command_prerequisites ()
 	local -a COMMAND_PATHS=(
 		'/usr/local/bin'
 		'/usr/bin'
+		'/bin'
 	)
 	local MANAGER_TYPE="${1:-${SCMI_MANAGER_TYPE}}"
 

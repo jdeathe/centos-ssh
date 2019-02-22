@@ -4,6 +4,10 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
+### 1.10.1 - Unreleased
+
+- Fixes `scmi` installation error when using the `--manager=systemd` option on Ubuntu hosts.
+
 ### 1.10.0 - 2019-01-28
 
 - Updates supervisor to 3.3.5.
