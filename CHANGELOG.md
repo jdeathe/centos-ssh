@@ -4,6 +4,10 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
+### 2.5.1 - Unreleased
+
+- Fixes `scmi` installation error when using the `--manager=systemd` option on Ubuntu hosts.
+
 ### 2.5.0 - 2019-01-28
 
 - Updates `openssl` package to 1.0.2k-16.el7.
