@@ -1,4 +1,4 @@
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Naming convention:
 #
 #    centos-ssh@.service = {service-unit-install-template-name}
@@ -39,7 +39,7 @@
 #     sudo systemctl stop {service-unit-instance-name}
 #     sudo rm /etc/systemd/system/{service-unit-template-name}
 #     sudo docker rm -f {service-unit-long-name}
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 [Unit]
 Description=centos-ssh // %p@%i
@@ -75,20 +75,12 @@ Environment="SSH_USER_SHELL=/bin/bash"
 
 # Initialisation: Load image from local storage if available, otherwise pull.
 ExecStartPre=/bin/bash -c \
-  "if [[ -z $( \
-      if [[ -n $(/usr/bin/docker images -q \
-          ${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
-        ) ]]; \
-      then \
-        echo $(/usr/bin/docker images -q \
-          ${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
-        ); \
-      else \
-        echo $(/usr/bin/docker images -q \
-          docker.io/${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
-        ); \
-      fi; \
-    ) ]]; \
+  "if [[ -z \"$(/usr/bin/docker images -q \
+      ${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
+    )\" ]] \
+    && [[ -z \"$(/usr/bin/docker images -q \
+      docker.io/${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
+    )\" ]]; \
   then \
     if [[ -f ${DOCKER_IMAGE_PACKAGE_PATH}/${DOCKER_USER}/${DOCKER_IMAGE_NAME}.${DOCKER_IMAGE_TAG}.tar.xz ]]; \
     then \
