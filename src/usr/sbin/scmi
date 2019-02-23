@@ -1701,6 +1701,7 @@ function scmi_systemd_uninstall ()
 	then
 		scmi_print_message "sub_step_info" \
 			"Stopping ${SERVICE_UNIT_INSTANCE_NAME}"
+		${systemctl} daemon-reload
 		scmi_run_step \
 			"${systemctl} stop ${SERVICE_UNIT_INSTANCE_NAME}"
 	fi
