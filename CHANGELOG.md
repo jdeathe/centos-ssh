@@ -9,7 +9,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Fixes `scmi` installation error when using the `--manager=systemd` option on Ubuntu hosts.
 - Fixes issues with failure to install/uninstall systemd units installed with scmi.
 - Adds improvement to pull logic in systemd unit install template.
-- Adds `docker-comose.yml` to `.dockerignore` to reduce size of build context.
+- Adds `docker-compose.yml` to `.dockerignore` to reduce size of build context.
 - Removes reference to `python-setuptools` from README as it's no longer installed.
 
 ### 2.5.0 - 2019-01-28
