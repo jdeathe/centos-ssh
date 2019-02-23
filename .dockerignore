@@ -2,6 +2,7 @@
 .gitignore
 dist
 test
+docker-compose.yml
 LICENSE
 README-short.txt
 *.md
