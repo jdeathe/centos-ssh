@@ -6,6 +6,7 @@ Summary of release changes for Version 2 - CentOS-7
 
 ### 2.5.1 - Unreleased
 
+- Updates Dockerfile with combined ADD to reduce layer count in final image.
 - Fixes `scmi` installation error when using the `--manager=systemd` option on Ubuntu hosts.
 - Fixes issues with failure to install/uninstall systemd units installed with scmi.
 - Adds improvement to pull logic in systemd unit install template.
