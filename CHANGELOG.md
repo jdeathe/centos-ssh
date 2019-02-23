@@ -7,6 +7,7 @@ Summary of release changes for Version 2 - CentOS-7
 ### 2.5.1 - Unreleased
 
 - Fixes `scmi` installation error when using the `--manager=systemd` option on Ubuntu hosts.
+- Fixes issues with failure to install/uninstall systemd units installed with scmi.
 
 ### 2.5.0 - 2019-01-28
 
