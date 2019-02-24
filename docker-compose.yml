@@ -6,14 +6,14 @@
 # docker-compose build
 # docker-compose down
 #
-# Run Default example:
+# Run:
 # docker-compose up -d
 #
 # Check service logs:
 # docker-compose logs ssh
 #
 # Usage:
-# docker-compose exec ssh bash
+# docker-compose exec ssh sh -c "curl ifconfig.io/all"
 #
 # Reset - bring down services + delete volume data:
 # docker-compose down -v
