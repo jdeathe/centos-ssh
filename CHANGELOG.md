@@ -11,6 +11,7 @@ Summary of release changes for Version 1 - CentOS-6
 - Fixes issues with failure to install/uninstall systemd units installed with scmi.
 - Adds improvement to pull logic in systemd unit install template.
 - Adds `docker-compose.yml` to `.dockerignore` to reduce size of build context.
+- Adds docker-compose configuration example.
 - Removes reference to `python-setuptools` from README as it's no longer installed.
 
 ### 1.10.0 - 2019-01-28
