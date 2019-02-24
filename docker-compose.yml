@@ -46,7 +46,7 @@ services:
       SSH_USER_SHELL: "${SSH_USER_SHELL}"
     image: "jdeathe/centos-ssh:latest"
     ports:
-      - "22:22"
+      - "2020:22"
     restart: "always"
     volumes:
       - "config-ssh:/etc/ssh"
