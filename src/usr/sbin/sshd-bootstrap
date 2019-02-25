@@ -921,8 +921,6 @@ function main ()
 	# Populate the environment source file
 	env >> /etc/sshd-bootstrap.env
 
-	source /etc/sshd-bootstrap.conf
-
 	# Docker ENV inheritance
 	if [[ ${SSH_INHERIT_ENVIRONMENT} == true ]] \
 		&& [[ -s /etc/sshd-bootstrap.env ]]
