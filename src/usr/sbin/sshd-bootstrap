@@ -42,7 +42,7 @@ function is_valid_ssh_authorized_keys ()
 
 function is_valid_ssh_chroot_directory ()
 {
-	local -r chroot_directory="${1:-}"
+	local -r chroot_directory="${1}"
 	local -r safe_directory='^(%h|\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+)$'
 
 	if grep -qoP "${safe_directory}" <<< "${chroot_directory}"
@@ -92,7 +92,7 @@ function is_valid_ssh_sudo ()
 	local -r temp_path="$(
 		mktemp -u
 	)"
-	local -r sudo_cmd="${1:-}"
+	local -r sudo_cmd="${1}"
 
 	trap \
 		"rm -f \"${temp_path}\"" \
@@ -160,7 +160,7 @@ function is_valid_ssh_user_force_sftp ()
 
 function is_valid_ssh_user_home ()
 {
-	local -r home_directory="${1:-}"
+	local -r home_directory="${1}"
 	local -r user_directory='^\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+$'
 	local -r root_directory='^/root$'
 	local -r user="${2:-"$(
@@ -278,7 +278,7 @@ function get_ssh_authorized_keys ()
 		get_ssh_password_authentication
 	)"
 
-	local value="${SSH_AUTHORIZED_KEYS:-}"
+	local value="${SSH_AUTHORIZED_KEYS}"
 
 	if [[ -n ${value} ]] \
 		&& [[ ${value} =~ ${pattern_base64} ]]
@@ -337,7 +337,7 @@ function get_ssh_chroot_directory ()
 {
 	local -r default_value="${1:-%h}"
 
-	local value="${SSH_CHROOT_DIRECTORY:-}"
+	local value="${SSH_CHROOT_DIRECTORY}"
 
 	if [[ -z ${value} ]] \
 		|| ! is_valid_ssh_chroot_directory "${value}"
@@ -415,7 +415,7 @@ function get_ssh_host_key_fingerprint ()
 
 function get_ssh_key_fingerprint ()
 {
-	local -r ssh_key="${1:-}"
+	local -r ssh_key="${1}"
 	local -r ssh_key_file="$(
 		mktemp
 	)"
@@ -495,7 +495,7 @@ function get_ssh_password_authentication ()
 {
 	local -r default_value="${1:-false}"
 
-	local value="${SSH_PASSWORD_AUTHENTICATION:-}"
+	local value="${SSH_PASSWORD_AUTHENTICATION}"
 
 	if [[ -z ${value} ]] \
 		|| ! is_valid_ssh_password_authentication "${value}"
@@ -510,7 +510,7 @@ function get_ssh_sudo ()
 {
 	local -r default_value="${1:-"ALL=(ALL) ALL"}"
 
-	local value="${SSH_SUDO:-}"
+	local value="${SSH_SUDO}"
 
 	if [[ -z ${value} ]] \
 		|| ! is_valid_ssh_sudo "${value}"
@@ -525,7 +525,7 @@ function get_ssh_timezone ()
 {
 	local -r default_value="${1:-UTC}"
 
-	local value="${SSH_TIMEZONE:-}"
+	local value="${SSH_TIMEZONE}"
 
 	if [[ -z ${value} ]] \
 		|| ! is_valid_ssh_timezone "${value}"
@@ -540,7 +540,7 @@ function get_ssh_user ()
 {
 	local -r default_value="${1:-app-admin}"
 
-	local value="${SSH_USER:-}"
+	local value="${SSH_USER}"
 
 	if [[ -z ${value} ]] \
 		|| ! is_valid_ssh_user "${value}"
@@ -555,7 +555,7 @@ function get_ssh_user_password_hashed ()
 {
 	local -r default_value="${1:-false}"
 
-	local value="${SSH_USER_PASSWORD_HASHED:-}"
+	local value="${SSH_USER_PASSWORD_HASHED}"
 
 	if [[ -z ${value} ]] \
 		|| ! is_valid_ssh_user_password_hashed "${value}"
@@ -571,7 +571,7 @@ function get_ssh_user_private_key ()
 	local -r default_value=""
 	local -r pattern_base64='^[A-Za-z0-9/+=]*$'
 
-	local value="${SSH_USER_PRIVATE_KEY:-}"
+	local value="${SSH_USER_PRIVATE_KEY}"
 
 	if [[ -n ${value} ]] \
 		&& [[ ${value} =~ ${pattern_base64} ]]
@@ -592,7 +592,7 @@ function get_ssh_user_force_sftp ()
 {
 	local -r default_value="${1:-false}"
 
-	local value="${SSH_USER_FORCE_SFTP:-}"
+	local value="${SSH_USER_FORCE_SFTP}"
 
 	if [[ -z ${value} ]] \
 		|| ! is_valid_ssh_user_force_sftp "${value}"
@@ -629,7 +629,7 @@ function get_ssh_user_home ()
 		get_ssh_user
 	)"}"
 
-	local value="${SSH_USER_HOME:-}"
+	local value="${SSH_USER_HOME}"
 
 	if [[ -z ${value} ]] \
 		|| ! is_valid_ssh_user_home "${value}"
@@ -656,7 +656,7 @@ function get_ssh_user_id ()
 		get_ssh_user
 	)"}"
 
-	local value="${SSH_USER_ID:-}"
+	local value="${SSH_USER_ID}"
 
 	if [[ -z ${value} ]] \
 		|| ! is_valid_ssh_user_id "${value}"
@@ -679,7 +679,7 @@ function get_ssh_user_shell ()
 		get_ssh_user_force_sftp
 	)"
 
-	local value="${SSH_USER_SHELL:-}"
+	local value="${SSH_USER_SHELL}"
 
 	if [[ -z ${value} ]] \
 		|| ! is_valid_ssh_user_shell "${value}"
@@ -767,7 +767,7 @@ function generate_ssh_host_keys ()
 {
 	local -r replace="${1:-false}"
 
-	local version="${2:-}"
+	local version="${2}"
 
 	if [[ -z ${version} ]] \
 		&& [[ -e /etc/redhat-release ]]
