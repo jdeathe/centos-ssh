@@ -33,7 +33,8 @@ fi
 
 if [[ ${SSH_AUTOSTART_SSHD} == true ]]
 then
-	if ! ps axo command | grep -qE '^/usr/sbin/sshd -D'
+	if ! ps axo command | grep -qE '^/usr/sbin/sshd -D' \
+		|| [[ ! -s /var/run/sshd.pid ]]
 	then
 		>&2 printf -- \
 			'%s\n' \
