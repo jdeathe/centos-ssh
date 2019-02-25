@@ -63,8 +63,7 @@ RUN rpm --rebuilddb \
 # ------------------------------------------------------------------------------
 # Copy files into place
 # ------------------------------------------------------------------------------
-ADD src \
-	/
+ADD src /
 
 # ------------------------------------------------------------------------------
 # Provisioning
@@ -103,9 +102,11 @@ EXPOSE 22
 # ------------------------------------------------------------------------------
 # Set default environment variables
 # ------------------------------------------------------------------------------
-ENV SSH_AUTHORIZED_KEYS="" \
+ENV \
+	SSH_AUTHORIZED_KEYS="" \
 	SSH_AUTOSTART_SSHD="true" \
 	SSH_AUTOSTART_SSHD_BOOTSTRAP="true" \
+	SSH_AUTOSTART_SUPERVISOR_STDOUT="true" \
 	SSH_CHROOT_DIRECTORY="%h" \
 	SSH_INHERIT_ENVIRONMENT="false" \
 	SSH_PASSWORD_AUTHENTICATION="false" \
