@@ -906,17 +906,17 @@ function __set_ssh_user_password ()
 
 function main ()
 {
-	readonly ENV_EXCLUDE_PATTERN="^([.]*SSH_USER_PASSWORD|_|HOME|HOSTNAME|PATH|PWD|SHLVL|SUPERVISOR_ENABLED|SUPERVISOR_GROUP_NAME|SUPERVISOR_PROCESS_NAME|TERM)="
-	readonly LOCK_FILE="/var/lock/subsys/sshd-bootstrap"
-	readonly PASSWORD_LENGTH=16
-	readonly REDACTED_VALUE="********"
-	readonly TIMER_START="$(
+	local -r env_exclude_pattern="^([.]*SSH_USER_PASSWORD|_|HOME|HOSTNAME|PATH|PWD|SHLVL|SUPERVISOR_ENABLED|SUPERVISOR_GROUP_NAME|SUPERVISOR_PROCESS_NAME|TERM)="
+	local -r lock_file="/var/lock/subsys/sshd-bootstrap"
+	local -r password_length=16
+	local -r redacted_value="********"
+	local -r timer_start="$(
 		date +%s.%N
 	)"
 
 	# Create lock file
 	touch \
-		"${LOCK_FILE}"
+		"${lock_file}"
 
 	# Populate the environment source file
 	env >> /etc/sshd-bootstrap.env
@@ -925,7 +925,7 @@ function main ()
 	if [[ ${SSH_INHERIT_ENVIRONMENT} == true ]] \
 		&& [[ -s /etc/sshd-bootstrap.env ]]
 	then
-		grep -Ev "${ENV_EXCLUDE_PATTERN}" \
+		grep -Ev "${env_exclude_pattern}" \
 			/etc/sshd-bootstrap.env \
 			> /etc/environment
 	fi
@@ -970,7 +970,7 @@ function main ()
 			__get_ssh_user_password_hashed
 		)"
 		OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-"$(
-			__get_password "${PASSWORD_LENGTH}"
+			__get_password "${password_length}"
 		)"}"
 		OPTS_SSH_USER_PRIVATE_KEY="$(
 			__get_ssh_user_private_key
@@ -1088,7 +1088,7 @@ function main ()
 					'%s:%s\n' \
 					"root" \
 					"$(
-						__get_password "${PASSWORD_LENGTH}"
+						__get_password "${password_length}"
 					)" \
 				| chpasswd
 			) &
@@ -1282,20 +1282,20 @@ function main ()
 		# password authentication or sudo.
 		if [[ -n ${SSH_USER_PASSWORD} ]]
 		then
-			OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
+			OPTS_SSH_USER_PASSWORD="${redacted_value}"
 		elif [[ ${OPTS_SSH_PASSWORD_AUTHENTICATION} == false ]] \
 			&& [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
 		then
-			OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
+			OPTS_SSH_USER_PASSWORD="${redacted_value}"
 		elif [[ ${OPTS_SSH_PASSWORD_AUTHENTICATION} == false ]] \
 			&& [[ ${OPTS_SSH_USER} != root ]] \
 			&& __is_sudo_no_password_all "${OPTS_SSH_SUDO}"
 		then
-			OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
+			OPTS_SSH_USER_PASSWORD="${redacted_value}"
 		elif [[ ${OPTS_SSH_PASSWORD_AUTHENTICATION} == false ]] \
 			&& [[ ${OPTS_SSH_USER} == root ]]
 		then
-			OPTS_SSH_USER_PASSWORD="${REDACTED_VALUE}"
+			OPTS_SSH_USER_PASSWORD="${redacted_value}"
 		fi
 
 		if [[ ${OPTS_SSH_USER_FORCE_SFTP} == true ]]
@@ -1310,7 +1310,7 @@ function main ()
 				-v timer_end="$(
 					date +%s.%N
 				)" \
-				-v timer_start="${TIMER_START}" \
+				-v timer_start="${timer_start}" \
 				'BEGIN { print \
 					timer_end - timer_start;
 				}'
@@ -1345,7 +1345,7 @@ function main ()
 
 	# Release lock file
 	rm -f \
-		"${LOCK_FILE}"
+		"${lock_file}"
 }
 
 main "${@}"
