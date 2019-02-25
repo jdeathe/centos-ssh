@@ -18,7 +18,7 @@ The Dockerfile can be used to build a base image that is the bases for several o
 
 Included in the build are the [SCL](https://www.softwarecollections.org/), [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/) and [vim-minimal](http://www.vim.org/) are along with [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
 
-[Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run. To enable simple viewing of stdout for the sshd subprocess, supervisor-stdout is included. This allows you to see output from the supervisord controlled subprocesses with `docker logs {container-name}`.
+[Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run.
 
 SSH access is by public key authentication and, by default, the [Vagrant](http://www.vagrantup.com/) [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant) is required.
 
@@ -334,6 +334,10 @@ It may be desirable to prevent the startup of the sshd daemon and/or sshd-bootst
   --env "SSH_AUTOSTART_SSHD_BOOTSTRAP=false" \
 ...
 ```
+
+##### SSH_AUTOSTART_SUPERVISOR_STDOUT
+
+This image has `supervisor_stdout` installed which can be used to allow a process controlled by supervisord to send output to both a log file and stdout. It is recommended to simply output to stdout in order to reduce the number of running processes to a minimum. Setting `SSH_AUTOSTART_SUPERVISOR_STDOUT` to "false" will prevent the startup of `supervisor_stdout`. Where an image requires this feature for its logging output `SSH_AUTOSTART_SUPERVISOR_STDOUT` should be set to "true".
 
 ##### SSH_CHROOT_DIRECTORY
 

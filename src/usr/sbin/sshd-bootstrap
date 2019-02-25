@@ -1339,8 +1339,6 @@ then
 
 	EOT
 
-	# Attempt to force output flush
-	sleep 0.1
 fi
 
 # Release lock file
