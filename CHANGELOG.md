@@ -15,6 +15,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Adds docker-compose configuration example.
 - Adds `SSH_AUTOSTART_SUPERVISOR_STDOUT` to control startup of `supervisor_stdout`.
 - Adds drop-in configuration for `supervisor_stdout` in `/etc/supervisord.d/00-supervisor_stdout.conf`.
+- Adds improved sshd-wrapper script.
 - Removes reference to `python-setuptools` from README as it's no longer installed.
 - Removes requirement of `supervisor_stdout` for output of supervisord logs to stdout.
 
