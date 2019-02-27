@@ -265,8 +265,7 @@ The output of the logs should show the auto-generated password for the app-admin
 2019-01-17 18:56:10,089 INFO success: supervisor_stdout entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
 2019-01-17 18:56:10,089 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
 2019-01-17 18:56:10,089 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-sshd-bootstrap stdout | Initialising SSH.
-sshd-bootstrap stdout |
+
 ================================================================================
 SSH Details
 --------------------------------------------------------------------------------

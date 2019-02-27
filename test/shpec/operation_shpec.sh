@@ -22,8 +22,8 @@ function __destroy ()
 
 function __get_container_port ()
 {
-	local container="${1:-}"
-	local port="${2:-}"
+	local container="${1}"
+	local port="${2}"
 	local value=""
 
 	value="$(
@@ -44,13 +44,13 @@ function __get_container_port ()
 # ready_test - Command used to test if the service is ready.
 function __is_container_ready ()
 {
-	local container="${1:-}"
+	local container="${1}"
 	local counter=$(
 		awk \
 			-v seconds="${2:-10}" \
 			'BEGIN { print 10 * seconds; }'
 	)
-	local process_pattern="${3:-}"
+	local process_pattern="${3}"
 	local ready_test="${4:-true}"
 
 	until (( counter == 0 )); do
@@ -85,8 +85,8 @@ function __setup ()
 # Match a string with an Extended Regular Expression pattern.
 function __shpec_matcher_egrep ()
 {
-	local pattern="${2:-}"
-	local string="${1:-}"
+	local pattern="${2}"
+	local string="${1}"
 
 	printf -- \
 		'%s' \
