@@ -985,51 +985,52 @@ function main ()
 	touch \
 		"${lock_file}"
 
-	ssh_authorized_keys="$(
-		__get_ssh_authorized_keys
-	)"
-	ssh_inherit_environment="$(
-		__get_ssh_inherit_environment
-	)"
-	ssh_password_authentication="$(
-		__get_ssh_password_authentication
-	)"
-	ssh_sudo="$(
-		__get_ssh_sudo
-	)"
-	ssh_timezone="$(
-		__get_ssh_timezone
-	)"
-	ssh_user="$(
-		__get_ssh_user
-	)"
-	ssh_user_force_sftp="$(
-		__get_ssh_user_force_sftp
-	)"
 	ssh_user_home="$(
 		__get_ssh_user_home
-	)"
-	ssh_user_password_hashed="$(
-		__get_ssh_user_password_hashed
-	)"
-	ssh_user_password="${SSH_USER_PASSWORD:-"$(
-		__get_password "${password_length}"
-	)"}"
-	ssh_user_private_key="$(
-		__get_ssh_user_private_key
-	)"
-	ssh_user_shell="$(
-		__get_ssh_user_shell
-	)"
-	ssh_user_uid="$(
-		__get_ssh_user_uid
-	)"
-	ssh_user_gid="$(
-		__get_ssh_user_gid
 	)"
 
 	if [[ ! -d ${ssh_user_home}/.ssh ]]
 	then
+		ssh_authorized_keys="$(
+			__get_ssh_authorized_keys
+		)"
+		ssh_inherit_environment="$(
+			__get_ssh_inherit_environment
+		)"
+		ssh_password_authentication="$(
+			__get_ssh_password_authentication
+		)"
+		ssh_sudo="$(
+			__get_ssh_sudo
+		)"
+		ssh_timezone="$(
+			__get_ssh_timezone
+		)"
+		ssh_user="$(
+			__get_ssh_user
+		)"
+		ssh_user_force_sftp="$(
+			__get_ssh_user_force_sftp
+		)"
+		ssh_user_password_hashed="$(
+			__get_ssh_user_password_hashed
+		)"
+		ssh_user_password="${SSH_USER_PASSWORD:-"$(
+			__get_password "${password_length}"
+		)"}"
+		ssh_user_private_key="$(
+			__get_ssh_user_private_key
+		)"
+		ssh_user_shell="$(
+			__get_ssh_user_shell
+		)"
+		ssh_user_uid="$(
+			__get_ssh_user_uid
+		)"
+		ssh_user_gid="$(
+			__get_ssh_user_gid
+		)"
+
 		if [[ ${ssh_inherit_environment} == true ]]
 		then
 			env \
