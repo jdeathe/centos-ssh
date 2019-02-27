@@ -981,9 +981,20 @@ function main ()
 	local sshd_command="SSH"
 	local timer_total
 
-	# Create lock file
+	# Create lock
 	touch \
 		"${lock_file}"
+
+	# Parse options
+	while [[ "${#}" -gt 0 ]]
+	do
+		case "${1}" in
+			-v|--verbose)
+				verbose=true
+				shift 1
+				;;
+		esac
+	done
 
 	ssh_user_home="$(
 		__get_ssh_user_home
@@ -1241,37 +1252,52 @@ function main ()
 		if [[ ${ssh_password_authentication} == true ]] \
 			&& [[ -z ${SSH_AUTHORIZED_KEYS} ]]
 		then
-			ssh_key_fingerprints="N/A"
+			if [[ ${verbose} == true ]]
+			then
+				ssh_key_fingerprints="N/A"
+			fi
 		elif ! __is_valid_ssh_authorized_keys "${ssh_authorized_keys}"
 		then
-			printf -v ssh_key_fingerprints \
-				-- \
-				'%s\nUnable to populate %s/.ssh/authorized_key' \
-				"ERROR: Public key validation failed." \
-				"${ssh_user_home}"
+			if [[ ${verbose} == true ]]
+			then
+				printf -v ssh_key_fingerprints \
+					-- \
+					'%s\nUnable to populate %s/.ssh/authorized_key' \
+					"ERROR: Public key validation failed." \
+					"${ssh_user_home}"
+			fi
 		else
 			printf -- \
 				'%s\n' \
 				"${ssh_authorized_keys}" \
 				> "${ssh_user_home}"/.ssh/authorized_keys
 
-			ssh_key_fingerprints="$(
-				__get_ssh_authorized_key_fingerprints
-			)"
+			if [[ ${verbose} == true ]]
+			then
+				ssh_key_fingerprints="$(
+					__get_ssh_authorized_key_fingerprints
+				)"
+			fi
 		fi
 
 		# Details output for SSH private key fingerprint
 		if [[ -z ${ssh_user_private_key} ]] \
 			|| [[ ${ssh_user_force_sftp} == true ]]
 		then
-			ssh_user_private_key_fingerprint="N/A"
+			if [[ ${verbose} == true ]]
+			then
+				ssh_user_private_key_fingerprint="N/A"
+			fi
 		elif ! __is_valid_ssh_key "${ssh_user_private_key}"
 		then
-			printf -v ssh_user_private_key_fingerprint \
-				-- \
-				'%s\nUnable to populate %s/.ssh/id_rsa' \
-				"ERROR: Private key validation failed." \
-				"${ssh_user_home}"
+			if [[ ${verbose} == true ]]
+			then
+				printf -v ssh_user_private_key_fingerprint \
+					-- \
+					'%s\nUnable to populate %s/.ssh/id_rsa' \
+					"ERROR: Private key validation failed." \
+					"${ssh_user_home}"
+			fi
 		else
 			printf -- \
 				'%s\n' \
@@ -1284,10 +1310,13 @@ function main ()
 			chmod 600 \
 				${ssh_user_home}/.ssh/id_rsa
 
-			ssh_user_private_key_fingerprint="$(
-				__get_ssh_key_fingerprint_hash_output \
-					"${ssh_user_private_key}"
-			)"
+			if [[ ${verbose} == true ]]
+			then
+				ssh_user_private_key_fingerprint="$(
+					__get_ssh_key_fingerprint_hash_output \
+						"${ssh_user_private_key}"
+				)"
+			fi
 		fi
 
 		# Set sudo access for the wheel group
@@ -1304,9 +1333,12 @@ function main ()
 		# Wait for background processes - Host key generation
 		wait ${pids[0]}
 
-		ssh_host_key_fingerprint_rsa="$(
-			__get_ssh_host_key_fingerprint rsa
-		)"
+		if [[ ${verbose} == true ]]
+		then
+			ssh_host_key_fingerprint_rsa="$(
+				__get_ssh_host_key_fingerprint rsa
+			)"
+		fi
 
 		# Wait for background processes - Set password for root user
 		if [[ -n ${pids[1]+isset} ]]
@@ -1334,45 +1366,59 @@ function main ()
 			ssh_user_password="${redacted_value}"
 		fi
 
-		timer_total="$(
-			awk \
-				-v timer_end="$(
-					date +%s.%N
-				)" \
-				-v timer_start="${timer_start}" \
-				'BEGIN { print \
-					timer_end - timer_start;
-				}'
-		)"
+		if [[ ${verbose} == true ]]
+		then
+			timer_total="$(
+				awk \
+					-v timer_end="$(
+						date +%s.%N
+					)" \
+					-v timer_start="${timer_start}" \
+					'BEGIN { print \
+						timer_end - timer_start;
+					}'
+			)"
 
-		cat <<-EOT
+			cat <<-EOT
 
-			================================================================================
-			${sshd_command} Details
-			--------------------------------------------------------------------------------
-			user : ${ssh_user}
-			password : ${ssh_user_password}
-			password authentication : ${password_authentication}
-			id : ${ssh_user_uid}:${ssh_user_gid}
-			home : ${ssh_user_home}
-			chroot path : ${ssh_chroot_directory_path}
-			shell : ${ssh_user_shell}
-			sudo : ${ssh_sudo}
-			key fingerprints :
-			${ssh_key_fingerprints}
-			rsa private key fingerprint :
-			${ssh_user_private_key_fingerprint}
-			rsa host key fingerprint :
-			${ssh_host_key_fingerprint_rsa}
-			timezone : ${ssh_timezone}
-			--------------------------------------------------------------------------------
-			${timer_total}
+				================================================================================
+				${sshd_command} Details
+				--------------------------------------------------------------------------------
+				user : ${ssh_user}
+				password : ${ssh_user_password}
+				password authentication : ${password_authentication}
+				id : ${ssh_user_uid}:${ssh_user_gid}
+				home : ${ssh_user_home}
+				chroot path : ${ssh_chroot_directory_path}
+				shell : ${ssh_user_shell}
+				sudo : ${ssh_sudo}
+				key fingerprints :
+				${ssh_key_fingerprints}
+				rsa private key fingerprint :
+				${ssh_user_private_key_fingerprint}
+				rsa host key fingerprint :
+				${ssh_host_key_fingerprint_rsa}
+				timezone : ${ssh_timezone}
+				--------------------------------------------------------------------------------
+				${timer_total}
 
-		EOT
+			EOT
+		elif [[ ${ssh_user_password} != "${redacted_value}" ]]
+		then
+			# Mininal ouput when required
+			cat <<-EOT
 
+				================================================================================
+				${sshd_command} Details
+				--------------------------------------------------------------------------------
+				password : ${ssh_user_password}
+				--------------------------------------------------------------------------------
+
+			EOT
+		fi
 	fi
 
-	# Release lock file
+	# Release lock
 	rm -f \
 		"${lock_file}"
 }
