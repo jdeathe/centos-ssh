@@ -1097,9 +1097,6 @@ function main ()
 			if [[ -n ${ssh_user_home%/*} ]] \
 				&& [[ ! -d ${ssh_user_home%/*} ]]
 			then
-				printf -- \
-					'Creating home base directory.\n'
-
 				mkdir -pm 755 \
 					"${ssh_user_home%/*}"
 			fi
