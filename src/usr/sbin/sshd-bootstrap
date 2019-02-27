@@ -959,7 +959,7 @@ function main ()
 	local -a pids
 	local ssh_authorized_keys
 	local ssh_chroot_directory
-	local ssh_chroot_directory_path
+	local ssh_chroot_directory_path="N/A"
 	local ssh_chroot_home_directory_path
 	local ssh_host_key_fingerprint_rsa
 	local ssh_inherit_environment
@@ -1221,7 +1221,6 @@ function main ()
 				ForceCommand internal-sftp
 			EOT
 		else
-			ssh_chroot_directory_path="N/A"
 			sed -i \
 				-e '/# Force SFTP/,/ForceCommand internal-sftp/ { d; }' \
 				/etc/ssh/sshd_config
