@@ -53,6 +53,19 @@ function __is_valid_ssh_chroot_directory ()
 	return 1
 }
 
+function __is_valid_ssh_inherit_environment ()
+{
+	local -r boolean_value='^(true|false)$'
+	local -r value="${1}"
+
+	if [[ ${value} =~ ${boolean_value} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
 function __is_valid_ssh_key ()
 {
 	local -r public_key="${1}"
@@ -373,6 +386,21 @@ function __get_ssh_chroot_directory_path ()
 
 	# Replace %u with SSH_USER
 	value="${value//'%u'/${user}}"
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_inherit_environment ()
+{
+	local -r default_value="${1:-false}"
+
+	local value="${SSH_INHERIT_ENVIRONMENT}"
+
+	if [[ -z ${value} ]] \
+		|| ! __is_valid_ssh_inherit_environment "${value}"
+	then
+		value="${default_value}"
+	fi
 
 	printf -- '%s' "${value}"
 }
@@ -945,57 +973,58 @@ function main ()
 	# Populate the environment source file
 	env >> /etc/sshd-bootstrap.env
 
-	# Docker ENV inheritance
-	if [[ ${SSH_INHERIT_ENVIRONMENT} == true ]] \
-		&& [[ -s /etc/sshd-bootstrap.env ]]
-	then
-		grep -Ev "${env_exclude_pattern}" \
-			/etc/sshd-bootstrap.env \
-			> /etc/environment
-	fi
-
+	OPTS_SSH_AUTHORIZED_KEYS="$(
+		__get_ssh_authorized_keys
+	)"
+	OPTS_SSH_INHERIT_ENVIRONMENT="$(
+		__get_ssh_inherit_environment
+	)"
+	OPTS_SSH_PASSWORD_AUTHENTICATION="$(
+		__get_ssh_password_authentication
+	)"
+	OPTS_SSH_SUDO="$(
+		__get_ssh_sudo
+	)"
+	OPTS_SSH_TIMEZONE="$(
+		__get_ssh_timezone
+	)"
+	OPTS_SSH_USER="$(
+		__get_ssh_user
+	)"
+	OPTS_SSH_USER_FORCE_SFTP="$(
+		__get_ssh_user_force_sftp
+	)"
 	OPTS_SSH_USER_HOME="$(
 		__get_ssh_user_home
+	)"
+	OPTS_SSH_USER_PASSWORD_HASHED="$(
+		__get_ssh_user_password_hashed
+	)"
+	OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-"$(
+		__get_password "${password_length}"
+	)"}"
+	OPTS_SSH_USER_PRIVATE_KEY="$(
+		__get_ssh_user_private_key
+	)"
+	OPTS_SSH_USER_SHELL="$(
+		__get_ssh_user_shell
+	)"
+	OPTS_SSH_USER_UID="$(
+		__get_ssh_user_uid
+	)"
+	OPTS_SSH_USER_GID="$(
+		__get_ssh_user_gid
 	)"
 
 	if [[ ! -d ${OPTS_SSH_USER_HOME}/.ssh ]]
 	then
-		OPTS_SSH_AUTHORIZED_KEYS="$(
-			__get_ssh_authorized_keys
-		)"
-		OPTS_SSH_PASSWORD_AUTHENTICATION="$(
-			__get_ssh_password_authentication
-		)"
-		OPTS_SSH_SUDO="$(
-			__get_ssh_sudo
-		)"
-		OPTS_SSH_TIMEZONE="$(
-			__get_ssh_timezone
-		)"
-		OPTS_SSH_USER="$(
-			__get_ssh_user
-		)"
-		OPTS_SSH_USER_FORCE_SFTP="$(
-			__get_ssh_user_force_sftp
-		)"
-		OPTS_SSH_USER_PASSWORD_HASHED="$(
-			__get_ssh_user_password_hashed
-		)"
-		OPTS_SSH_USER_PASSWORD="${SSH_USER_PASSWORD:-"$(
-			__get_password "${password_length}"
-		)"}"
-		OPTS_SSH_USER_PRIVATE_KEY="$(
-			__get_ssh_user_private_key
-		)"
-		OPTS_SSH_USER_SHELL="$(
-			__get_ssh_user_shell
-		)"
-		OPTS_SSH_USER_UID="$(
-			__get_ssh_user_uid
-		)"
-		OPTS_SSH_USER_GID="$(
-			__get_ssh_user_gid
-		)"
+		if [[ ${OPTS_SSH_INHERIT_ENVIRONMENT} == true ]] \
+			&& [[ -s /etc/sshd-bootstrap.env ]]
+		then
+			grep -Ev "${env_exclude_pattern}" \
+				/etc/sshd-bootstrap.env \
+				> /etc/environment
+		fi
 
 		if [[ ${OPTS_SSH_PASSWORD_AUTHENTICATION} == true ]]
 		then
