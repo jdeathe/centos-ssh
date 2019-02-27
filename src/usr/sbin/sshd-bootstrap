@@ -1300,13 +1300,10 @@ function main ()
 			)"
 		fi
 
-		# Set sudo access for the wheel group only
-		if [[ ${DEFAULT_SSH_SUDO} != "${ssh_sudo}" ]]
-		then
-			sed -i \
-				-e "s~^%wheel\\t.*$~%wheel\\t${ssh_sudo}~g" \
-				/etc/sudoers
-		fi
+		# Set sudo access for the wheel group
+		sed -i \
+			-e "s~^%wheel\\t.*$~%wheel\\t${ssh_sudo}~g" \
+			/etc/sudoers
 
 		tee -a /etc/sudoers > /dev/null <<-EOT
 
