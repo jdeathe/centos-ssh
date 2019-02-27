@@ -48,7 +48,7 @@ function scmi ()
 				break
 				;;
 			-c)
-				if [[ -z ${2:-} ]]
+				if [[ -z ${2} ]]
 				then
 					scmi_print_message "error" \
 						"Empty option value (${1})"
@@ -92,7 +92,7 @@ function scmi ()
 				shift 1
 				;;
 			-m)
-				if [[ ! ${2:-} =~ ${SCMI_MANAGER_TYPE_PATTERN} ]]
+				if [[ ! ${2} =~ ${SCMI_MANAGER_TYPE_PATTERN} ]]
 				then
 					scmi_print_message "error" \
 						"Invalid option value (${1})"
@@ -152,7 +152,7 @@ function scmi ()
 				shift 1
 				;;
 			-t)
-				if [[ -z ${2:-} ]]
+				if [[ -z ${2} ]]
 				then
 					scmi_print_message "error" \
 						"Empty option value (${1})"
@@ -334,8 +334,8 @@ function scmi ()
 
 function scmi_cleanup_background_task ()
 {
-	local PID="${1:-}"
-	local PID_CHILD="${2:-}"
+	local PID="${1}"
+	local PID_CHILD="${2}"
 
 	if [[ -n ${PID} ]]
 	then
@@ -967,7 +967,7 @@ function scmi_info ()
 # Require a docker name of the form described with SCMI_NAME_FORMAT
 function scmi_is_valid_managed_docker_name ()
 {
-	local NAME="${1:-}"
+	local NAME="${1}"
 	local NAME_PATTERN='^[a-zA-Z0-9][a-zA-Z0-9_.-]*\.[0-9][0-9]*(\.[0-9][0-9]*)?$'
 
 	if [[ -z ${NAME} ]]
@@ -1071,9 +1071,9 @@ function scmi_print_message ()
 	local COLOUR_RESET='\033[0m'
 	local CHARACTER_STEP='--->'
 	local FORMAT='%s\n'
-	local MESSAGE="${2:-}"
+	local MESSAGE="${2}"
 	local PREFIX=""
-	local TYPE="${1:-}"
+	local TYPE="${1}"
 	local TYPE_PATTERN_ERROR='^(error|error_info|step_error|sub_step_error)$'
 
 	# Allow for uncolourised output
@@ -1205,7 +1205,7 @@ function scmi_restart_option_error ()
 
 function scmi_run_step ()
 {
-	local COMMAND="${1:-}"
+	local COMMAND="${1}"
 	local COMMAND_OUTPUT
 
 	if [[ -n ${COMMAND} ]]
@@ -1228,7 +1228,7 @@ function scmi_run_step ()
 function scmi_systemd_get_template_unit_file_drop_in_content ()
 {
 	local KEYS
-	local SOURCE_UNIT_FILE_NAME="${1:-}"
+	local SOURCE_UNIT_FILE_NAME="${1}"
 	local UNIT_SERVICE
 	local VALUE
 
@@ -1360,7 +1360,7 @@ function scmi_systemd_get_template_unit_file_drop_in_path ()
 
 function scmi_systemd_get_template_unit_file_name ()
 {
-	local SOURCE_UNIT_FILE_NAME="${1:-}"
+	local SOURCE_UNIT_FILE_NAME="${1}"
 	local TEMPLATE_UNIT_NAME
 
 	case "${SOURCE_UNIT_FILE_NAME}" in
@@ -1379,7 +1379,7 @@ function scmi_systemd_get_template_unit_file_name ()
 
 function scmi_systemd_get_unit_file_install_path ()
 {
-	local UNIT_FILE="${1:-}"
+	local UNIT_FILE="${1}"
 
 	printf -- \
 		'%s/etc/systemd/system/%s' \
@@ -1389,7 +1389,7 @@ function scmi_systemd_get_unit_file_install_path ()
 
 function scmi_systemd_get_unit_file_path ()
 {
-	local UNIT_FILE="${1:-}"
+	local UNIT_FILE="${1}"
 	local UNIT_FILE_PATH=""
 	local TEMPLATE_PATHS="
 	 .
