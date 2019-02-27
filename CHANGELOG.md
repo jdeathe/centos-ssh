@@ -15,8 +15,12 @@ Summary of release changes for Version 2 - CentOS-7
 - Adds docker-compose configuration example.
 - Adds `SSH_AUTOSTART_SUPERVISOR_STDOUT` to control startup of `supervisor_stdout`.
 - Adds drop-in configuration for `supervisor_stdout` in `/etc/supervisord.d/00-supervisor_stdout.conf`.
+- Adds improved `healtchcheck`, `sshd-bootstrap` and `sshd-wrapper` scripts.
+- Adds validation of `SSH_INHERIT_ENVIRONMENT` values.
 - Removes reference to `python-setuptools` from README as it's no longer installed.
 - Removes requirement of `supervisor_stdout` for output of supervisord logs to stdout.
+- Removes unnecessary configuration file `/etc/sshd-bootstrap.conf`.
+- Removes unnecessary environment file `/etc/sshd-bootstrap.env`.
 
 ### 2.5.0 - 2019-01-28
 
