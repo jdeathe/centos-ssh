@@ -1072,15 +1072,18 @@ function main ()
 
 		# Warn operator if any supplied environment variable values failed
 		# validation and have been set to a safe default.
-		for env in "${!env_validation_with_defaults[@]}"
-		do
-			if ! ${env_validation_with_defaults[${env}]} "${!env}"
-			then
-				printf -- \
-					'WARNING: Validation failed on %s - setting to default.\n' \
-					"${env}"
-			fi
-		done
+		if [[ ${verbose} == true ]]
+		then
+			for env in "${!env_validation_with_defaults[@]}"
+			do
+				if ! ${env_validation_with_defaults[${env}]} "${!env}"
+				then
+					printf -- \
+						'WARNING: Validation failed on %s - setting to default.\n' \
+						"${env}"
+				fi
+			done
+		fi
 
 		if ! __set_ssh_timezone "${ssh_timezone}"
 		then
