@@ -1056,6 +1056,7 @@ function main ()
 		if [[ ${ssh_password_authentication} == true ]]
 		then
 			password_authentication="yes"
+
 			if [[ ${ssh_user} == root ]]
 			then
 				sed -i \
@@ -1162,11 +1163,8 @@ function main ()
 			ssh_sudo="N/A"
 			ssh_user_groups="users"
 			ssh_chroot_directory="$(
-				__get_ssh_chroot_directory %h
+				__get_ssh_chroot_directory
 			)"
-
-			# Get the ChrootDirectory path. %h and %u are replaced with the
-			# HOME and USERNAME values respectively.
 			ssh_chroot_directory_path="$(
 				__get_ssh_chroot_directory_path "${ssh_chroot_directory}"
 			)"
@@ -1180,7 +1178,6 @@ function main ()
 					'%s%s' \
 					"${ssh_chroot_directory_path}" \
 					"${ssh_user_home}"
-
 				mkdir -pm 711 \
 					"${ssh_chroot_directory_path}"
 				mkdir -pm 755 \
@@ -1188,13 +1185,12 @@ function main ()
 			else
 				# ChrootDirectory %h
 				ssh_chroot_home_directory_path="${ssh_user_home}"
-
 				chmod 750 \
-					"${ssh_user_home}"
+					"${ssh_chroot_home_directory_path}"
 			fi
 
-			# Create a user writeable data directory if no other directories are
-			# mounted.
+			# Create a user writeable data directory if no other directories
+			# are mounted.
 			if ! grep -q '^d' <<< "$(
 					ls -l "${ssh_chroot_home_directory_path}"/
 				)"
@@ -1207,7 +1203,7 @@ function main ()
 					"${ssh_chroot_home_directory_path}"/_data
 			elif [[ -d ${ssh_chroot_home_directory_path}/_data ]]
 			then
-				# Set user permissions on _data directory in case where it exists
+				# Set user permissions on _data directory where it exists
 				chmod 700 \
 					"${ssh_chroot_home_directory_path}"/_data
 				chown -R \
@@ -1310,12 +1306,11 @@ function main ()
 				'%s\n' \
 				"${ssh_user_private_key}" \
 				> "${ssh_user_home}"/.ssh/id_rsa
-
 			chown \
 				"${ssh_user}":"${ssh_user}" \
 				"${ssh_user_home}"/.ssh/id_rsa
 			chmod 600 \
-				${ssh_user_home}/.ssh/id_rsa
+				"${ssh_user_home}"/.ssh/id_rsa
 
 			if [[ ${verbose} == true ]]
 			then
@@ -1353,8 +1348,8 @@ function main ()
 			wait ${pids[1]}
 		fi
 
-		# Only show user password if auto-generated and password is required for
-		# password authentication or sudo.
+		# Only show user password if auto-generated and password is required
+		# for password authentication or sudo.
 		if [[ -n ${SSH_USER_PASSWORD} ]]
 		then
 			ssh_user_password="${redacted_value}"
