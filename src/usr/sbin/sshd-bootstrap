@@ -45,6 +45,11 @@ function __is_valid_ssh_chroot_directory ()
 	local -r chroot_directory="${1}"
 	local -r safe_directory='^(%h|\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+)$'
 
+	if [[ -z ${chroot_directory} ]]
+	then
+		return 1
+	fi
+
 	if grep -qoP "${safe_directory}" <<< "${chroot_directory}"
 	then
 		return 0
@@ -106,6 +111,11 @@ function __is_valid_ssh_sudo ()
 		mktemp -u
 	)"
 	local -r sudo_cmd="${1}"
+
+	if [[ -z ${sudo_cmd} ]]
+	then
+		return 1
+	fi
 
 	trap \
 		"rm -f \"${temp_path}\"" \
@@ -181,6 +191,11 @@ function __is_valid_ssh_user_home ()
 	)"}"
 
 	local safe_directory="${user_directory}"
+
+	if [[ -z ${home_directory} ]]
+	then
+		return 1
+	fi
 
 	if [[ ${user} == root ]]
 	then
@@ -352,8 +367,7 @@ function __get_ssh_chroot_directory ()
 
 	local value="${SSH_CHROOT_DIRECTORY}"
 
-	if [[ -z ${value} ]] \
-		|| ! __is_valid_ssh_chroot_directory "${value}"
+	if ! __is_valid_ssh_chroot_directory "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -396,8 +410,7 @@ function __get_ssh_inherit_environment ()
 
 	local value="${SSH_INHERIT_ENVIRONMENT}"
 
-	if [[ -z ${value} ]] \
-		|| ! __is_valid_ssh_inherit_environment "${value}"
+	if ! __is_valid_ssh_inherit_environment "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -525,8 +538,7 @@ function __get_ssh_password_authentication ()
 
 	local value="${SSH_PASSWORD_AUTHENTICATION}"
 
-	if [[ -z ${value} ]] \
-		|| ! __is_valid_ssh_password_authentication "${value}"
+	if ! __is_valid_ssh_password_authentication "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -540,8 +552,7 @@ function __get_ssh_sudo ()
 
 	local value="${SSH_SUDO}"
 
-	if [[ -z ${value} ]] \
-		|| ! __is_valid_ssh_sudo "${value}"
+	if ! __is_valid_ssh_sudo "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -555,8 +566,7 @@ function __get_ssh_timezone ()
 
 	local value="${SSH_TIMEZONE}"
 
-	if [[ -z ${value} ]] \
-		|| ! __is_valid_ssh_timezone "${value}"
+	if ! __is_valid_ssh_timezone "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -570,8 +580,7 @@ function __get_ssh_user ()
 
 	local value="${SSH_USER}"
 
-	if [[ -z ${value} ]] \
-		|| ! __is_valid_ssh_user "${value}"
+	if ! __is_valid_ssh_user "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -585,8 +594,7 @@ function __get_ssh_user_password_hashed ()
 
 	local value="${SSH_USER_PASSWORD_HASHED}"
 
-	if [[ -z ${value} ]] \
-		|| ! __is_valid_ssh_user_password_hashed "${value}"
+	if ! __is_valid_ssh_user_password_hashed "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -622,8 +630,7 @@ function __get_ssh_user_force_sftp ()
 
 	local value="${SSH_USER_FORCE_SFTP}"
 
-	if [[ -z ${value} ]] \
-		|| ! __is_valid_ssh_user_force_sftp "${value}"
+	if ! __is_valid_ssh_user_force_sftp "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -659,8 +666,7 @@ function __get_ssh_user_home ()
 
 	local value="${SSH_USER_HOME}"
 
-	if [[ -z ${value} ]] \
-		|| ! __is_valid_ssh_user_home "${value}"
+	if ! __is_valid_ssh_user_home "${value}"
 	then
 		if [[ ${user} == root ]]
 		then
@@ -686,8 +692,7 @@ function __get_ssh_user_id ()
 
 	local value="${SSH_USER_ID}"
 
-	if [[ -z ${value} ]] \
-		|| ! __is_valid_ssh_user_id "${value}"
+	if ! __is_valid_ssh_user_id "${value}"
 	then
 		if [[ ${user} == root ]]
 		then
@@ -709,8 +714,7 @@ function __get_ssh_user_shell ()
 
 	local value="${SSH_USER_SHELL}"
 
-	if [[ -z ${value} ]] \
-		|| ! __is_valid_ssh_user_shell "${value}"
+	if ! __is_valid_ssh_user_shell "${value}"
 	then
 		value="${default_value}"
 	fi
