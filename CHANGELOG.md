@@ -19,6 +19,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Removes reference to `python-setuptools` from README as it's no longer installed.
 - Removes requirement of `supervisor_stdout` for output of supervisord logs to stdout.
 - Removes unnecessary configuration file `/etc/sshd-bootstrap.conf`.
+- Removes unnecessary environment file `/etc/sshd-bootstrap.env`.
 
 ### 2.5.0 - 2019-01-28
 
