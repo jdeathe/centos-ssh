@@ -1059,20 +1059,6 @@ function main ()
 				/etc/ssh/sshd_config
 		fi
 
-		if [[ ${ssh_user_force_sftp} == true ]]
-		then
-			sshd_command="SFTP"
-			ssh_user_groups="users"
-			ssh_chroot_directory="$(
-				__get_ssh_chroot_directory %h
-			)"
-		fi
-
-		# Initialise
-		printf -- \
-			'Initialising %s.\n' \
-			"${sshd_command}"
-
 		# Warn operator if any supplied environment variable values failed
 		# validation and have been set to a safe default.
 		for env in "${!env_validation_with_defaults[@]}"
@@ -1155,11 +1141,17 @@ function main ()
 			exit 1
 		fi
 
-		# SFTP users
 		if [[ ${ssh_user_force_sftp} == true ]]
 		then
-			# Get the ChrootDirectory path.
-			# %h and %u are replaced with the User's HOME and USERNAME respectively.
+			sshd_command="SFTP"
+			ssh_sudo="N/A"
+			ssh_user_groups="users"
+			ssh_chroot_directory="$(
+				__get_ssh_chroot_directory %h
+			)"
+
+			# Get the ChrootDirectory path. %h and %u are replaced with the
+			# HOME and USERNAME values respectively.
 			ssh_chroot_directory_path="$(
 				__get_ssh_chroot_directory_path "${ssh_chroot_directory}"
 			)"
@@ -1232,6 +1224,7 @@ function main ()
 				ForceCommand internal-sftp
 			EOT
 		else
+			ssh_chroot_directory_path="N/A"
 			sed -i \
 				-e '/# Force SFTP/,/ForceCommand internal-sftp/ { d; }' \
 				/etc/ssh/sshd_config
@@ -1343,13 +1336,6 @@ function main ()
 			&& [[ ${ssh_user} == root ]]
 		then
 			ssh_user_password="${redacted_value}"
-		fi
-
-		if [[ ${ssh_user_force_sftp} == true ]]
-		then
-			ssh_sudo="N/A"
-		else
-			ssh_chroot_directory_path="N/A"
 		fi
 
 		timer_total="$(
