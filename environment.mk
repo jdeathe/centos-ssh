@@ -1,6 +1,6 @@
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Constants
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 DOCKER_USER := jdeathe
 DOCKER_IMAGE_NAME := centos-ssh
 SHPEC_ROOT := test/shpec
@@ -9,9 +9,9 @@ SHPEC_ROOT := test/shpec
 DOCKER_IMAGE_TAG_PATTERN := ^(latest|centos-[6-7]|((1|2|centos-(6-1|7-2))\.[0-9]+\.[0-9]+))$
 DOCKER_IMAGE_RELEASE_TAG_PATTERN := ^(1|2|centos-(6-1|7-2))\.[0-9]+\.[0-9]+$
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Variables
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Docker image/container settings
 DOCKER_CONTAINER_OPTS ?=
@@ -35,6 +35,7 @@ STARTUP_TIME ?= 2
 SSH_AUTHORIZED_KEYS ?=
 SSH_AUTOSTART_SSHD ?= true
 SSH_AUTOSTART_SSHD_BOOTSTRAP ?= true
+SSH_AUTOSTART_SUPERVISOR_STDOUT ?= true
 SSH_CHROOT_DIRECTORY ?= %h
 SSH_INHERIT_ENVIRONMENT ?= false
 SSH_PASSWORD_AUTHENTICATION ?= false

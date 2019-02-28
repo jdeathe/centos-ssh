@@ -1,22 +1,64 @@
 #!/usr/bin/env bash
 
-readonly BIN="/usr/sbin/sshd"
-readonly LOCK_FILE="/var/lock/subsys/sshd-bootstrap"
-readonly NICE="/bin/nice"
-readonly NICENESS="10"
-readonly OPTIONS="
- -D
- -e
- -u 0
-"
+set -e
 
-while true
-do
-	sleep 0.1
-	[[ -e ${LOCK_FILE} ]] || break
-done
+function __is_valid_ssh_autostart_sshd_bootstrap ()
+{
+	local -r boolean_value='^(true|false)$'
+	local -r value="${1}"
 
-exec ${NICE} \
-	-n ${NICENESS} \
-	${BIN} \
-	${OPTIONS}
+	if [[ ${value} =~ ${boolean_value} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __get_ssh_autostart_sshd_bootstrap ()
+{
+	local -r default_value="${1:-true}"
+
+	local value="${SSH_AUTOSTART_SSHD_BOOTSTRAP}"
+
+	if ! __is_valid_ssh_autostart_sshd_bootstrap "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function main ()
+{
+	local -r autostart_bootstrap="$(
+		__get_ssh_autostart_sshd_bootstrap
+	)"
+	local -r bin="/usr/sbin/sshd"
+	local -r lock_file="/var/lock/subsys/sshd-bootstrap"
+	local -r nice="/bin/nice"
+	local -r niceness="10"
+	local -r options="-D -e -u 0"
+
+	if [[ ${autostart_bootstrap} == false ]]
+	then
+		# block.
+		sleep infinity
+	fi
+
+	while true
+	do
+		sleep 0.1
+		if [[ ! -e ${lock_file} ]]
+		then
+			break
+		fi
+	done
+
+	exec ${nice} \
+		-n ${niceness} \
+		${bin} \
+		${options}
+}
+
+main "${@}"

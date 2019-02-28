@@ -2,44 +2,77 @@
 
 set -e
 
-source /etc/sshd-bootstrap.conf
+function __is_valid_ssh_user ()
+{
+	local -r safe_user='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
+	local -r user="${1}"
 
-if ! ps axo command | grep -qE '^/usr/bin/python /usr/bin/supervisord'
-then
-	>&2 printf -- \
-		'%s\n' \
-		"supervisord not running."
-	exit 1
-fi
+	if [[ ${user} =~ ${safe_user} ]]
+	then
+		return 0
+	fi
 
-if [[ ${SSH_AUTOSTART_SSHD_BOOTSTRAP} == true ]]
-then
-	if [[ -e /var/lock/subsys/sshd-bootstrap ]]
+	return 1
+}
+
+function __get_ssh_user ()
+{
+	local -r default_value="${1:-app-admin}"
+
+	local value="${SSH_USER}"
+
+	if ! __is_valid_ssh_user "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function main ()
+{
+	local -r user="$(
+		__get_ssh_user
+	)"
+
+	if ! ps axo command | grep -qE '^/usr/bin/python /usr/bin/supervisord'
 	then
 		>&2 printf -- \
 			'%s\n' \
-			"sshd-bootstrap in progress."
+			"supervisord not running."
 		exit 1
 	fi
 
-	if ! grep -qE "^# ${SSH_USER}" /etc/sudoers
+	if [[ ${SSH_AUTOSTART_SSHD_BOOTSTRAP} == true ]]
 	then
-		>&2 printf -- \
-			'%s\n' \
-			"sshd-bootstrap incomplete."
-		exit 1
-	fi
-fi
+		if [[ -e /var/lock/subsys/sshd-bootstrap ]]
+		then
+			>&2 printf -- \
+				'%s\n' \
+				"sshd-bootstrap in progress."
+			exit 1
+		fi
 
-if [[ ${SSH_AUTOSTART_SSHD} == true ]]
-then
-	if ! ps axo command | grep -qE '^/usr/sbin/sshd -D'
+		if ! grep -qE "^# ${user}" /etc/sudoers
+		then
+			>&2 printf -- \
+				'%s\n' \
+				"sshd-bootstrap incomplete."
+			exit 1
+		fi
+	fi
+
+	if [[ ${SSH_AUTOSTART_SSHD} == true ]]
 	then
-		>&2 printf -- \
-			'%s\n' \
-			"sshd not running."
-		exit 1
+		if ! ps axo command | grep -qE '^/usr/sbin/sshd -D' \
+			|| [[ ! -s /var/run/sshd.pid ]]
+		then
+			>&2 printf -- \
+				'%s\n' \
+				"sshd not running."
+			exit 1
+		fi
 	fi
-fi
+}
 
-exit 0
+main "${@}"

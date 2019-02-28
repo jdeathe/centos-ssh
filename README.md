@@ -7,18 +7,18 @@ Includes public key authentication, Automated password generation and supports c
 
 ## Overview & links
 
-The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag - the convention is `centos-6-1.10.0` OR `1.10.0` for the [1.10.0](https://github.com/jdeathe/centos-ssh/tree/1.10.0) release tag and `centos-7-2.5.0` OR `2.5.0` for the [2.5.0](https://github.com/jdeathe/centos-ssh/tree/2.5.0) release tag.
+The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag - the convention is `centos-6-1.10.1` OR `1.10.1` for the [1.10.1](https://github.com/jdeathe/centos-ssh/tree/1.10.1) release tag and `centos-7-2.5.1` OR `2.5.1` for the [2.5.1](https://github.com/jdeathe/centos-ssh/tree/2.5.1) release tag.
 
 ### Tags and respective `Dockerfile` links
 
-- `centos-7`,`centos-7-2.5.0`,`2.5.0` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
-- `centos-6`,`centos-6-1.10.0`,`1.10.0` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
+- `centos-7`,`centos-7-2.5.1`,`2.5.1` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
+- `centos-6`,`centos-6-1.10.1`,`1.10.1` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
 
 The Dockerfile can be used to build a base image that is the bases for several other docker images.
 
-Included in the build are the [SCL](https://www.softwarecollections.org/), [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/) and [vim-minimal](http://www.vim.org/) are along with python-setuptools, [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
+Included in the build are the [SCL](https://www.softwarecollections.org/), [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/) and [vim-minimal](http://www.vim.org/) are along with [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
 
-[Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run. To enable simple viewing of stdout for the sshd subprocess, supervisor-stdout is included. This allows you to see output from the supervisord controlled subprocesses with `docker logs {container-name}`.
+[Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run.
 
 SSH access is by public key authentication and, by default, the [Vagrant](http://www.vagrantup.com/) [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant) is required.
 
@@ -42,7 +42,7 @@ Run up an SSH container named 'ssh.1' from the docker image 'jdeathe/centos-ssh'
 $ docker run -d \
   --name ssh.1 \
   -p 2020:22 \
-  jdeathe/centos-ssh:2.5.0
+  jdeathe/centos-ssh:2.5.1
 ```
 
 Check the logs for the password (required for sudo).
@@ -76,7 +76,7 @@ $ docker run -d \
   --name sftp.1 \
   -p 2021:22 \
   -e SSH_USER_FORCE_SFTP=true \
-  jdeathe/centos-ssh:2.5.0
+  jdeathe/centos-ssh:2.5.1
 ```
 
 Connect using the `sftp` command line client with the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant).
@@ -106,10 +106,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:2.5.0 \
+  jdeathe/centos-ssh:2.5.1 \
   /usr/sbin/scmi install \
     --chroot=/media/root \
-    --tag=2.5.0 \
+    --tag=2.5.1 \
     --name=ssh.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
@@ -123,10 +123,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:2.5.0 \
+  jdeathe/centos-ssh:2.5.1 \
   /usr/sbin/scmi uninstall \
     --chroot=/media/root \
-    --tag=2.5.0 \
+    --tag=2.5.1 \
     --name=ssh.1 \
     --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
 ```
@@ -140,10 +140,10 @@ $ docker run \
   --rm \
   --privileged \
   --volume /:/media/root \
-  jdeathe/centos-ssh:2.5.0 \
+  jdeathe/centos-ssh:2.5.1 \
   /usr/sbin/scmi install \
     --chroot=/media/root \
-    --tag=2.5.0 \
+    --tag=2.5.1 \
     --name=ssh.1 \
     --manager=systemd \
     --register \
@@ -159,7 +159,7 @@ Since release tags `1.7.2` / `2.1.2` the install template has been added to the 
 _NOTE:_ A prerequisite of the following examples is that the image has been pulled (or loaded from the release package).
 
 ```
-$ docker pull jdeathe/centos-ssh:2.5.0
+$ docker pull jdeathe/centos-ssh:2.5.1
 ```
 
 To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
@@ -168,7 +168,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:2.5.0
+    jdeathe/centos-ssh:2.5.1
   ) --info"
 ```
 
@@ -178,7 +178,7 @@ To perform an installation using the docker name `ssh.2` simply use the `--name`
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:2.5.0
+    jdeathe/centos-ssh:2.5.1
   ) --name=ssh.2"
 ```
 
@@ -188,7 +188,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 $ eval "sudo -E $(
     docker inspect \
     -f "{{.ContainerConfig.Labels.uninstall}}" \
-    jdeathe/centos-ssh:2.5.0
+    jdeathe/centos-ssh:2.5.1
   ) --name=ssh.2"
 ```
 
@@ -201,7 +201,7 @@ To see detailed information about the image run `scmi` with the `--info` option.
 ```
 $ sudo -E atomic install \
   -n ssh.3 \
-  jdeathe/centos-ssh:2.5.0 \
+  jdeathe/centos-ssh:2.5.1 \
   --info
 ```
 
@@ -210,14 +210,14 @@ To perform an installation using the docker name `ssh.3` simply use the `-n` opt
 ```
 $ sudo -E atomic install \
   -n ssh.3 \
-  jdeathe/centos-ssh:2.5.0
+  jdeathe/centos-ssh:2.5.1
 ```
 
 Alternatively, you could use the `scmi` options `--name` or `-n` for naming the container.
 
 ```
 $ sudo -E atomic install \
-  jdeathe/centos-ssh:2.5.0 \
+  jdeathe/centos-ssh:2.5.1 \
   --name ssh.3
 ```
 
@@ -226,7 +226,7 @@ To uninstall use the *same command* that was used to install but with the `unins
 ```
 $ sudo -E atomic uninstall \
   -n ssh.3 \
-  jdeathe/centos-ssh:2.5.0
+  jdeathe/centos-ssh:2.5.1
 ```
 
 #### Using environment variables
@@ -242,7 +242,7 @@ $ docker stop ssh.1 \
   --name ssh.1 \
   -p :22 \
   --env "SSH_USER=centos" \
-  jdeathe/centos-ssh:2.5.0
+  jdeathe/centos-ssh:2.5.1
 ```
 
 To identify the `SSH_USER` user's sudoer password, inspect the container's logs as follows:
@@ -265,8 +265,7 @@ The output of the logs will show the auto-generated password for the user specif
 2019-01-17 18:56:10,089 INFO success: supervisor_stdout entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
 2019-01-17 18:56:10,089 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
 2019-01-17 18:56:10,089 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-sshd-bootstrap stdout | Initialising SSH.
-sshd-bootstrap stdout |
+
 ================================================================================
 SSH Details
 --------------------------------------------------------------------------------
@@ -334,6 +333,10 @@ It may be desirable to prevent the startup of the sshd daemon and/or sshd-bootst
   --env "SSH_AUTOSTART_SSHD_BOOTSTRAP=false" \
 ...
 ```
+
+##### SSH_AUTOSTART_SUPERVISOR_STDOUT
+
+This image has `supervisor_stdout` installed which can be used to allow a process controlled by supervisord to send output to both a log file and stdout. It is recommended to simply output to stdout in order to reduce the number of running processes to a minimum. Setting `SSH_AUTOSTART_SUPERVISOR_STDOUT` to "false" will prevent the startup of `supervisor_stdout`. Where an image requires this feature for its logging output `SSH_AUTOSTART_SUPERVISOR_STDOUT` should be set to "true".
 
 ##### SSH_CHROOT_DIRECTORY
 

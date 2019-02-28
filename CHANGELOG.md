@@ -4,6 +4,24 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
+### 2.5.1 - 2019-02-28
+
+- Deprecates use of `supervisor_stdout` - the default value of `SSH_AUTOSTART_SUPERVISOR_STDOUT` will be switched to "false" in a future release.
+- Updates Dockerfile with combined ADD to reduce layer count in final image.
+- Fixes `scmi` installation error when using the `--manager=systemd` option on Ubuntu hosts.
+- Fixes issues with failure to install/uninstall systemd units installed with scmi.
+- Adds improvement to pull logic in systemd unit install template.
+- Adds `docker-compose.yml` to `.dockerignore` to reduce size of build context.
+- Adds docker-compose configuration example.
+- Adds `SSH_AUTOSTART_SUPERVISOR_STDOUT` to control startup of `supervisor_stdout`.
+- Adds drop-in configuration for `supervisor_stdout` in `/etc/supervisord.d/00-supervisor_stdout.conf`.
+- Adds improved `healtchcheck`, `sshd-bootstrap` and `sshd-wrapper` scripts.
+- Adds validation of `SSH_INHERIT_ENVIRONMENT` values.
+- Removes reference to `python-setuptools` from README as it's no longer installed.
+- Removes requirement of `supervisor_stdout` for output of supervisord logs to stdout.
+- Removes unnecessary configuration file `/etc/sshd-bootstrap.conf`.
+- Removes unnecessary environment file `/etc/sshd-bootstrap.env`.
+
 ### 2.5.0 - 2019-01-28
 
 - Updates `openssl` package to 1.0.2k-16.el7.

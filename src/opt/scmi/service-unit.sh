@@ -1,6 +1,6 @@
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Constants
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 readonly SERVICE_UNIT_ENVIRONMENT_KEYS="
  DOCKER_CONTAINER_OPTS
  DOCKER_IMAGE_PACKAGE_PATH
@@ -9,6 +9,7 @@ readonly SERVICE_UNIT_ENVIRONMENT_KEYS="
  SSH_AUTHORIZED_KEYS
  SSH_AUTOSTART_SSHD
  SSH_AUTOSTART_SSHD_BOOTSTRAP
+ SSH_AUTOSTART_SUPERVISOR_STDOUT
  SSH_CHROOT_DIRECTORY
  SSH_INHERIT_ENVIRONMENT
  SSH_PASSWORD_AUTHENTICATION
@@ -29,7 +30,7 @@ readonly SERVICE_UNIT_REGISTER_ENVIRONMENT_KEYS="
  REGISTER_UPDATE_INTERVAL
 "
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Variables
-# -----------------------------------------------------------------------------
-SERVICE_UNIT_INSTALL_TIMEOUT=${SERVICE_UNIT_INSTALL_TIMEOUT:-5}
+# ------------------------------------------------------------------------------
+SERVICE_UNIT_INSTALL_TIMEOUT="${SERVICE_UNIT_INSTALL_TIMEOUT:-5}"
