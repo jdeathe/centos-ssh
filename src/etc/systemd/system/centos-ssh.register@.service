@@ -1,4 +1,4 @@
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Naming convention:
 #
 #    centos-ssh@.service = {service-unit-install-template-name}
@@ -37,7 +37,7 @@
 #     sudo systemctl disable -f {service-unit-instance-name}
 #     sudo rm /etc/systemd/system/{service-unit-template-name}
 #     sudo systemctl daemon-reload
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 [Unit]
 Description=centos-ssh etcd registration // %p@%i

@@ -1,6 +1,6 @@
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Constants
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 readonly DOCKER_USER=jdeathe
 readonly DOCKER_IMAGE_NAME=centos-ssh
 
@@ -8,9 +8,9 @@ readonly DOCKER_IMAGE_NAME=centos-ssh
 readonly DOCKER_IMAGE_TAG_PATTERN='^(latest|centos-[6-7]|((1|2|centos-(6-1|7-2))\.[0-9]+\.[0-9]+))$'
 readonly DOCKER_IMAGE_RELEASE_TAG_PATTERN='^(1|2|centos-(6-1|7-2))\.[0-9]+\.[0-9]+$'
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Variables
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Docker image/container settings
 DOCKER_CONTAINER_OPTS="${DOCKER_CONTAINER_OPTS:-}"
@@ -37,6 +37,7 @@ STARTUP_TIME="${STARTUP_TIME:-2}"
 SSH_AUTHORIZED_KEYS="${SSH_AUTHORIZED_KEYS:-}"
 SSH_AUTOSTART_SSHD="${SSH_AUTOSTART_SSHD:-true}"
 SSH_AUTOSTART_SSHD_BOOTSTRAP="${SSH_AUTOSTART_SSHD_BOOTSTRAP:-true}"
+SSH_AUTOSTART_SUPERVISOR_STDOUT="${SSH_AUTOSTART_SUPERVISOR_STDOUT:-true}"
 SSH_CHROOT_DIRECTORY="${SSH_CHROOT_DIRECTORY:-%h}"
 SSH_INHERIT_ENVIRONMENT="${SSH_INHERIT_ENVIRONMENT:-false}"
 SSH_PASSWORD_AUTHENTICATION="${SSH_PASSWORD_AUTHENTICATION:-false}"

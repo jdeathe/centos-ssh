@@ -1,14 +1,14 @@
 FROM centos:centos6.10
 
-ARG RELEASE_VERSION="1.10.0"
+ARG RELEASE_VERSION="1.10.1"
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # - Import the RPM GPG keys for repositories
 # - Base install of required packages
 # - Install supervisord (used to run more than a single process)
 # - Install supervisor-stdout to allow output of services started by
 #  supervisord to be easily inspected with "docker logs".
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 RUN rpm --rebuilddb \
 	&& rpm --import \
 		http://mirror.centos.org/centos/RPM-GPG-KEY-CentOS-6 \
@@ -60,19 +60,12 @@ RUN rpm --rebuilddb \
 	&& rm -rf /{root,tmp,var/cache/{ldconfig,yum}}/* \
 	&& > /etc/sysconfig/i18n
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Copy files into place
-# -----------------------------------------------------------------------------
-ADD src/usr/bin \
-	/usr/bin/
-ADD src/usr/sbin \
-	/usr/sbin/
-ADD src/opt/scmi \
-	/opt/scmi/
-ADD src/etc \
-	/etc/
+# ------------------------------------------------------------------------------
+ADD src /
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Provisioning
 # - UTC Timezone
 # - Networking
@@ -80,7 +73,7 @@ ADD src/etc \
 # - Enable the wheel sudoers group
 # - Replace placeholders with values in systemd service unit template
 # - Set permissions
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 RUN ln -sf \
 		/usr/share/zoneinfo/UTC \
 		/etc/localtime \
@@ -100,18 +93,20 @@ RUN ln -sf \
 		-e "s~{{RELEASE_VERSION}}~${RELEASE_VERSION}~g" \
 		/etc/systemd/system/centos-ssh@.service \
 	&& chmod 644 \
-		/etc/{sshd-bootstrap.{conf,env},supervisord.conf,supervisord.d/sshd-{bootstrap,wrapper}.conf} \
+		/etc/{supervisord.conf,supervisord.d/sshd-{bootstrap,wrapper}.conf} \
 	&& chmod 700 \
 		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper}}}
 
 EXPOSE 22
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Set default environment variables
-# -----------------------------------------------------------------------------
-ENV SSH_AUTHORIZED_KEYS="" \
+# ------------------------------------------------------------------------------
+ENV \
+	SSH_AUTHORIZED_KEYS="" \
 	SSH_AUTOSTART_SSHD="true" \
 	SSH_AUTOSTART_SSHD_BOOTSTRAP="true" \
+	SSH_AUTOSTART_SUPERVISOR_STDOUT="true" \
 	SSH_CHROOT_DIRECTORY="%h" \
 	SSH_INHERIT_ENVIRONMENT="false" \
 	SSH_PASSWORD_AUTHENTICATION="false" \
@@ -126,9 +121,9 @@ ENV SSH_AUTHORIZED_KEYS="" \
 	SSH_USER_PRIVATE_KEY="" \
 	SSH_USER_SHELL="/bin/bash"
 
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 # Set image metadata
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 LABEL \
 	maintainer="James Deathe <james.deathe@gmail.com>" \
 	install="docker run \

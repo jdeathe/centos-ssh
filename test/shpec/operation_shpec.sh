@@ -22,8 +22,8 @@ function __destroy ()
 
 function __get_container_port ()
 {
-	local container="${1:-}"
-	local port="${2:-}"
+	local container="${1}"
+	local port="${2}"
 	local value=""
 
 	value="$(
@@ -44,13 +44,13 @@ function __get_container_port ()
 # ready_test - Command used to test if the service is ready.
 function __is_container_ready ()
 {
-	local container="${1:-}"
+	local container="${1}"
 	local counter=$(
 		awk \
 			-v seconds="${2:-10}" \
 			'BEGIN { print 10 * seconds; }'
 	)
-	local process_pattern="${3:-}"
+	local process_pattern="${3}"
 	local ready_test="${4:-true}"
 
 	until (( counter == 0 )); do
@@ -85,8 +85,8 @@ function __setup ()
 # Match a string with an Extended Regular Expression pattern.
 function __shpec_matcher_egrep ()
 {
-	local pattern="${2:-}"
-	local string="${1:-}"
+	local pattern="${2}"
+	local string="${1}"
 
 	printf -- \
 		'%s' \
@@ -170,9 +170,7 @@ function test_basic_ssh_operations ()
 			ssh.1 \
 			${STARTUP_TIME} \
 			"/usr/sbin/sshd " \
-			"grep \
-				'^Server listening on 0\.0\.0\.0 port 22\.' \
-				/var/log/secure"
+			"[[ -s /var/run/sshd.pid ]]"
 		then
 			exit 1
 		fi
@@ -301,9 +299,7 @@ function test_basic_sftp_operations ()
 			sftp.1 \
 			${STARTUP_TIME} \
 			"/usr/sbin/sshd " \
-			"grep \
-				'^Server listening on 0\.0\.0\.0 port 22\.' \
-				/var/log/secure"
+			"[[ -s /var/run/sshd.pid ]]"
 		then
 			exit 1
 		fi
@@ -427,9 +423,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -508,9 +502,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -556,9 +548,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -619,9 +609,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -681,9 +669,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -759,9 +745,7 @@ function test_custom_ssh_configuration ()
 					ssh.1 \
 					${STARTUP_TIME} \
 					"/usr/sbin/sshd " \
-					"grep \
-						'^Server listening on 0\.0\.0\.0 port 22\.' \
-						/var/log/secure"
+					"[[ -s /var/run/sshd.pid ]]"
 				then
 					exit 1
 				fi
@@ -844,9 +828,7 @@ function test_custom_ssh_configuration ()
 					ssh.1 \
 					${STARTUP_TIME} \
 					"/usr/sbin/sshd " \
-					"grep \
-						'^Server listening on 0\.0\.0\.0 port 22\.' \
-						/var/log/secure"
+					"[[ -s /var/run/sshd.pid ]]"
 				then
 					exit 1
 				fi
@@ -929,9 +911,7 @@ function test_custom_ssh_configuration ()
 					ssh.1 \
 					${STARTUP_TIME} \
 					"/usr/sbin/sshd " \
-					"grep \
-						'^Server listening on 0\.0\.0\.0 port 22\.' \
-						/var/log/secure"
+					"[[ -s /var/run/sshd.pid ]]"
 				then
 					exit 1
 				fi
@@ -988,9 +968,7 @@ function test_custom_ssh_configuration ()
 					ssh.1 \
 					${STARTUP_TIME} \
 					"/usr/sbin/sshd " \
-					"grep \
-						'^Server listening on 0\.0\.0\.0 port 22\.' \
-						/var/log/secure"
+					"[[ -s /var/run/sshd.pid ]]"
 				then
 					exit 1
 				fi
@@ -1049,9 +1027,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -1111,9 +1087,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -1174,9 +1148,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -1237,9 +1209,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -1301,9 +1271,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -1354,9 +1322,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -1426,9 +1392,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -1498,9 +1462,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -1567,9 +1529,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -1630,9 +1590,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -1744,9 +1702,7 @@ function test_custom_ssh_configuration ()
 				ssh.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -1778,6 +1734,52 @@ function test_custom_ssh_configuration ()
 		end
 
 		describe "Configure autostart"
+			__terminate_container \
+				ssh.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.1 \
+				--env "SSH_AUTOSTART_SUPERVISOR_STDOUT=true" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			sleep ${STARTUP_TIME}
+
+			it "Can enable supervisor_stdout."
+				docker top ssh.1 \
+					| grep -qE '/usr/bin/python /usr/bin/supervisor_stdout'
+
+				assert equal \
+					"${?}" \
+					"0"
+			end
+
+			__terminate_container \
+				ssh.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.1 \
+				--env "SSH_AUTOSTART_SUPERVISOR_STDOUT=false" \
+				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			sleep ${STARTUP_TIME}
+
+			it "Can disable supervisor_stdout."
+				docker top ssh.1 \
+					| grep -qE '/usr/bin/python /usr/bin/supervisor_stdout'
+
+				assert equal \
+					"${?}" \
+					"1"
+			end
+
 			__terminate_container \
 				ssh.1 \
 			&> /dev/null
@@ -1875,9 +1877,7 @@ function test_custom_sftp_configuration ()
 				sftp.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -1960,9 +1960,7 @@ function test_custom_sftp_configuration ()
 				sftp.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
@@ -2040,9 +2038,7 @@ function test_custom_sftp_configuration ()
 					sftp.1 \
 					${STARTUP_TIME} \
 					"/usr/sbin/sshd " \
-					"grep \
-						'^Server listening on 0\.0\.0\.0 port 22\.' \
-						/var/log/secure"
+					"[[ -s /var/run/sshd.pid ]]"
 				then
 					exit 1
 				fi
@@ -2129,9 +2125,7 @@ function test_custom_sftp_configuration ()
 				sftp.1 \
 				${STARTUP_TIME} \
 				"/usr/sbin/sshd " \
-				"grep \
-					'^Server listening on 0\.0\.0\.0 port 22\.' \
-					/var/log/secure"
+				"[[ -s /var/run/sshd.pid ]]"
 			then
 				exit 1
 			fi
