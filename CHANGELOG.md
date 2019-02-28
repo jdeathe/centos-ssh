@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
-### 1.10.1 - Unreleased
+### 1.10.1 - 2019-02-28
 
 - Deprecates use of `supervisor_stdout` - the default value of `SSH_AUTOSTART_SUPERVISOR_STDOUT` will be switched to "false" in a future release.
 - Updates Dockerfile with combined ADD to reduce layer count in final image.
