@@ -153,7 +153,7 @@ ExecStart=/bin/bash -c \
           <<< \"${DOCKER_PORT_MAP_TCP_22}\" \
         && /usr/bin/grep -qE \
           '^.+\.[0-9]+(\.[0-9]+)?$' \
-          <<< \"${DOCKER_NAME}\"; \
+          <<< %p.%i; \
       then \
         printf -- '--publish %%s%%s:22' \
           $(\
