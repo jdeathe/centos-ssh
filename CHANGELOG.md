@@ -6,7 +6,9 @@ Summary of release changes for Version 2 - CentOS-7
 
 ### 2.5.2 - Unreleased
 
-- Fixes issue with port incrementation failure when installing systemd units via `scmi`.
+- Fixes port incrementation failures when installing systemd units via `scmi`.
+- Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
+- Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.
 
 ### 2.5.1 - 2019-02-28
 
