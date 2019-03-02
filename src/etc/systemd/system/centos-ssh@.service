@@ -178,7 +178,7 @@ ExecStart=/bin/bash -c \
         /usr/bin/printf -- '--publish %%s:22' \
           \"${DOCKER_PORT_MAP_TCP_22}\"; \
       fi; \
-    fi;) \
+    fi) \
     ${DOCKER_CONTAINER_OPTS} \
     ${DOCKER_USER}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG}; \
   "
