@@ -6,7 +6,9 @@ Summary of release changes for Version 1 - CentOS-6
 
 ### 1.10.2 - Unreleased
 
-- Fixes issue with port incrementation failure when installing systemd units via `scmi`.
+- Fixes port incrementation failures when installing systemd units via `scmi`.
+- Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
+- Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.
 
 ### 1.10.1 - 2019-02-28
 
