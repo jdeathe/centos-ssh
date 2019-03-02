@@ -86,7 +86,7 @@ ExecStart=/bin/bash -c \
         \"$(/usr/bin/docker port \
             {{SERVICE_UNIT_NAME}}.%i \
             22 \
-          | /usr/bin/sed 's~^[0-9.]*:~~' \
+          | /bin/sed 's~^[0-9.]*:~~' \
         )\" \
         --ttl ${REGISTER_TTL} 2> /dev/null; \
     fi; \
@@ -111,15 +111,15 @@ ExecStart=/bin/bash -c \
             ${REGISTER_KEY_ROOT}/ports/tcp/22 \
           &> /dev/null; \
         then \
-          echo set; \
+          /usr/bin/printf -- 'set\n'; \
         else \
-          echo update; \
+          /usr/bin/printf -- 'update\n'; \
         fi) \
         ${REGISTER_KEY_ROOT}/ports/tcp/22 \
         \"$(/usr/bin/docker port \
             {{SERVICE_UNIT_NAME}}.%i \
             22 \
-          | /usr/bin/sed 's~^[0-9.]*:~~' \
+          | /bin/sed 's~^[0-9.]*:~~' \
         )\" \
         --ttl ${REGISTER_TTL}; \
     fi; \
@@ -131,9 +131,9 @@ ExecStart=/bin/bash -c \
           ${REGISTER_KEY_ROOT}/hostname \
         &> /dev/null; \
       then \
-        echo set; \
+        /usr/bin/printf -- 'set\n'; \
       else \
-        echo update; \
+        /usr/bin/printf -- 'update\n'; \
       fi) \
       ${REGISTER_KEY_ROOT}/hostname \
       %H \
