@@ -67,7 +67,7 @@ ADD src /
 # - Set permissions
 # ------------------------------------------------------------------------------
 RUN ln -sf \
-		/usr/share/zoneinfo/UTC \
+		/usr/share/zoneinfo/Asia/Shanghai \
 		/etc/localtime \
 	&& echo "NETWORKING=yes" \
 		> /etc/sysconfig/network \
@@ -105,7 +105,7 @@ ENV \
 	SSH_INHERIT_ENVIRONMENT="false" \
 	SSH_PASSWORD_AUTHENTICATION="false" \
 	SSH_SUDO="ALL=(ALL) ALL" \
-	SSH_TIMEZONE="UTC" \
+	SSH_TIMEZONE="Asia/Shanghai" \
 	SSH_USER="wubx" \
 	SSH_USER_FORCE_SFTP="false" \
 	SSH_USER_HOME="/home/%u" \
