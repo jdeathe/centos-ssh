@@ -28,6 +28,9 @@ RUN rpm --rebuilddb \
 		openssl-1.0.2k-16.el7 \
 		python-setuptools-0.9.8-7.el7 \
 		sudo-1.8.23-3.el7 \
+		vim-minimal \
+		iproute \
+		net-tools \
 		yum-plugin-versionlock-1.1.31-50.el7 \
 	&& yum versionlock add \
 		openssh \
@@ -68,8 +71,6 @@ RUN ln -sf \
 	&& echo "NETWORKING=yes" \
 		> /etc/sysconfig/network \
 	&& sed -i \
-		-e 's~^PasswordAuthentication yes~PasswordAuthentication no~g' \
-		-e 's~^#PermitRootLogin yes~PermitRootLogin no~g' \
 		-e 's~^#UseDNS yes~UseDNS no~g' \
 		-e 's~^\(.*\)/usr/libexec/openssh/sftp-server$~\1internal-sftp~g' \
 		/etc/ssh/sshd_config \
@@ -83,7 +84,8 @@ RUN ln -sf \
 	&& chmod 644 \
 		/etc/{supervisord.conf,supervisord.d/sshd-{bootstrap,wrapper}.conf} \
 	&& chmod 700 \
-		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper}}}
+		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper}}} \
+	&& echo "root:zstzst"|chpasswd
 
 EXPOSE 22
 
@@ -100,11 +102,11 @@ ENV \
 	SSH_PASSWORD_AUTHENTICATION="false" \
 	SSH_SUDO="ALL=(ALL) ALL" \
 	SSH_TIMEZONE="UTC" \
-	SSH_USER="app-admin" \
+	SSH_USER="wubx" \
 	SSH_USER_FORCE_SFTP="false" \
 	SSH_USER_HOME="/home/%u" \
 	SSH_USER_ID="500:500" \
-	SSH_USER_PASSWORD="" \
+	SSH_USER_PASSWORD="zstzst" \
 	SSH_USER_PASSWORD_HASHED="false" \
 	SSH_USER_PRIVATE_KEY="" \
 	SSH_USER_SHELL="/bin/bash"
