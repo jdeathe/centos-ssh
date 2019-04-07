@@ -28,7 +28,7 @@ RUN rpm --rebuilddb \
 		openssl-1.0.2k-16.el7 \
 		python-setuptools-0.9.8-7.el7 \
 		sudo-1.8.23-3.el7 \
-		vim-minimal \
+		vim \
 		iproute \
 		net-tools \
 		wget \
