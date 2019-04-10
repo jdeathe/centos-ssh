@@ -1,0 +1,6 @@
+
+docker run -d --privileged -v /data/ddata/dzst150:/data -v /data/ddata/dfile:/dfile -p1050:22  --net zstnet --ip 172.18.0.150 --cap-add=NET_ADMIN  --name dzst150 -h dzst150 zst/centos76
+
+docker run -d --privileged -v /data/ddata/dzst151:/data -v /data/ddata/dfile:/dfile -p1051:22  --net zstnet --ip 172.18.0.151 --cap-add=NET_ADMIN  --name dzst151 -h dzst151 zst/centos76
+
+docker run -d --privileged -v /data/ddata/dzst152:/data -v /data/ddata/dfile:/dfile -p1052:22  --net zstnet --ip 172.18.0.152 --cap-add=NET_ADMIN  --name dzst152 -h dzst152 zst/centos76
