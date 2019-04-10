@@ -29,8 +29,10 @@ RUN rpm --rebuilddb \
 		python-setuptools-0.9.8-7.el7 \
 		sudo-1.8.23-3.el7 \
 		vim \
+		tree \
 		libaio \
 		numactl \
+		man \
 		iproute \
 		net-tools \
 		wget \
