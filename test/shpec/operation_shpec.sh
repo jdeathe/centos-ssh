@@ -2349,7 +2349,7 @@ function test_healthcheck ()
 						-v event_lag="${event_lag_seconds}" \
 						-v interval="${interval_seconds}" \
 						-v retries="${retries}" \
-						'BEGIN { print event_lag + (interval * retries); }'
+						'BEGIN { print (2 * event_lag) + (interval * retries); }'
 				)"
 
 				health_status="$(
