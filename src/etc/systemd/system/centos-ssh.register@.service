@@ -35,6 +35,7 @@
 #
 # To uninstall:
 #     sudo systemctl disable -f {service-unit-instance-name}
+#     sudo systemctl daemon-reload
 #     sudo rm /etc/systemd/system/{service-unit-template-name}
 #     sudo systemctl daemon-reload
 # ------------------------------------------------------------------------------
@@ -111,9 +112,9 @@ ExecStart=/bin/bash -c \
             ${REGISTER_KEY_ROOT}/ports/tcp/22 \
           &> /dev/null; \
         then \
-          /usr/bin/printf -- 'set\n'; \
+          printf -- 'set\n'; \
         else \
-          /usr/bin/printf -- 'update\n'; \
+          printf -- 'update\n'; \
         fi) \
         ${REGISTER_KEY_ROOT}/ports/tcp/22 \
         \"$(/usr/bin/docker port \
@@ -131,9 +132,9 @@ ExecStart=/bin/bash -c \
           ${REGISTER_KEY_ROOT}/hostname \
         &> /dev/null; \
       then \
-        /usr/bin/printf -- 'set\n'; \
+        printf -- 'set\n'; \
       else \
-        /usr/bin/printf -- 'update\n'; \
+        printf -- 'update\n'; \
       fi) \
       ${REGISTER_KEY_ROOT}/hostname \
       %H \

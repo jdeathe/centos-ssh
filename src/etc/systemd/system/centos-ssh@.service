@@ -85,7 +85,7 @@ ExecStartPre=/bin/bash -c \
   then \
     if [[ -f ${DOCKER_IMAGE_PACKAGE_PATH}/${DOCKER_USER}/${DOCKER_IMAGE_NAME}.${DOCKER_IMAGE_TAG}.tar.xz ]]; \
     then \
-      /usr/bin/printf -- '%%s/%%s/%%s.%%s.tar.xz\n' \
+      printf -- '%%s/%%s/%%s.%%s.tar.xz\n' \
         \"${DOCKER_IMAGE_PACKAGE_PATH}\" \
         \"${DOCKER_USER}\" \
         \"${DOCKER_IMAGE_NAME}\" \
@@ -93,7 +93,7 @@ ExecStartPre=/bin/bash -c \
       | /usr/bin/xargs /usr/bin/xz -dc \
       | /usr/bin/docker load; \
     else \
-      /usr/bin/printf -- '%%s/%%s:%%s\n' \
+      printf -- '%%s/%%s:%%s\n' \
         \"${DOCKER_USER}\" \
         \"${DOCKER_IMAGE_NAME}\" \
         \"${DOCKER_IMAGE_TAG}\" \
@@ -155,7 +155,7 @@ ExecStart=/bin/bash -c \
           '^.+\.[0-9]+(\.[0-9]+)?$' \
           <<< %p.%i; \
       then \
-        /usr/bin/printf -- '--publish %%s%%s:22' \
+        printf -- '--publish %%s%%s:22' \
           $(\
             /bin/grep -o \
               '^[0-9\.]*:' \
@@ -175,7 +175,7 @@ ExecStart=/bin/bash -c \
             - 1 \
           )); \
       else \
-        /usr/bin/printf -- '--publish %%s:22' \
+        printf -- '--publish %%s:22' \
           \"${DOCKER_PORT_MAP_TCP_22}\"; \
       fi; \
     fi) \
