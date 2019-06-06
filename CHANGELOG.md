@@ -7,6 +7,7 @@ Summary of release changes for Version 2 - CentOS-7
 ### 2.6.0 - Unreleased
 
 - Updates source tag to CentOS 7.6.1810.
+- Adds reference to `python-setuptools` in README; removed in error.
 - Fixes port incrementation failures when installing systemd units via `scmi`.
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
 - Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.
