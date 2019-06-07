@@ -7,6 +7,8 @@ Summary of release changes for Version 2 - CentOS-7
 ### 2.6.0 - Unreleased
 
 - Updates source tag to CentOS 7.6.1810.
+- Updates supervisord to 4.0.3.
+- Updates default value of `SSH_AUTOSTART_SUPERVISOR_STDOUT` to false.
 - Adds reference to `python-setuptools` in README; removed in error.
 - Fixes port incrementation failures when installing systemd units via `scmi`.
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.

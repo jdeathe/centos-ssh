@@ -38,7 +38,7 @@ RUN rpm --rebuilddb \
 		yum-plugin-versionlock \
 	&& yum clean all \
 	&& easy_install \
-		'supervisor == 3.3.5' \
+		'supervisor == 4.0.3' \
 		'supervisor-stdout == 0.1.1' \
 	&& mkdir -p \
 		/var/log/supervisor/ \
@@ -94,7 +94,7 @@ ENV \
 	SSH_AUTHORIZED_KEYS="" \
 	SSH_AUTOSTART_SSHD="true" \
 	SSH_AUTOSTART_SSHD_BOOTSTRAP="true" \
-	SSH_AUTOSTART_SUPERVISOR_STDOUT="true" \
+	SSH_AUTOSTART_SUPERVISOR_STDOUT="false" \
 	SSH_CHROOT_DIRECTORY="%h" \
 	SSH_INHERIT_ENVIRONMENT="false" \
 	SSH_PASSWORD_AUTHENTICATION="false" \
