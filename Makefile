@@ -19,6 +19,7 @@ Targets:
   distclean                 Clean up distribution artifacts.
   exec COMMAND [ARG...]     Run command in a the running container.
   help                      Show this help.
+  inspect [-f \"FORMAT\"]   Return low-level information on the container.
   install                   Terminate running container and run the docker
                             create template.
   images                    Show container's image details.
@@ -167,6 +168,7 @@ endef
 	distclean \
 	exec \
 	help \
+	inspect \
 	install \
 	images \
 	load \
@@ -573,6 +575,15 @@ images: \
 
 help: \
 	_usage
+
+inspect: \
+	_prerequisites \
+	_require-docker-container
+	@ $(docker) inspect \
+		--type=container \
+		$(filter-out $@, $(MAKECMDGOALS)) \
+		$(DOCKER_NAME)
+%:; @:
 
 install: | \
 	_prerequisites \
