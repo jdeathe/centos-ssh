@@ -6,6 +6,7 @@ Summary of release changes for Version 1 - CentOS-6
 
 ### 1.10.2 - Unreleased
 
+- Adds reference to `python-setuptools` in README; removed in error.
 - Fixes port incrementation failures when installing systemd units via `scmi`.
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
 - Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.
