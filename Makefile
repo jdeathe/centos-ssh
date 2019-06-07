@@ -33,6 +33,7 @@ Targets:
   pull                      Pull the release image from the registry. Requires
                             the DOCKER_IMAGE_TAG variable.
   ps                        Display the details of the container process.
+  reload                    Send SIGHUP to the PID 1 container process.
   restart                   Restarts the container.
   rm                        Force remove the container.
   rmi                       Untag (remove) the image.
@@ -63,6 +64,8 @@ Variables:
                             artifacts are placed.
   - NO_CACHE                When true, no cache will be used while running the
                             build target.
+  - RELOAD_SIGNAL           Default signal is SIGHUP. Use to set an alternative
+                            signal value.
   - STARTUP_TIME            Defines the number of seconds expected to complete
                             the startup process, including the bootstrap where
                             applicable.
@@ -178,6 +181,7 @@ endef
 	pause \
 	pull \
 	ps \
+	reload \
 	restart \
 	rm \
 	rmi \
@@ -689,6 +693,19 @@ ps: \
 	_require-docker-container
 	@ $(docker) ps -as \
 		--filter "name=$(DOCKER_NAME)"
+
+reload: \
+	_prerequisites \
+	_require-docker-container \
+	_require-docker-container-not-status-paused
+	@ printf -- '%s%s\n' \
+		"$(PREFIX_STEP)" \
+		"Reloading container"
+	@ $(docker) exec $(DOCKER_NAME) \
+		kill -$(RELOAD_SIGNAL) 1
+	@ printf -- '%s%s\n' \
+		"$(PREFIX_SUB_STEP_POSITIVE)" \
+		"Container reloaded"
 
 restart: \
 	_prerequisites \

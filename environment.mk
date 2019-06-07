@@ -26,6 +26,8 @@ NO_CACHE ?= false
 # Directory path for release packages
 DIST_PATH ?= ./dist
 
+RELOAD_SIGNAL ?= HUP
+
 # Number of seconds expected to complete container startup including bootstrap.
 STARTUP_TIME ?= 2
 
