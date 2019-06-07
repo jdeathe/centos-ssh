@@ -40,6 +40,7 @@ Targets:
   stop                      Stop the container when in a running state.
   terminate                 Unpause, stop and remove the container.
   test                      Run all test cases.
+  top [ps OPTIONS]          Display the running processes of a container.
   unpause                   Unpause the container when in a paused state.
 
 Variables:
@@ -182,6 +183,7 @@ endef
 	stop \
 	terminate \
 	test \
+	top \
 	unpause
 
 _prerequisites:
@@ -854,6 +856,11 @@ stop: \
 			exit 1; \
 		fi; \
 	fi
+
+top: \
+	_prerequisites
+	@ $(docker) top $(DOCKER_NAME) $(filter-out $@, $(MAKECMDGOALS))
+%:; @:
 
 terminate: \
 	_prerequisites
