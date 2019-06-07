@@ -569,7 +569,7 @@ distclean: \
 	fi
 
 exec: \
-	_prerequisites
+	_prerequisites \
 	_require-docker-container
 	@ $(docker) exec -it $(DOCKER_NAME) $(filter-out $@, $(MAKECMDGOALS))
 %:; @:
