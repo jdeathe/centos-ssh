@@ -8,6 +8,7 @@ Summary of release changes for Version 1 - CentOS-6
 
 - Updates supervisord to 3.4.0.
 - Updates default value of `SSH_AUTOSTART_SUPERVISOR_STDOUT` to false.
+- Updates `sshd-bootstrap` and `sshd-wrapper` configuration to send error log output to stderr.
 - Adds reference to `python-setuptools` in README; removed in error.
 - Fixes port incrementation failures when installing systemd units via `scmi`.
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
