@@ -6,6 +6,8 @@ Summary of release changes for Version 1 - CentOS-6
 
 ### 1.10.2 - Unreleased
 
+- Updates supervisord to 3.4.0.
+- Updates default value of `SSH_AUTOSTART_SUPERVISOR_STDOUT` to false.
 - Adds reference to `python-setuptools` in README; removed in error.
 - Fixes port incrementation failures when installing systemd units via `scmi`.
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
