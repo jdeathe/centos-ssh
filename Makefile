@@ -566,6 +566,7 @@ distclean: \
 
 exec: \
 	_prerequisites
+	_require-docker-container
 	@ $(docker) exec -it $(DOCKER_NAME) $(filter-out $@, $(MAKECMDGOALS))
 %:; @:
 
@@ -592,11 +593,13 @@ install: | \
 	create
 
 logs: \
-	_prerequisites
+	_prerequisites \
+	_require-docker-container
 	@ $(docker) logs $(DOCKER_NAME)
 
 logs-delayed: \
-	_prerequisites
+	_prerequisites \
+	_require-docker-container
 	@ sleep $(STARTUP_TIME)
 	@ $(MAKE) logs
 
@@ -870,7 +873,8 @@ stop: \
 	fi
 
 top: \
-	_prerequisites
+	_prerequisites \
+	_require-docker-container
 	@ $(docker) top $(DOCKER_NAME) $(filter-out $@, $(MAKECMDGOALS))
 %:; @:
 
