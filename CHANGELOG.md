@@ -17,6 +17,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
 - Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.
 - Fixes use of printf binary instead of builtin in systemd unit files.
+- Removes support for long image tags (i.e. centos-7-2.x.x).
 
 ### 2.5.1 - 2019-02-28
 
