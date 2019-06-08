@@ -19,6 +19,7 @@ Targets:
   distclean                 Clean up distribution artifacts.
   exec COMMAND [ARG...]     Run command in a the running container.
   help                      Show this help.
+  inspect [-f \"FORMAT\"]   Return low-level information on the container.
   install                   Terminate running container and run the docker
                             create template.
   images                    Show container's image details.
@@ -32,6 +33,7 @@ Targets:
   pull                      Pull the release image from the registry. Requires
                             the DOCKER_IMAGE_TAG variable.
   ps                        Display the details of the container process.
+  reload                    Send SIGHUP to the PID 1 container process.
   restart                   Restarts the container.
   rm                        Force remove the container.
   rmi                       Untag (remove) the image.
@@ -40,6 +42,7 @@ Targets:
   stop                      Stop the container when in a running state.
   terminate                 Unpause, stop and remove the container.
   test                      Run all test cases.
+  top [ps OPTIONS]          Display the running processes of the container.
   unpause                   Unpause the container when in a paused state.
 
 Variables:
@@ -60,6 +63,8 @@ Variables:
                             artifacts are placed.
   - NO_CACHE                When true, no cache will be used while running the
                             build target.
+  - RELOAD_SIGNAL           Default signal is SIGHUP. Use to set an alternative
+                            signal value.
   - STARTUP_TIME            Defines the number of seconds expected to complete
                             the startup process, including the bootstrap where
                             applicable.
@@ -166,6 +171,7 @@ endef
 	distclean \
 	exec \
 	help \
+	inspect \
 	install \
 	images \
 	load \
@@ -174,6 +180,7 @@ endef
 	pause \
 	pull \
 	ps \
+	reload \
 	restart \
 	rm \
 	rmi \
@@ -182,6 +189,7 @@ endef
 	stop \
 	terminate \
 	test \
+	top \
 	unpause
 
 _prerequisites:
@@ -560,7 +568,8 @@ distclean: \
 	fi
 
 exec: \
-	_prerequisites
+	_prerequisites \
+	_require-docker-container
 	@ $(docker) exec -it $(DOCKER_NAME) $(filter-out $@, $(MAKECMDGOALS))
 %:; @:
 
@@ -572,17 +581,28 @@ images: \
 help: \
 	_usage
 
+inspect: \
+	_prerequisites \
+	_require-docker-container
+	@ $(docker) inspect \
+		--type=container \
+		$(filter-out $@, $(MAKECMDGOALS)) \
+		$(DOCKER_NAME)
+%:; @:
+
 install: | \
 	_prerequisites \
 	terminate \
 	create
 
 logs: \
-	_prerequisites
+	_prerequisites \
+	_require-docker-container
 	@ $(docker) logs $(DOCKER_NAME)
 
 logs-delayed: \
-	_prerequisites
+	_prerequisites \
+	_require-docker-container
 	@ sleep $(STARTUP_TIME)
 	@ $(MAKE) logs
 
@@ -672,6 +692,19 @@ ps: \
 	_require-docker-container
 	@ $(docker) ps -as \
 		--filter "name=$(DOCKER_NAME)"
+
+reload: \
+	_prerequisites \
+	_require-docker-container \
+	_require-docker-container-not-status-paused
+	@ printf -- '%s%s\n' \
+		"$(PREFIX_STEP)" \
+		"Reloading container"
+	@ $(docker) exec $(DOCKER_NAME) \
+		kill -$(RELOAD_SIGNAL) 1
+	@ printf -- '%s%s\n' \
+		"$(PREFIX_SUB_STEP_POSITIVE)" \
+		"Container reloaded"
 
 restart: \
 	_prerequisites \
@@ -854,6 +887,12 @@ stop: \
 			exit 1; \
 		fi; \
 	fi
+
+top: \
+	_prerequisites \
+	_require-docker-container
+	@ $(docker) top $(DOCKER_NAME) $(filter-out $@, $(MAKECMDGOALS))
+%:; @:
 
 terminate: \
 	_prerequisites

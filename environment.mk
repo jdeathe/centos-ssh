@@ -1,32 +1,23 @@
 # ------------------------------------------------------------------------------
 # Constants
 # ------------------------------------------------------------------------------
-DOCKER_USER := jdeathe
 DOCKER_IMAGE_NAME := centos-ssh
-SHPEC_ROOT := test/shpec
-
-# Tag validation patterns
-DOCKER_IMAGE_TAG_PATTERN := ^(latest|centos-[6-7]|((1|2|centos-(6-1|7-2))\.[0-9]+\.[0-9]+))$
 DOCKER_IMAGE_RELEASE_TAG_PATTERN := ^(1|2|centos-(6-1|7-2))\.[0-9]+\.[0-9]+$
+DOCKER_IMAGE_TAG_PATTERN := ^(latest|centos-[6-7]|((1|2|centos-(6-1|7-2))\.[0-9]+\.[0-9]+))$
+DOCKER_USER := jdeathe
+SHPEC_ROOT := test/shpec
 
 # ------------------------------------------------------------------------------
 # Variables
 # ------------------------------------------------------------------------------
-
-# Docker image/container settings
+DIST_PATH ?= ./dist
 DOCKER_CONTAINER_OPTS ?=
 DOCKER_IMAGE_TAG ?= latest
 DOCKER_NAME ?= ssh.1
 DOCKER_PORT_MAP_TCP_22 ?= 2020
 DOCKER_RESTART_POLICY ?= always
-
-# Docker build --no-cache parameter
 NO_CACHE ?= false
-
-# Directory path for release packages
-DIST_PATH ?= ./dist
-
-# Number of seconds expected to complete container startup including bootstrap.
+RELOAD_SIGNAL ?= HUP
 STARTUP_TIME ?= 2
 
 # ------------------------------------------------------------------------------
