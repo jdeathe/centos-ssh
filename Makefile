@@ -42,7 +42,6 @@ Targets:
   stop                      Stop the container when in a running state.
   terminate                 Unpause, stop and remove the container.
   test                      Run all test cases.
-  top [ps OPTIONS]          Display the running processes of a container.
   top [ps OPTIONS]          Display the running processes of the container.
   unpause                   Unpause the container when in a paused state.
 
