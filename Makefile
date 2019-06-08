@@ -569,7 +569,8 @@ distclean: \
 
 exec: \
 	_prerequisites \
-	_require-docker-container
+	_require-docker-container \
+	_require-docker-container-status-running
 	@ $(docker) exec -it $(DOCKER_NAME) $(filter-out $@, $(MAKECMDGOALS))
 %:; @:
 
@@ -583,7 +584,8 @@ help: \
 
 inspect: \
 	_prerequisites \
-	_require-docker-container
+	_require-docker-container \
+	_require-docker-container-status-running
 	@ $(docker) inspect \
 		--type=container \
 		$(filter-out $@, $(MAKECMDGOALS)) \
@@ -652,6 +654,7 @@ load: \
 
 pause: \
 	_prerequisites \
+	_require-docker-container \
 	_require-docker-container-status-running
 	@ printf -- '%s%s\n' \
 		"$(PREFIX_STEP)" \
@@ -696,7 +699,7 @@ ps: \
 reload: \
 	_prerequisites \
 	_require-docker-container \
-	_require-docker-container-not-status-paused
+	_require-docker-container-status-running
 	@ printf -- '%s%s\n' \
 		"$(PREFIX_STEP)" \
 		"Reloading container"
@@ -858,6 +861,7 @@ start: \
 
 stop: \
 	_prerequisites \
+	_require-docker-container \
 	_require-docker-container-not-status-paused \
 	_require-docker-container-status-running
 	@ printf -- '%s%s\n' \
@@ -890,7 +894,8 @@ stop: \
 
 top: \
 	_prerequisites \
-	_require-docker-container
+	_require-docker-container \
+	_require-docker-container-status-running
 	@ $(docker) top $(DOCKER_NAME) $(filter-out $@, $(MAKECMDGOALS))
 %:; @:
 
@@ -965,6 +970,7 @@ test: \
 
 unpause: \
 	_prerequisites \
+	_require-docker-container \
 	_require-docker-container-status-paused
 	@ printf -- '%s%s\n' \
 		"$(PREFIX_STEP)" \

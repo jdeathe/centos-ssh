@@ -1,288 +1,131 @@
 #!/usr/bin/env bash
 
-function __is_sudo_no_password_all ()
+set -e
+
+function __cleanup ()
 {
-	local -r sudo="${1}"
-	local -r pattern=' ?NOPASSWD:ALL$'
+	local -r exit_code="${?}"
 
-	if [[ ${sudo} =~ ${pattern} ]]
+	__delete_lock
+
+	if [[ ${exit_code} -eq 0 ]]
 	then
-		return 0
+		__create_state
 	fi
-
-	return 1
 }
 
-function __is_valid_ssh_authorized_keys ()
+function __create_lock ()
 {
-	local -r authorized_keys="${1}"
-	local -r invalid_key_pattern='is not a public key file.$'
-
-	local ssh_key
-	local IFS=""
-
-	if [[ -z ${authorized_keys} ]]
+	if [[ -n ${lock_file} ]]
 	then
+		touch "${lock_file}"
+	fi
+}
+
+function __create_state ()
+{
+	if [[ -n ${state_file} ]]
+	then
+		touch "${state_file}"
+	fi
+}
+
+function __delete_lock ()
+{
+	if [[ -e ${lock_file} ]]
+	then
+		rm -f "${lock_file}"
+	fi
+}
+
+function __generate_ssh_host_key ()
+{
+	local -r replace="${1:-false}"
+	local -r type="${2:-rsa}"
+
+	local private_key_path
+	local public_key_path
+	local response='n\n'
+
+	if [[ ${replace} == true ]]
+	then
+		response='y\n'
+	fi
+
+	case "${type}" in
+		rsa1|rsa|dsa|ecdsa|ed25519)
+			if [[ ${type} != rsa1 ]]
+			then
+				private_key_path=/etc/ssh/ssh_host_"${type}"_key
+				public_key_path=/etc/ssh/ssh_host_"${type}"_key.pub
+			else
+				private_key_path=/etc/ssh/ssh_host_key
+				public_key_path=/etc/ssh/ssh_host_key.pub
+			fi
+
+			printf -- \
+				"${response}" \
+			| ssh-keygen \
+				-q \
+				-C "" \
+				-N "" \
+				-t "${type}" \
+				-f "${private_key_path}" \
+				&> /dev/null
+
+			if [[ -x /sbin/restorecon ]]
+			then
+				/sbin/restorecon "${public_key_path}"
+			fi
+
+			;;
+		*)
+			printf -- \
+				'Unknown key type %s - skipping.\n' \
+				"${type}"
+			;;
+	esac
+}
+
+function __generate_ssh_host_keys ()
+{
+	local -r replace="${1:-false}"
+
+	local version="${2}"
+
+	if [[ -z ${version} ]] \
+		&& [[ -e /etc/redhat-release ]]
+	then
+		version="$(
+			rpm -q \
+				--whatprovides redhat-release \
+				--queryformat "%{VERSION}"
+		)"
+	else
+		>&2 printf -- \
+			'ERROR: Unknown EL release.\n'
 		return 1
 	fi
 
-	while read -r ssh_key || [[ -n ${ssh_key} ]]
-	do
-		if [[ -n ${ssh_key} ]] \
-			&& [[ $(
-				__get_ssh_key_fingerprint "${ssh_key}"
-			) =~ ${invalid_key_pattern} ]]
-		then
-			return 1
-		fi
-	done <<< "${authorized_keys}"
-
-	return 0
-}
-
-function __is_valid_ssh_chroot_directory ()
-{
-	local -r chroot_directory="${1}"
-	local -r safe_directory='^(%h|\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+)$'
-
-	if [[ -z ${chroot_directory} ]]
-	then
-		return 1
-	fi
-
-	if grep -qoP "${safe_directory}" <<< "${chroot_directory}"
-	then
-		return 0
-	fi
-
-	return 1
-}
-
-function __is_valid_ssh_inherit_environment ()
-{
-	local -r boolean_value='^(true|false)$'
-	local -r value="${1}"
-
-	if [[ ${value} =~ ${boolean_value} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
-function __is_valid_ssh_key ()
-{
-	local -r public_key="${1}"
-	local -r invalid_key_pattern='is not a public key file.$'
-
-	if [[ -z ${public_key} ]]
-	then
-		return 1
-	fi
-
-	if [[ -n ${public_key} ]] \
-		&& [[ $(
-			__get_ssh_key_fingerprint "${public_key}"
-		) =~ ${invalid_key_pattern} ]]
-	then
-		return 1
-	fi
-
-	return 0
-}
-
-function __is_valid_ssh_password_authentication ()
-{
-	local -r boolean_value='^(true|false)$'
-	local -r value="${1}"
-
-	if [[ ${value} =~ ${boolean_value} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
-function __is_valid_ssh_sudo ()
-{
-	local -r temp_path="$(
-		mktemp -u
-	)"
-	local -r sudo_cmd="${1}"
-
-	if [[ -z ${sudo_cmd} ]]
-	then
-		return 1
-	fi
-
-	trap \
-		"rm -f \"${temp_path}\"" \
-		EXIT INT RETURN TERM
-
-	printf -- \
-		'%%wheel %s\n' \
-		"${sudo_cmd}" \
-		> "${temp_path}"
-
-	if visudo \
-		-c \
-		-q \
-		-f "${temp_path}" \
-		&> /dev/null
-	then
-		return 0
-	fi
-
-	return 1
-}
-
-function __is_valid_ssh_timezone ()
-{
-	local -r zone="${1}"
-
-	if [[ -z ${zone} ]]
-	then
-		return 1
-	fi
-
-	if [[ -f /usr/share/zoneinfo/${zone} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
-function __is_valid_ssh_user ()
-{
-	local -r safe_user='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
-	local -r user="${1}"
-
-	if [[ ${user} =~ ${safe_user} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
-function __is_valid_ssh_user_force_sftp ()
-{
-	local -r boolean_value='^(true|false)$'
-	local -r value="${1}"
-
-	if [[ ${value} =~ ${boolean_value} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
-function __is_valid_ssh_user_home ()
-{
-	local -r home_directory="${1}"
-	local -r user_directory='^\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+$'
-	local -r root_directory='^/root$'
-	local -r user="${2:-"$(
-		__get_ssh_user
-	)"}"
-
-	local safe_directory="${user_directory}"
-
-	if [[ -z ${home_directory} ]]
-	then
-		return 1
-	fi
-
-	if [[ ${user} == root ]]
-	then
-		safe_directory="${root_directory}"
-	fi
-
-	if grep -qoP "${safe_directory}" <<< "${home_directory}"
-	then
-		return 0
-	fi
-
-	return 1
-}
-
-function __is_valid_ssh_user_id ()
-{
-	local -r id="${1}"
-	local -r user_id_pattern='^[1-9][0-9]*:[1-9][0-9]*$'
-	local -r root_id_pattern='^0:0$'
-	local -r user="${2:-"$(
-		__get_ssh_user
-	)"}"
-
-	local id_pattern="${user_id_pattern}"
-
-	if [[ ${user} == root ]]
-	then
-		id_pattern="${root_id_pattern}"
-	fi
-
-	if [[ ${id} =~ ${id_pattern} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
-function __is_valid_ssh_user_password_hash ()
-{
-	local -r password_hash="${1}"
-	local -r sha_512_pattern='^\$6\$[a-zA-Z0-9./]{0,16}\$[a-zA-Z0-9./]{86}$'
-
-	if [[ ${password_hash} =~ ${sha_512_pattern} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
-function __is_valid_ssh_user_password_hashed ()
-{
-	local -r boolean_value='^(true|false)$'
-	local -r value="${1}"
-
-	if [[ ${value} =~ ${boolean_value} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
-function __is_valid_ssh_user_shell ()
-{
-	local -r shell="${1}"
-	local -r valid_shells="$(
-		chsh --list-shells
-	)"
-
-	local valid_shell
-
-	if [[ -z ${shell} ]]
-	then
-		return 1
-	fi
-
-	for valid_shell in ${valid_shells}
-	do
-		if [[ ${valid_shell} == "${shell}" ]]
-		then
-			return 0
-		fi
-	done
-
-	return 1
+	case "${version}" in
+		6)
+			__generate_ssh_host_key "${replace}" rsa1
+			__generate_ssh_host_key "${replace}" rsa
+			__generate_ssh_host_key "${replace}" dsa
+			;;
+		7)
+			__generate_ssh_host_key "${replace}" rsa1
+			__generate_ssh_host_key "${replace}" rsa
+			__generate_ssh_host_key "${replace}" dsa
+			__generate_ssh_host_key "${replace}" ecdsa
+			__generate_ssh_host_key "${replace}" ed25519
+			;;
+		*)
+			printf -- \
+				'Unknown EL release %s - skipping.\n' \
+				"${version}"
+			;;
+	esac
 }
 
 function __get_password ()
@@ -435,20 +278,315 @@ function __get_ssh_host_key_fingerprint ()
 			then
 				__get_ssh_key_fingerprint_hash_output "${ssh_key}"
 			else
-				printf -- \
-					'ERROR: invalid host key\n' \
-					>&2
-				sleep 0.1
-
+				>&2 printf -- \
+					'ERROR: invalid host key\n'
 				return 1
 			fi
 			;;
 		*)
-			printf -- \
-				'ERROR: invalid key type\n' \
-				>&2
-			sleep 0.1
+			>&2 printf -- \
+				'ERROR: invalid key type\n'
+			return 1
+			;;
+	esac
+}
 
+function __get_ssh_key_fingerprint ()
+{
+	local -r ssh_key="${1}"
+	local -r ssh_key_file="$(
+		mktemp
+	)"
+
+	local fingerprint
+	local public_key
+
+	printf -- \
+		'%s\n' \
+		"${ssh_key}" \
+	> "${ssh_key_file}"
+
+	# If an RSA private key convert to a public key
+	if openssl rsa -check -noout -in \
+		"${ssh_key_file}" \
+		&> /dev/null
+	then
+		public_key="$(
+			ssh-keygen \
+				-y \
+				-f "${ssh_key_file}"
+		)"
+
+		printf -- \
+			'%s\n' \
+			"${public_key}" \
+		> "${ssh_key_file}"
+	fi
+
+	fingerprint="$(
+		ssh-keygen \
+			-l \
+			-E md5 \
+			-f "${ssh_key_file}" \
+		| sed 's~MD5:~~'
+	)"
+
+	rm -f \
+		"${ssh_key_file}"
+
+	printf -- '%s' "${fingerprint}"
+}
+
+function __get_ssh_key_fingerprint_hash_output ()
+{
+	local -r ssh_key="${1}"
+	local -r insecure_fingerprint='dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6'
+
+	local value
+
+	if __is_valid_ssh_key "${ssh_key}"
+	then
+		printf -v value \
+			-- \
+			'%s' \
+			"$(
+				__get_ssh_key_fingerprint "${ssh_key}" \
+				| awk '{ print $2; }'
+			)"
+
+		# Indicate use of insecure public key
+		if [[ ${value} == ${insecure_fingerprint} ]]
+		then
+			value+=" (insecure key)"
+		fi
+
+		printf -v value \
+			-- \
+			'%s\n' \
+			"${value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_password_authentication ()
+{
+	local -r default_value="${1:-false}"
+
+	local value="${SSH_PASSWORD_AUTHENTICATION}"
+
+	if ! __is_valid_ssh_password_authentication "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_sudo ()
+{
+	local -r default_value="${1:-"ALL=(ALL) ALL"}"
+
+	local value="${SSH_SUDO}"
+
+	if ! __is_valid_ssh_sudo "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_timezone ()
+{
+	local -r default_value="${1:-UTC}"
+
+	local value="${SSH_TIMEZONE}"
+
+	if ! __is_valid_ssh_timezone "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_user ()
+{
+	local -r default_value="${1:-app-admin}"
+
+	local value="${SSH_USER}"
+
+	if ! __is_valid_ssh_user "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_user_password_hashed ()
+{
+	local -r default_value="${1:-false}"
+
+	local value="${SSH_USER_PASSWORD_HASHED}"
+
+	if ! __is_valid_ssh_user_password_hashed "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_user_private_key ()
+{
+	local -r default_value=""
+	local -r pattern_base64='^[A-Za-z0-9/+=]*$'
+
+	local value="${SSH_USER_PRIVATE_KEY}"
+
+	if [[ -n ${value} ]] \
+		&& [[ ${value} =~ ${pattern_base64} ]]
+	then
+		value="$(
+			base64 -d -i <<< "${value}"
+		)"
+	elif [[ -n ${value} ]] \
+		&& [[ -f ${value} ]]
+	then
+		value="$(< "${value}")"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_user_force_sftp ()
+{
+	local -r default_value="${1:-false}"
+
+	local value="${SSH_USER_FORCE_SFTP}"
+
+	if ! __is_valid_ssh_user_force_sftp "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_authorized_key_fingerprints ()
+{
+	local -r authorized_keys="${1:-"$(
+		__get_ssh_authorized_keys
+	)"}"
+
+	local ssh_key
+	local value
+	local IFS=""
+
+	if [[ -n ${authorized_keys} ]]
+	then
+		while read -r ssh_key || [[ -n ${ssh_key} ]]
+		do
+			if __is_valid_ssh_key "${ssh_key}"
+			then
+				printf -v value \
+					-- \
+					'%s%s\n' \
+					"${value}" \
+					"$(
+						__get_ssh_key_fingerprint_hash_output "${ssh_key}"
+					)"
+			fi
+		done <<< "${authorized_keys}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_chroot_directory ()
+{
+	local -r default_value="${1:-%h}"
+
+	local value="${SSH_CHROOT_DIRECTORY}"
+
+	if ! __is_valid_ssh_chroot_directory "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_chroot_directory_path ()
+{
+	local -r default_chroot_directory="%h"
+	local -r user="$(
+		__get_ssh_user
+	)"
+	local -r home="$(
+		__get_ssh_user_home
+	)"
+
+	local chroot_directory="${1:-"$(
+		__get_ssh_chroot_directory
+	)"}"
+	local value
+
+	if ! __is_valid_ssh_chroot_directory "${chroot_directory}"
+	then
+		chroot_directory="${default_chroot_directory}"
+	fi
+
+	# Replace %h with SSH_USER_HOME
+	value="${chroot_directory//'%h'/${home}}"
+
+	# Replace %u with SSH_USER
+	value="${value//'%u'/${user}}"
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_inherit_environment ()
+{
+	local -r default_value="${1:-false}"
+
+	local value="${SSH_INHERIT_ENVIRONMENT}"
+
+	if ! __is_valid_ssh_inherit_environment "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __get_ssh_host_key_fingerprint ()
+{
+	local -r type="${1:-rsa}"
+
+	local fingerprint
+	local public_key_path
+	local ssh_key
+
+	case "${type}" in
+		rsa1|rsa|dsa|ecdsa|ed25519)
+			public_key_path=/etc/ssh/ssh_host_"${type}"_key.pub
+			ssh_key="$(< "${public_key_path}")"
+
+			if __is_valid_ssh_key "${ssh_key}"
+			then
+				__get_ssh_key_fingerprint_hash_output "${ssh_key}"
+			else
+				>&2 printf -- \
+					'ERROR: invalid host key\n'
+				return 1
+			fi
+			;;
+		*)
+			>&2 printf -- \
+				'ERROR: invalid key type\n'
 			return 1
 			;;
 	esac
@@ -744,97 +882,314 @@ function __get_ssh_user_uid ()
 	printf -- '%d' "${value}"
 }
 
-function __generate_ssh_host_key ()
+function __get_timer_total ()
 {
-	local -r replace="${1:-false}"
-	local -r type="${2:-rsa}"
+	local -r timer_end="$(
+		date +%s.%N
+	)"
+	local -r timer_start="${1}"
 
-	local private_key_path
-	local public_key_path
-	local response='n\n'
-
-	if [[ ${replace} == true ]]
+	if [[ -z ${timer_start} ]] \
+		|| [[ ${timer_start//.} -gt ${timer_end//.} ]]
 	then
-		response='y\n'
+		>&2 printf -- \
+			'ERROR: invalid timer start: %s\n' \
+			"${timer_start}"
+		printf -- \
+			'0.000000'
+	else
+		awk \
+			-v timer_end="${timer_end}" \
+			-v timer_start="${timer_start}" \
+			'BEGIN { print \
+				timer_end - timer_start;
+			}'
 	fi
-
-	case "${type}" in
-		rsa1|rsa|dsa|ecdsa|ed25519)
-			if [[ ${type} != rsa1 ]]
-			then
-				private_key_path=/etc/ssh/ssh_host_"${type}"_key
-				public_key_path=/etc/ssh/ssh_host_"${type}"_key.pub
-			else
-				private_key_path=/etc/ssh/ssh_host_key
-				public_key_path=/etc/ssh/ssh_host_key.pub
-			fi
-
-			printf -- \
-				"${response}" \
-			| ssh-keygen \
-				-q \
-				-C "" \
-				-N "" \
-				-t "${type}" \
-				-f "${private_key_path}" \
-				&> /dev/null
-
-			if [[ -x /sbin/restorecon ]]
-			then
-				/sbin/restorecon "${public_key_path}"
-			fi
-
-			;;
-		*)
-			printf -- \
-				'Unknown key type %s - skipping.\n' \
-				"${type}"
-			;;
-	esac
 }
 
-function __generate_ssh_host_keys ()
+function __is_sudo_no_password_all ()
 {
-	local -r replace="${1:-false}"
+	local -r sudo="${1}"
+	local -r pattern=' ?NOPASSWD:ALL$'
 
-	local version="${2}"
-
-	if [[ -z ${version} ]] \
-		&& [[ -e /etc/redhat-release ]]
+	if [[ ${sudo} =~ ${pattern} ]]
 	then
-		version="$(
-			rpm -q \
-				--whatprovides redhat-release \
-				--queryformat "%{VERSION}"
-		)"
-	else
-		printf -- \
-			'ERROR: Unknown EL release.\n' \
-			>&2
-		sleep 0.1
+		return 0
+	fi
 
+	return 1
+}
+
+function __is_valid_ssh_authorized_keys ()
+{
+	local -r authorized_keys="${1}"
+	local -r invalid_key_pattern='is not a public key file.$'
+
+	local ssh_key
+	local IFS=""
+
+	if [[ -z ${authorized_keys} ]]
+	then
 		return 1
 	fi
 
-	case "${version}" in
-		6)
-			__generate_ssh_host_key "${replace}" rsa1
-			__generate_ssh_host_key "${replace}" rsa
-			__generate_ssh_host_key "${replace}" dsa
-			;;
-		7)
-			__generate_ssh_host_key "${replace}" rsa1
-			__generate_ssh_host_key "${replace}" rsa
-			__generate_ssh_host_key "${replace}" dsa
-			__generate_ssh_host_key "${replace}" ecdsa
-			__generate_ssh_host_key "${replace}" ed25519
-			;;
-		*)
-			printf -- \
-				'Unknown EL release %s - skipping.\n' \
-				"${version}"
-			;;
-	esac
+	while read -r ssh_key || [[ -n ${ssh_key} ]]
+	do
+		if [[ -n ${ssh_key} ]] \
+			&& [[ $(
+				__get_ssh_key_fingerprint "${ssh_key}"
+			) =~ ${invalid_key_pattern} ]]
+		then
+			return 1
+		fi
+	done <<< "${authorized_keys}"
+
+	return 0
+}
+
+function __is_valid_ssh_chroot_directory ()
+{
+	local -r chroot_directory="${1}"
+	local -r safe_directory='^(%h|\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+)$'
+
+	if [[ -z ${chroot_directory} ]]
+	then
+		return 1
+	fi
+
+	if grep -qoP "${safe_directory}" <<< "${chroot_directory}"
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_ssh_inherit_environment ()
+{
+	local -r boolean_value='^(true|false)$'
+	local -r value="${1}"
+
+	if [[ ${value} =~ ${boolean_value} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_ssh_key ()
+{
+	local -r public_key="${1}"
+	local -r invalid_key_pattern='is not a public key file.$'
+
+	if [[ -z ${public_key} ]]
+	then
+		return 1
+	fi
+
+	if [[ -n ${public_key} ]] \
+		&& [[ $(
+			__get_ssh_key_fingerprint "${public_key}"
+		) =~ ${invalid_key_pattern} ]]
+	then
+		return 1
+	fi
+
+	return 0
+}
+
+function __is_valid_ssh_password_authentication ()
+{
+	local -r boolean_value='^(true|false)$'
+	local -r value="${1}"
+
+	if [[ ${value} =~ ${boolean_value} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_ssh_sudo ()
+{
+	local -r temp_path="$(
+		mktemp -u
+	)"
+	local -r sudo_cmd="${1}"
+
+	if [[ -z ${sudo_cmd} ]]
+	then
+		return 1
+	fi
+
+	trap \
+		"rm -f \"${temp_path}\"" \
+		RETURN
+
+	printf -- \
+		'%%wheel %s\n' \
+		"${sudo_cmd}" \
+		> "${temp_path}"
+
+	if visudo \
+		-c \
+		-q \
+		-f "${temp_path}" \
+		&> /dev/null
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_ssh_timezone ()
+{
+	local -r zone="${1}"
+
+	if [[ -z ${zone} ]]
+	then
+		return 1
+	fi
+
+	if [[ -f /usr/share/zoneinfo/${zone} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_ssh_user ()
+{
+	local -r safe_user='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
+	local -r user="${1}"
+
+	if [[ ${user} =~ ${safe_user} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_ssh_user_force_sftp ()
+{
+	local -r boolean_value='^(true|false)$'
+	local -r value="${1}"
+
+	if [[ ${value} =~ ${boolean_value} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_ssh_user_home ()
+{
+	local -r home_directory="${1}"
+	local -r user_directory='^\/(?!\/|bin|dev|etc|lib|lib64|lost+found|media|proc|root|sbin|srv|sys|tmp|usr).+$'
+	local -r root_directory='^/root$'
+	local -r user="${2:-"$(
+		__get_ssh_user
+	)"}"
+
+	local safe_directory="${user_directory}"
+
+	if [[ -z ${home_directory} ]]
+	then
+		return 1
+	fi
+
+	if [[ ${user} == root ]]
+	then
+		safe_directory="${root_directory}"
+	fi
+
+	if grep -qoP "${safe_directory}" <<< "${home_directory}"
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_ssh_user_id ()
+{
+	local -r id="${1}"
+	local -r user_id_pattern='^[1-9][0-9]*:[1-9][0-9]*$'
+	local -r root_id_pattern='^0:0$'
+	local -r user="${2:-"$(
+		__get_ssh_user
+	)"}"
+
+	local id_pattern="${user_id_pattern}"
+
+	if [[ ${user} == root ]]
+	then
+		id_pattern="${root_id_pattern}"
+	fi
+
+	if [[ ${id} =~ ${id_pattern} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_ssh_user_password_hash ()
+{
+	local -r password_hash="${1}"
+	local -r sha_512_pattern='^\$6\$[a-zA-Z0-9./]{0,16}\$[a-zA-Z0-9./]{86}$'
+
+	if [[ ${password_hash} =~ ${sha_512_pattern} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_ssh_user_password_hashed ()
+{
+	local -r boolean_value='^(true|false)$'
+	local -r value="${1}"
+
+	if [[ ${value} =~ ${boolean_value} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_ssh_user_shell ()
+{
+	local -r shell="${1}"
+	local -r valid_shells="$(
+		chsh --list-shells
+	)"
+
+	local valid_shell
+
+	if [[ -z ${shell} ]]
+	then
+		return 1
+	fi
+
+	for valid_shell in ${valid_shells}
+	do
+		if [[ ${valid_shell} == "${shell}" ]]
+		then
+			return 0
+		fi
+	done
+
+	return 1
 }
 
 function __set_ssh_timezone ()
@@ -843,12 +1198,9 @@ function __set_ssh_timezone ()
 
 	if ! __is_valid_ssh_timezone "${zone}"
 	then
-		printf -- \
+		>&2 printf -- \
 			'ERROR: Unknown time zone: %s\n' \
-			"${zone}" \
-			>&2
-		sleep 0.1
-
+			"${zone}"
 		return 1
 	else
 		if [[ -f /etc/sysconfig/clock ]]
@@ -886,22 +1238,16 @@ function __set_ssh_user_password ()
 
 	if ! __is_valid_ssh_user "${user}"
 	then
-		printf -- \
-			'ERROR: Invalid user\n' \
-			>&2
-		sleep 0.1
-
+		>&2 printf -- \
+			'ERROR: Invalid user\n'
 		return 1
 	else
 		if [[ ${password_hashed} == true ]]
 		then
 			if ! __is_valid_ssh_user_password_hash "${password}"
 			then
-				printf -- \
-					'ERROR: Invalid password - requires SHA-512 hash\n' \
-					>&2
-				sleep 0.1
-
+				>&2 printf -- \
+					'ERROR: Invalid password - requires SHA-512 hash\n'
 				return 1
 			else
 				printf -- \
@@ -915,11 +1261,8 @@ function __set_ssh_user_password ()
 		else
 			if [[ -z ${password} ]]
 			then
-				printf -- \
-					'ERROR: Invalid password - empty\n' \
-					>&2
-				sleep 0.1
-
+				>&2 printf -- \
+					'ERROR: Invalid password - empty\n'
 				return 1
 			else
 				printf -- \
@@ -938,8 +1281,9 @@ function main ()
 {
 	local -r env_exclude_pattern="^([.]*SSH_USER_PASSWORD|_|HOME|HOSTNAME|PATH|PWD|SHLVL|SUPERVISOR_ENABLED|SUPERVISOR_GROUP_NAME|SUPERVISOR_PROCESS_NAME|TERM)="
 	local -r lock_file="/var/lock/subsys/sshd-bootstrap"
-	local -r password_length=16
+	local -r password_length="16"
 	local -r redacted_value="********"
+	local -r state_file="/var/lib/misc/sshd-bootstrap"
 	local -r timer_start="$(
 		date +%s.%N
 	)"
@@ -983,20 +1327,39 @@ function main ()
 	local sshd_command="SSH"
 	local timer_total
 
-	# Create lock
-	touch \
-		"${lock_file}"
-
 	# Parse options
 	while [[ "${#}" -gt 0 ]]
 	do
 		case "${1}" in
 			-v|--verbose)
-				verbose=true
+				verbose="true"
 				shift 1
 				;;
 		esac
 	done
+
+	if [[ -e ${state_file} ]]
+	then
+		if [[ ${verbose} == true ]]
+		then
+			printf -- \
+				'INFO: %s finished - skipping.\n' \
+				"${0##*/}"
+		fi
+		exit 0
+	fi
+
+	if [[ -e ${lock_file} ]]
+	then
+		>&2 printf -- \
+			'ERROR: %s lock detected - aborting.\n' \
+			"${0##*/}"
+		exit 1
+	fi
+
+	trap "__cleanup" \
+		EXIT INT TERM
+	__create_lock
 
 	ssh_user_home="$(
 		__get_ssh_user_home
@@ -1090,11 +1453,8 @@ function main ()
 
 		if ! __set_ssh_timezone "${ssh_timezone}"
 		then
-			printf -- \
-				'ERROR: Could not set timezone - aborting.\n' \
-				>&2
-			sleep 0.1
-
+			>&2 printf -- \
+				'ERROR: Could not set timezone - aborting.\n'
 			exit 1
 		fi
 
@@ -1147,11 +1507,8 @@ function main ()
 
 		if ! __set_ssh_user_password "${ssh_user_password}"
 		then
-			printf -- \
-				'ERROR: Could not set password - aborting.\n' \
-				>&2
-			sleep 0.1
-
+			>&2 printf -- \
+				'ERROR: Could not set password - aborting.\n'
 			exit 1
 		fi
 
@@ -1369,14 +1726,8 @@ function main ()
 		if [[ ${verbose} == true ]]
 		then
 			timer_total="$(
-				awk \
-					-v timer_end="$(
-						date +%s.%N
-					)" \
-					-v timer_start="${timer_start}" \
-					'BEGIN { print \
-						timer_end - timer_start;
-					}'
+				__get_timer_total \
+					"${timer_start}"
 			)"
 
 			cat <<-EOT
@@ -1418,9 +1769,8 @@ function main ()
 		fi
 	fi
 
-	# Release lock
-	rm -f \
-		"${lock_file}"
+	# Trigger cleanup trap.
+	exit 0
 }
 
 main "${@}"
