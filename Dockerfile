@@ -1,4 +1,4 @@
-FROM centos:centos6.10
+FROM centos:6.10
 
 ARG RELEASE_VERSION="1.10.1"
 
