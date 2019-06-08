@@ -7,12 +7,12 @@ Includes public key authentication, Automated password generation and supports c
 
 ## Overview & links
 
-The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag - the convention is `centos-6-1.10.1` OR `1.10.1` for the [1.10.1](https://github.com/jdeathe/centos-ssh/tree/1.10.1) release tag and `centos-7-2.5.1` OR `2.5.1` for the [2.5.1](https://github.com/jdeathe/centos-ssh/tree/2.5.1) release tag.
+The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag as shown in the examples.
 
 ### Tags and respective `Dockerfile` links
 
-- `centos-7`,`centos-7-2.5.1`,`2.5.1` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
-- `centos-6`,`centos-6-1.10.1`,`1.10.1` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
+- `centos-7`,[`2.5.1`](https://github.com/jdeathe/centos-ssh/releases/tag/2.5.1) [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
+- `centos-6`,[`1.10.1`](https://github.com/jdeathe/centos-ssh/releases/tag/1.10.1) [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
 
 The Dockerfile can be used to build a base image that is the bases for several other docker images.
 
