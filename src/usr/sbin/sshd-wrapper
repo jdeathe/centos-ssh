@@ -2,17 +2,35 @@
 
 set -e
 
-function __is_valid_ssh_autostart_sshd_bootstrap ()
+function __cleanup ()
 {
-	local -r boolean_value='^(true|false)$'
-	local -r value="${1}"
+	__delete_lock
+}
 
-	if [[ ${value} =~ ${boolean_value} ]]
+function __create_lock ()
+{
+	if [[ -n ${lock_file} ]]
 	then
-		return 0
+		touch "${lock_file}"
 	fi
+}
 
-	return 1
+function __delete_lock ()
+{
+	if [[ -e ${lock_file} ]]
+	then
+		rm -f "${lock_file}"
+	fi
+}
+
+function __get_options ()
+{
+	local -r options="${1}"
+
+	printf -- \
+		'-D -e -u 0%s%s' \
+		"${options:+" "}" \
+		"${options}"
 }
 
 function __get_ssh_autostart_sshd_bootstrap ()
@@ -29,16 +47,59 @@ function __get_ssh_autostart_sshd_bootstrap ()
 	printf -- '%s' "${value}"
 }
 
+function __is_valid_ssh_autostart_sshd_bootstrap ()
+{
+	local -r boolean_value='^(true|false)$'
+	local -r value="${1}"
+
+	if [[ ${value} =~ ${boolean_value} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
 function main ()
 {
 	local -r autostart_bootstrap="$(
 		__get_ssh_autostart_sshd_bootstrap
 	)"
 	local -r bin="/usr/sbin/sshd"
-	local -r lock_file="/var/lock/subsys/sshd-bootstrap"
+	local -r bootstrap_state_file="/var/lib/misc/sshd-bootstrap"
+	local -r lock_file="/var/lock/subsys/sshd-wrapper"
 	local -r nice="/bin/nice"
 	local -r niceness="10"
-	local -r options="-D -e -u 0"
+
+	local options
+	local verbose="false"
+
+	# Parse options
+	while [[ "${#}" -gt 0 ]]
+	do
+		case "${1}" in
+			-v|--verbose)
+				verbose="true"
+				shift 1
+				;;
+		esac
+	done
+
+	if [[ -e ${lock_file} ]]
+	then
+		>&2 printf -- \
+			'ERROR: %s lock detected - aborting\n' \
+			"${0##*/}"
+		exit 1
+	fi
+
+	trap __cleanup \
+		EXIT INT TERM
+	__create_lock
+
+	options="$(
+		__get_options
+	)"
 
 	if [[ ${autostart_bootstrap} == false ]]
 	then
@@ -46,14 +107,22 @@ function main ()
 		sleep infinity
 	fi
 
-	while true
+	until [[ -e ${bootstrap_state_file} ]]
 	do
 		sleep 0.1
-		if [[ ! -e ${lock_file} ]]
-		then
-			break
-		fi
 	done
+
+	if [[ ${verbose} == true ]]
+	then
+		printf -- \
+			'INFO: %s starting %s\n' \
+			"${0##*/}" \
+			"${bin##*/}"
+	fi
+
+	__cleanup
+	trap - \
+		EXIT INT TERM
 
 	exec ${nice} \
 		-n ${niceness} \
