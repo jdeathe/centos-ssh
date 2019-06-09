@@ -36,7 +36,10 @@ Targets:
   reload                    Send SIGHUP to the PID 1 container process.
   restart                   Restarts the container.
   rm                        Force remove the container.
+  rm-exited                 Force remove all containers in the exited state.
   rmi                       Untag (remove) the image.
+  rmi-dangling              Untag (remove) images not referenced by any
+                            container.
   run                       Execute the run container template.
   start                     Start the container in the created state.
   stop                      Stop the container when in a running state.
@@ -183,7 +186,9 @@ endef
 	reload \
 	restart \
 	rm \
+	rm-exited \
 	rmi \
+	rmi-dangling \
 	run \
 	start \
 	stop \
@@ -434,7 +439,9 @@ clean: \
 	_prerequisites \
 	| \
 	terminate \
-	rmi
+	rm-exited \
+	rmi \
+	rmi-dangling
 
 create: \
 	_prerequisites \
@@ -754,6 +761,26 @@ rm: \
 		fi; \
 	fi
 
+rm-exited: \
+	_prerequisites
+	@ if [[ -z $$($(docker) ps -aq \
+			--filter "status=exited" \
+		) ]]; \
+	then \
+		printf -- '%s%s\n' \
+			"$(PREFIX_STEP)" \
+			"Exited containers removal skipped"; \
+	else \
+		printf -- '%s%s\n' \
+			"$(PREFIX_STEP)" \
+			"Removing exited containers"; \
+		$(docker) rm -f \
+			"$$($(docker) ps -aq \
+				--filter "status=exited" \
+			)" \
+			1> /dev/null; \
+	fi
+
 rmi: \
 	_prerequisites \
 	_require-docker-image-tag \
@@ -788,6 +815,26 @@ rmi: \
 		printf -- '%s%s\n' \
 			"$(PREFIX_STEP)" \
 			"Untagging image skipped"; \
+	fi
+
+rmi-dangling: \
+	_prerequisites
+	@ if [[ -z $$($(docker) images -q \
+			--filter "dangling=true" \
+		) ]]; \
+	then \
+		printf -- '%s%s\n' \
+			"$(PREFIX_STEP)" \
+			"Untagging dangling images skipped"; \
+	else \
+		printf -- '%s%s\n' \
+			"$(PREFIX_STEP)" \
+			"Untagging dangling images"; \
+		$(docker) rmi \
+			$$($(docker) images -q \
+				--filter "dangling=true" \
+			) \
+			1> /dev/null; \
 	fi
 
 run: \
