@@ -210,31 +210,27 @@ endif
 _require-docker-container:
 	@ if [[ -z $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; \
 	then \
-		printf -- '%sThis operation requires the %s container.\n' \
+		>&2 printf -- '%sThis operation requires the %s container.\n' \
 			"$(PREFIX_STEP_NEGATIVE)" \
-			"$(DOCKER_NAME)" \
-			>&2; \
-		printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
+			"$(DOCKER_NAME)"; \
+		>&2 printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
 			"$(PREFIX_SUB_STEP)" \
 			"$(DOCKER_NAME)" \
-			"install" \
-			>&2; \
+			"install"; \
 		exit 1; \
 	fi
 
 _require-docker-container-not:
 	@ if [[ -n $$($(docker) ps -aq --filter "name=$(DOCKER_NAME)") ]]; \
 	then \
-		printf -- '%sThis operation requires the %s container %s.\n' \
+		>&2 printf -- '%sThis operation requires the %s container %s.\n' \
 			"$(PREFIX_STEP_NEGATIVE)" \
 			"$(DOCKER_NAME)" \
-			"be removed or renamed" \
-			>&2; \
-		printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
+			"be removed or renamed"; \
+		>&2 printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
 			"$(PREFIX_SUB_STEP)" \
 			"$(DOCKER_NAME)" \
-			"rm" \
-			>&2; \
+			"rm"; \
 		exit 1; \
 	fi
 
@@ -244,16 +240,14 @@ _require-docker-container-not-status-paused:
 			--filter "status=paused" \
 		) ]]; \
 	then \
-		printf -- '%sThis operation requires the %s container %s.\n' \
+		>&2 printf -- '%sThis operation requires the %s container %s.\n' \
 			"$(PREFIX_STEP_NEGATIVE)" \
 			"$(DOCKER_NAME)" \
-			"to be unpaused" \
-			>&2; \
-		printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
+			"to be unpaused"; \
+		>&2 printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
 			"$(PREFIX_SUB_STEP)" \
 			"$(DOCKER_NAME)" \
-			"unpause" \
-			>&2; \
+			"unpause"; \
 		exit 1; \
 	fi
 
@@ -263,16 +257,14 @@ _require-docker-container-status-created:
 			--filter "status=created" \
 		) ]]; \
 	then \
-		printf -- '%sThis operation requires the %s container %s.\n' \
+		>&2 printf -- '%sThis operation requires the %s container %s.\n' \
 			"$(PREFIX_STEP_NEGATIVE)" \
 			"$(DOCKER_NAME)" \
-			"to be created" \
-			>&2; \
-		printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
+			"to be created"; \
+		>&2 printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
 			"$(PREFIX_SUB_STEP)" \
 			"$(DOCKER_NAME)" \
-			"install" \
-			>&2; \
+			"install"; \
 		exit 1; \
 	fi
 
@@ -282,16 +274,14 @@ _require-docker-container-status-exited:
 			--filter "status=exited" \
 		) ]]; \
 	then \
-		printf -- '%sThis operation requires the %s container %s.\n' \
+		>&2 printf -- '%sThis operation requires the %s container %s.\n' \
 			"$(PREFIX_STEP_NEGATIVE)" \
 			"$(DOCKER_NAME)" \
-			"to be exited" \
-			>&2; \
-		printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
+			"to be exited"; \
+		>&2 printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
 			"$(PREFIX_SUB_STEP)" \
 			"$(DOCKER_NAME)" \
-			"stop" \
-			>&2; \
+			"stop"; \
 		exit 1; \
 	fi
 
@@ -301,16 +291,14 @@ _require-docker-container-status-paused:
 			--filter "status=paused" \
 		) ]]; \
 	then \
-		printf -- '%sThis operation requires the %s container %s.\n' \
+		>&2 printf -- '%sThis operation requires the %s container %s.\n' \
 			"$(PREFIX_STEP_NEGATIVE)" \
 			"$(DOCKER_NAME)" \
-			"to be paused" \
-			>&2; \
-		printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
+			"to be paused"; \
+		>&2 printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
 			"$(PREFIX_SUB_STEP)" \
 			"$(DOCKER_NAME)" \
-			"pause" \
-			>&2; \
+			"pause"; \
 		exit 1; \
 	fi
 
@@ -320,42 +308,37 @@ _require-docker-container-status-running:
 			--filter "status=running" \
 		) ]]; \
 	then \
-		printf -- '%sThis operation requires the %s container %s.\n' \
+		>&2 printf -- '%sThis operation requires the %s container %s.\n' \
 			"$(PREFIX_STEP_NEGATIVE)" \
 			"$(DOCKER_NAME)" \
-			"to be running" \
-			>&2; \
-		printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
+			"to be running"; \
+		>&2 printf -- '%sTry: DOCKER_NAME=%s make %s\n' \
 			"$(PREFIX_SUB_STEP)" \
 			"$(DOCKER_NAME)" \
-			"start" \
-			>&2; \
+			"start"; \
 		exit 1; \
 	fi
 
 _require-docker-image-tag:
 	@ if ! [[ "$(DOCKER_IMAGE_TAG)" =~ $(DOCKER_IMAGE_TAG_PATTERN) ]]; \
 	then \
-		printf -- '%sInvalid %s value: %s\n' \
+		>&2 printf -- '%sInvalid %s value: %s\n' \
 			"$(PREFIX_STEP_NEGATIVE)" \
 			"DOCKER_IMAGE_TAG" \
-			"$(DOCKER_IMAGE_TAG)" \
-			>&2; \
+			"$(DOCKER_IMAGE_TAG)"; \
 		exit 1; \
 	fi
 
 _require-docker-release-tag:
 	@ if ! [[ "$(DOCKER_IMAGE_TAG)" =~ $(DOCKER_IMAGE_RELEASE_TAG_PATTERN) ]]; \
 	then \
-		printf -- '%sInvalid %s value: %s\n' \
+		>&2 printf -- '%sInvalid %s value: %s\n' \
 			"$(PREFIX_STEP_NEGATIVE)" \
 			"DOCKER_IMAGE_TAG" \
-			"$(DOCKER_IMAGE_TAG)" \
-			>&2; \
-		printf -- '%s%s\n' \
+			"$(DOCKER_IMAGE_TAG)"; \
+		>&2 printf -- '%s%s\n' \
 			"$(PREFIX_SUB_STEP)" \
-			"A release tag is required for this operation." \
-			>&2; \
+			"A release tag is required for this operation."; \
 		exit 1; \
 	fi
 
@@ -369,18 +352,16 @@ _require-package-path:
 	fi; \
 	if [[ ! $${?} -eq 0 ]]; \
 	then \
-		printf -- '%s%s: %s\n' \
+		>&2 printf -- '%s%s: %s\n' \
 			"$(PREFIX_STEP_NEGATIVE)" \
 			"Failed to make package path" \
-			"$(DIST_PATH)" \
-			>&2; \
+			"$(DIST_PATH)"; \
 		exit 1; \
 	elif [[ -z $(DIST_PATH) ]]; \
 	then \
-		printf -- '%sUndefined %s\n' \
+		>&2 printf -- '%sUndefined %s\n' \
 			"$(PREFIX_STEP_NEGATIVE)" \
-			"DIST_PATH" \
-			>&2; \
+			"DIST_PATH"; \
 		exit 1; \
 	fi
 
@@ -425,10 +406,9 @@ build: \
 			"$(PREFIX_SUB_STEP_POSITIVE)" \
 			"Build complete"; \
 	else \
-		printf -- '%s%s\n' \
+		>&2 printf -- '%s%s\n' \
 			"$(PREFIX_SUB_STEP_NEGATIVE)" \
-			"Build error" \
-			>&2; \
+			"Build error"; \
 		exit 1; \
 	fi
 
@@ -468,10 +448,9 @@ create: \
 			"$(PREFIX_SUB_STEP_POSITIVE)" \
 			"Container created"; \
 	else \
-		printf -- '%s%s\n' \
+		>&2 printf -- '%s%s\n' \
 			"$(PREFIX_SUB_STEP_NEGATIVE)" \
-			"Container creation failed" \
-			>&2; \
+			"Container creation failed"; \
 		exit 1; \
 	fi
 
@@ -518,10 +497,9 @@ dist: \
 				"$(PREFIX_SUB_STEP_POSITIVE)" \
 				"Package saved"; \
 		else \
-			printf -- '%s%s\n' \
+			>&2 printf -- '%s%s\n' \
 				"$(PREFIX_SUB_STEP_NEGATIVE)" \
-				"Package save error" \
-				>&2; \
+				"Package save error"; \
 			exit 1; \
 		fi; \
 	fi
@@ -559,10 +537,9 @@ distclean: \
 				"$(PREFIX_SUB_STEP_POSITIVE)" \
 				"Package cleanup complete"; \
 		else \
-			printf -- '%s%s\n' \
+			>&2 printf -- '%s%s\n' \
 				"$(PREFIX_SUB_STEP_NEGATIVE)" \
-				"Package cleanup failed" \
-				>&2; \
+				"Package cleanup failed"; \
 			exit 1; \
 		fi; \
 	else \
@@ -634,15 +611,13 @@ load: \
 		"$(DOCKER_IMAGE_TAG)"; \
 	if [[ ! -s $($@_dist_path)/$($@_dist_file) ]]; \
 	then \
-		printf -- '%s%s\n' \
+		>&2 printf -- '%s%s\n' \
 			"$(PREFIX_SUB_STEP_NEGATIVE)" \
-			"Package not found" \
-			>&2; \
-		printf -- '%sTry: DOCKER_IMAGE_TAG=%s make %s\n' \
+			"Package not found"; \
+		>&2 printf -- '%sTry: DOCKER_IMAGE_TAG=%s make %s\n' \
 			"$(PREFIX_SUB_STEP_NEGATIVE)" \
 			"$(DOCKER_IMAGE_TAG)" \
-			"dist" \
-			>&2; \
+			"dist"; \
 		exit 1; \
 	else \
 		$(xz) -dc \
@@ -687,10 +662,9 @@ pull: \
 			"$(PREFIX_SUB_STEP_POSITIVE)" \
 			"Image pulled"; \
 	else \
-		printf -- '%s%s\n' \
+		>&2 printf -- '%s%s\n' \
 			"$(PREFIX_SUB_STEP_NEGATIVE)" \
-			"Error pulling image" \
-			>&2; \
+			"Error pulling image"; \
 		exit 1; \
 	fi
 
@@ -750,10 +724,9 @@ rm: \
 				"$(PREFIX_SUB_STEP_POSITIVE)" \
 				"Container removed"; \
 		else \
-			printf -- '%s%s\n' \
+			>&2 printf -- '%s%s\n' \
 				"$(PREFIX_SUB_STEP_NEGATIVE)" \
-				"Container removal failed" \
-				>&2; \
+				"Container removal failed"; \
 			exit 1; \
 		fi; \
 	fi
@@ -802,10 +775,9 @@ rmi: \
 				"$(PREFIX_SUB_STEP_POSITIVE)" \
 				"Image untagged"; \
 		else \
-			printf -- '%s%s\n' \
+			>&2 printf -- '%s%s\n' \
 				"$(PREFIX_SUB_STEP_NEGATIVE)" \
-				"Error untagging image" \
-				>&2; \
+				"Error untagging image"; \
 			exit 1; \
 		fi; \
 	else \
@@ -863,10 +835,9 @@ run: \
 			"$(PREFIX_SUB_STEP_POSITIVE)" \
 			"Container running"; \
 	else \
-		printf -- '%s%s\n' \
+		>&2 printf -- '%s%s\n' \
 			"$(PREFIX_SUB_STEP_NEGATIVE)" \
-			"Container run failed" \
-			>&2; \
+			"Container run failed"; \
 		exit 1; \
 	fi
 
@@ -896,10 +867,9 @@ start: \
 			"$(PREFIX_SUB_STEP_POSITIVE)" \
 			"Container started"; \
 	else \
-		printf -- '%s%s\n' \
+		>&2 printf -- '%s%s\n' \
 			"$(PREFIX_SUB_STEP_NEGATIVE)" \
-			"Container start failed" \
-			>&2; \
+			"Container start failed"; \
 		exit 1; \
 	fi
 
@@ -928,10 +898,9 @@ stop: \
 				"$(PREFIX_SUB_STEP_POSITIVE)" \
 				"Container stopped"; \
 		else \
-			printf -- '%s%s\n' \
+			>&2 printf -- '%s%s\n' \
 				"$(PREFIX_SUB_STEP_NEGATIVE)" \
-				"Error stopping container" \
-				>&2; \
+				"Error stopping container"; \
 			exit 1; \
 		fi; \
 	fi
@@ -993,10 +962,9 @@ terminate: \
 				"$(PREFIX_SUB_STEP_POSITIVE)" \
 				"Container terminated"; \
 		else \
-			printf -- '%s%s\n' \
+			>&2 printf -- '%s%s\n' \
 				"$(PREFIX_SUB_STEP_NEGATIVE)" \
-				"Container termination failed" \
-				>&2; \
+				"Container termination failed"; \
 			exit 1; \
 		fi; \
 	fi
