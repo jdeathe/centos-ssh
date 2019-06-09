@@ -1735,21 +1735,21 @@ function main ()
 				================================================================================
 				${sshd_command} Details
 				--------------------------------------------------------------------------------
-				user : ${ssh_user}
-				password : ${ssh_user_password}
-				password authentication : ${password_authentication}
-				id : ${ssh_user_uid}:${ssh_user_gid}
-				home : ${ssh_user_home}
 				chroot path : ${ssh_chroot_directory_path}
-				shell : ${ssh_user_shell}
-				sudo : ${ssh_sudo}
+				home : ${ssh_user_home}
+				id : ${ssh_user_uid}:${ssh_user_gid}
 				key fingerprints :
 				${ssh_key_fingerprints}
+				password : ${ssh_user_password}
+				password authentication : ${password_authentication}
 				rsa private key fingerprint :
 				${ssh_user_private_key_fingerprint}
 				rsa host key fingerprint :
 				${ssh_host_key_fingerprint_rsa}
+				shell : ${ssh_user_shell}
+				sudo : ${ssh_sudo}
 				timezone : ${ssh_timezone}
+				user : ${ssh_user}
 				--------------------------------------------------------------------------------
 				${timer_total}
 

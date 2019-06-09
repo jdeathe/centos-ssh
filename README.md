@@ -254,38 +254,42 @@ $ docker logs ssh.1
 The output of the logs should show the auto-generated password for the app-admin and root users, (if not try again after a few seconds).
 
 ```
-2019-01-17 18:56:09,093 WARN No file matches via include "/etc/supervisord.d/*.ini"
-2019-01-17 18:56:09,093 INFO Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
-2019-01-17 18:56:09,093 INFO Included extra file "/etc/supervisord.d/sshd-wrapper.conf" during parsing
-2019-01-17 18:56:09,093 INFO Set uid to user 0 succeeded
-2019-01-17 18:56:09,098 INFO supervisord started with pid 1
-2019-01-17 18:56:10,064 INFO spawned: 'supervisor_stdout' with pid 16
-2019-01-17 18:56:10,066 INFO spawned: 'sshd-bootstrap' with pid 17
-2019-01-17 18:56:10,067 INFO spawned: 'sshd-wrapper' with pid 18
-2019-01-17 18:56:10,089 INFO success: supervisor_stdout entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-2019-01-17 18:56:10,089 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-2019-01-17 18:56:10,089 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-06-09 10:20:09,504 WARN No file matches via include "/etc/supervisord.d/*.ini"
+2019-06-09 10:20:09,504 INFO Included extra file "/etc/supervisord.d/00-supervisor_stdout.conf" during parsing
+2019-06-09 10:20:09,504 INFO Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
+2019-06-09 10:20:09,504 INFO Included extra file "/etc/supervisord.d/sshd-wrapper.conf" during parsing
+2019-06-09 10:20:09,504 INFO Set uid to user 0 succeeded
+2019-06-09 10:20:09,506 INFO supervisord started with pid 1
+2019-06-09 10:20:10,510 INFO spawned: 'sshd-bootstrap' with pid 9
+2019-06-09 10:20:10,513 INFO spawned: 'sshd-wrapper' with pid 10
 
 ================================================================================
 SSH Details
 --------------------------------------------------------------------------------
-user : centos
-password : YNT8fPEbpqrMJdpx
-password authentication : no
-id : 500:500
-home : /home/centos
 chroot path : N/A
-shell : /bin/bash
-sudo : ALL=(ALL) ALL
+home : /home/app-admin
+id : 500:500
 key fingerprints :
 dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6 (insecure key)
+password : buSoRzQB3dyXw67L
+password authentication : no
+rsa private key fingerprint :
+N/A
 rsa host key fingerprint :
-d0:8e:c7:b4:9b:ce:10:a6:a0:38:78:74:c5:68:cc:a8
+5d:29:c0:f0:ee:4b:6a:d5:fe:76:a4:1d:1e:c4:e8:4d
+shell : /bin/bash
+sudo : ALL=(ALL) ALL
 timezone : UTC
+user : app-admin
 --------------------------------------------------------------------------------
-0.485003
+0.355662
 
-2019-01-17 18:56:10,568 INFO exited: sshd-bootstrap (exit status 0; expected)
+2019-06-09 10:20:10,880 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-06-09 10:20:10,880 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-06-09 10:20:10,883 INFO exited: sshd-bootstrap (exit status 0; expected)
+INFO: sshd-wrapper starting sshd
+Server listening on 0.0.0.0 port 22.
+Server listening on :: port 22.
 ```
 
 #### Environment Variables
