@@ -77,7 +77,7 @@ endef
 include environment.mk
 include default.mk
 
-# UI constants
+.DEFAULT_GOAL := build
 COLOUR_NEGATIVE := \033[1;31m
 COLOUR_POSITIVE := \033[1;32m
 COLOUR_RESET := \033[0m
@@ -114,25 +114,22 @@ PREFIX_SUB_STEP_POSITIVE := $(shell \
 		"$(PREFIX_SUB_STEP)" \
 		"$(COLOUR_RESET)"; \
 )
-
-.DEFAULT_GOAL := build
-
-# Package prerequisites
 docker := $(shell \
 	command -v docker \
 )
-xz := $(shell \
-	command -v xz \
+docker-status := $(shell \
+	if ! docker version > /dev/null; \
+	then \
+		printf -- 'ERROR'; \
+	else \
+		printf -- 'OK'; \
+	fi \
 )
-
-# Testing prerequisites
 shpec := $(shell \
 	command -v shpec \
 )
-
-# Used to test docker host is accessible
-get-docker-info := $(shell \
-	$(docker) info \
+xz := $(shell \
+	command -v xz \
 )
 
 define get-docker-image-id
@@ -206,8 +203,8 @@ ifeq ($(xz),)
 	$(error "Please install the xz package.")
 endif
 
-ifeq ($(get-docker-info),)
-	$(error "Unable to connect to docker host.")
+ifneq ($(docker-status),OK)
+	$(error "Docker server host error.")
 endif
 
 _require-docker-container:
