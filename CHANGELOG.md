@@ -13,10 +13,12 @@ Summary of release changes for Version 2 - CentOS-7
 - Adds reference to `python-setuptools` in README; removed in error.
 - Adds `inspect`, `reload` and `top` Makefile targets.
 - Adds improved lock/state file implementation in bootstrap and wrapper scripts.
+- Adds improved `clean` Makefile target; includes exited containers and dangling images.
 - Fixes port incrementation failures when installing systemd units via `scmi`.
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
 - Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.
 - Fixes use of printf binary instead of builtin in systemd unit files.
+- Fixes docker host connection status check in Makefile.
 - Removes support for long image tags (i.e. centos-7-2.x.x).
 
 ### 2.5.1 - 2019-02-28
