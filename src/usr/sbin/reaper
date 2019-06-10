@@ -1,0 +1,119 @@
+#!/usr/bin/env bash
+
+set -e
+
+function __get_ssh_reaper_timeout ()
+{
+	local -r default_value="${1:-3600}"
+
+	local value="${SSH_REAPER_TIMEOUT}"
+
+	if ! __is_valid_ssh_reaper_timeout "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __is_valid_positive_integer ()
+{
+	local -r positive_integer='^[0-9]+$'
+	local -r value="${1}"
+
+	if [[ ${value} =~ ${positive_integer} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_ssh_reaper_timeout ()
+{
+	__is_valid_positive_integer "${@}"
+}
+
+function __reap ()
+{
+	kill -"${signal:-TERM}" "${pid:-1}"
+}
+
+function main ()
+{
+	local -r warning_timeout="30"
+
+	local pid="1"
+	local signal="TERM"
+	local timeout="$(
+		__get_ssh_reaper_timeout
+	)"
+	local verbose="false"
+
+	while [[ "${#}" -gt 0 ]]
+	do
+		case "${1}" in
+			-p)
+				pid="${2}"
+				shift 2 || break
+				;;
+			--pid)
+				pid="${1#*=}"
+				shift 1
+				;;
+			-s)
+				signal="${2}"
+				shift 2 || break
+				;;
+			--signal)
+				signal="${1#*=}"
+				shift 1
+				;;
+			-v|--verbose)
+				verbose="true"
+				shift 1
+				;;
+		esac
+	done
+
+	if (( timeout > 0 ))
+	then
+		trap __reap \
+			EXIT INT TERM
+
+		if (( timeout > warning_timeout ))
+		then
+			(( timeout -= warning_timeout ))
+		else
+			warning_timeout="0"
+		fi
+
+		if coproc read -t "${timeout}"
+		then
+			wait "${!}" || :
+
+			if (( warning_timeout > 0 ))
+			then
+				wall "Session expired - exiting in ${warning_timeout} seconds."
+
+				if coproc read -t "${warning_timeout}"
+				then
+					wait "${!}" || :
+				fi
+			else
+				wall "Session expired."
+			fi
+		fi
+
+		if [[ ${verbose} == true ]]
+		then
+			printf -- \
+				'INFO: %s expiring session.\n' \
+				"${0##*/}"
+		fi
+	fi
+
+	exit 0
+}
+
+main "${@}"

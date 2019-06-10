@@ -15,6 +15,9 @@ Summary of release changes for Version 2 - CentOS-7
 - Adds `inspect`, `reload` and `top` Makefile targets.
 - Adds improved lock/state file implementation in bootstrap and wrapper scripts.
 - Adds improved `clean` Makefile target; includes exited containers and dangling images.
+- Adds feature to optionally exit the container after a specified timout period.
+- Adds `SSH_AUTOSTART_REAPER` to control startup of `reaper`.
+- Adds `SSH_REAPER_TIMEOUT` with a default value of 3600 seconds (i.e 1 hour).
 - Fixes port incrementation failures when installing systemd units via `scmi`.
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
 - Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.

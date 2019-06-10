@@ -24,12 +24,14 @@ STARTUP_TIME ?= 2
 # Application container configuration
 # ------------------------------------------------------------------------------
 SSH_AUTHORIZED_KEYS ?=
+SSH_AUTOSTART_REAPER ?= false
 SSH_AUTOSTART_SSHD ?= true
 SSH_AUTOSTART_SSHD_BOOTSTRAP ?= true
 SSH_AUTOSTART_SUPERVISOR_STDOUT ?= false
 SSH_CHROOT_DIRECTORY ?= %h
 SSH_INHERIT_ENVIRONMENT ?= false
 SSH_PASSWORD_AUTHENTICATION ?= false
+SSH_REAPER_TIMEOUT ?= 3600
 SSH_SUDO ?= ALL=(ALL) ALL
 SSH_TIMEZONE ?= UTC
 SSH_USER ?= app-admin

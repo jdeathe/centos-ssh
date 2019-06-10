@@ -28,6 +28,7 @@ RUN rpm --rebuilddb \
 		openssl-1.0.2k-16.el7 \
 		python-setuptools-0.9.8-7.el7 \
 		sudo-1.8.23-3.el7 \
+		sysvinit-tools-2.88-14.dsf.el7 \
 		yum-plugin-versionlock-1.1.31-50.el7 \
 	&& yum versionlock add \
 		openssh \
@@ -35,6 +36,7 @@ RUN rpm --rebuilddb \
 		openssh-clients \
 		python-setuptools \
 		sudo \
+		sysvinit-tools \
 		yum-plugin-versionlock \
 	&& yum clean all \
 	&& easy_install \
@@ -83,7 +85,7 @@ RUN ln -sf \
 	&& chmod 644 \
 		/etc/{supervisord.conf,supervisord.d/sshd-{bootstrap,wrapper}.conf} \
 	&& chmod 700 \
-		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper}}}
+		/usr/{bin/healthcheck,sbin/{reaper,scmi,sshd-{bootstrap,wrapper}}}
 
 EXPOSE 22
 
@@ -92,12 +94,14 @@ EXPOSE 22
 # ------------------------------------------------------------------------------
 ENV \
 	SSH_AUTHORIZED_KEYS="" \
+	SSH_AUTOSTART_REAPER="false" \
 	SSH_AUTOSTART_SSHD="true" \
 	SSH_AUTOSTART_SSHD_BOOTSTRAP="true" \
 	SSH_AUTOSTART_SUPERVISOR_STDOUT="false" \
 	SSH_CHROOT_DIRECTORY="%h" \
 	SSH_INHERIT_ENVIRONMENT="false" \
 	SSH_PASSWORD_AUTHENTICATION="false" \
+	SSH_REAPER_TIMEOUT="3600" \
 	SSH_SUDO="ALL=(ALL) ALL" \
 	SSH_TIMEZONE="UTC" \
 	SSH_USER="app-admin" \
