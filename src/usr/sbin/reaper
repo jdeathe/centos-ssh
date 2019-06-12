@@ -2,13 +2,25 @@
 
 set -e
 
-function __get_ssh_reaper_timeout ()
+function __create_state ()
+{
+	if [[ -n ${state_file} ]]
+	then
+		printf -- \
+			'%s %s\n' \
+			"${session_start}" \
+			"$(( ${session_start} + ${timeout} ))" \
+			> "${state_file}"
+	fi
+}
+
+function __get_reaper_timeout ()
 {
 	local -r default_value="${1:-3600}"
 
-	local value="${SSH_REAPER_TIMEOUT}"
+	local value="${REAPER_TIMEOUT}"
 
-	if ! __is_valid_ssh_reaper_timeout "${value}"
+	if ! __is_valid_reaper_timeout "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -29,26 +41,31 @@ function __is_valid_positive_integer ()
 	return 1
 }
 
-function __is_valid_ssh_reaper_timeout ()
+function __is_valid_reaper_timeout ()
 {
 	__is_valid_positive_integer "${@}"
 }
 
 function __reap ()
 {
-	kill -"${signal:-TERM}" "${pid:-1}"
+	return kill \
+		-s "${signal:-TERM}" \
+		"${pid:-1}"
 }
 
 function main ()
 {
-	local -r warning_timeout="30"
+	local -r state_file="/var/lib/misc/reaper"
+	local -r timeout="$(
+		__get_reaper_timeout
+	)"
 
 	local pid="1"
 	local signal="TERM"
-	local timeout="$(
-		__get_ssh_reaper_timeout
-	)"
+	local session_start
+	local session_end
 	local verbose="false"
+	local warning_timeout="30"
 
 	while [[ "${#}" -gt 0 ]]
 	do
@@ -81,27 +98,31 @@ function main ()
 		trap __reap \
 			EXIT INT TERM
 
-		if (( timeout > warning_timeout ))
+		if (( timeout <= warning_timeout ))
 		then
-			(( timeout -= warning_timeout ))
-		else
 			warning_timeout="0"
 		fi
 
-		if coproc read -t "${timeout}"
+		session_start="$(
+			date -u +%s
+		)"
+
+		__create_state
+
+		if coproc read -t "$(( ${timeout} - ${warning_timeout} ))"
 		then
 			wait "${!}" || :
 
 			if (( warning_timeout > 0 ))
 			then
-				wall "Session expired - exiting in ${warning_timeout} seconds."
+				wall "Session expired - exiting in ${warning_timeout} seconds." || :
 
 				if coproc read -t "${warning_timeout}"
 				then
 					wait "${!}" || :
 				fi
 			else
-				wall "Session expired."
+				wall "Session expired." || :
 			fi
 		fi
 
