@@ -48,7 +48,7 @@ function __is_valid_reaper_timeout ()
 
 function __reap ()
 {
-	return kill \
+	kill \
 		-s "${signal:-TERM}" \
 		"${pid:-1}"
 }
