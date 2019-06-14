@@ -49,6 +49,19 @@ function __get_reaper_timeout ()
 	printf -- '%s' "${value}"
 }
 
+function __is_valid_get ()
+{
+	local -r get_options='^(end|start|ttl)$'
+	local -r value="${1}"
+
+	if [[ ${value} =~ ${get_options} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
 function __is_valid_positive_integer ()
 {
 	local -r positive_integer='^[0-9]+$'
@@ -84,45 +97,100 @@ function main ()
 		__get_reaper_timeout
 	)"
 
+	local current_time
+	local get
 	local pid="1"
 	local signal="TERM"
 	local session_start
 	local session_end
+	local state_value
 	local verbose="false"
 	local warning_timeout="30"
 
 	while [[ "${#}" -gt 0 ]]
 	do
 		case "${1}" in
-			-p)
-				pid="${2}"
+			--get=*)
+				get="${1#*=}"
+				shift 1
+				;;
+			-g|--get)
+				get="${2}"
 				shift 2 || break
 				;;
-			--pid)
+			--pid=*)
 				pid="${1#*=}"
 				shift 1
 				;;
-			-s)
-				signal="${2}"
+			-p|--pid)
+				pid="${2}"
 				shift 2 || break
 				;;
-			--signal)
+			--signal=*)
 				signal="${1#*=}"
 				shift 1
+				;;
+			-s|--signal)
+				signal="${2}"
+				shift 2 || break
 				;;
 			-v|--verbose)
 				verbose="true"
 				shift 1
+				;;
+			*)
+				>&2 printf -- \
+					'ERROR: Unknown option %s\n' \
+					"${1}"
+				exit 1
 				;;
 		esac
 	done
 
 	if [[ -e ${lock_file} ]]
 	then
-		>&2 printf -- \
-			'ERROR: %s lock detected - aborting\n' \
-			"${0##*/}"
-		exit 1
+		if [[ -n ${get} ]]
+		then
+			state_value="$(< "${state_file}")"
+
+			session_end="${state_value##* }"
+			session_start="${state_value%% *}"
+
+			case "${get}" in
+				end)
+					printf -- \
+						'%s\n' \
+						"${session_end}"
+					;;
+				start)
+					printf -- \
+						'%s\n' \
+						"${session_start}"
+					;;
+				ttl)
+					current_time="$(
+						date -u +%s
+					)"
+
+					printf -- \
+						'%s\n' \
+						"$(( ${session_end} - ${current_time} ))"
+					;;
+				*)
+					>&2 printf -- \
+						'ERROR: Unknown get value %s\n' \
+						"${get}"
+					exit 1
+					;;
+			esac
+
+			exit 0
+		else
+			>&2 printf -- \
+				'ERROR: %s lock detected - aborting\n' \
+				"${0##*/}"
+			exit 1
+		fi
 	fi
 
 	trap __cleanup \
