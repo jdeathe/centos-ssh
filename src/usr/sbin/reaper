@@ -115,7 +115,7 @@ function main ()
 
 			if (( warning_timeout > 0 ))
 			then
-				wall "Session expired - exiting in ${warning_timeout} seconds." || :
+				wall "Session expires in ${warning_timeout} seconds." || :
 
 				if coproc read -t "${warning_timeout}"
 				then
