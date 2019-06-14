@@ -2,6 +2,19 @@
 
 set -e
 
+function __cleanup ()
+{
+	__delete_lock
+}
+
+function __create_lock ()
+{
+	if [[ -n ${lock_file} ]]
+	then
+		touch "${lock_file}"
+	fi
+}
+
 function __create_state ()
 {
 	if [[ -n ${state_file} ]]
@@ -11,6 +24,14 @@ function __create_state ()
 			"${session_start}" \
 			"$(( ${session_start} + ${timeout} ))" \
 			> "${state_file}"
+	fi
+}
+
+function __delete_lock ()
+{
+	if [[ -e ${lock_file} ]]
+	then
+		rm -f "${lock_file}"
 	fi
 }
 
@@ -51,10 +72,13 @@ function __reap ()
 	kill \
 		-s "${signal:-TERM}" \
 		"${pid:-1}"
+
+	__cleanup
 }
 
 function main ()
 {
+	local -r lock_file="/var/lock/subsys/reaper"
 	local -r state_file="/var/lib/misc/reaper"
 	local -r timeout="$(
 		__get_reaper_timeout
@@ -92,6 +116,18 @@ function main ()
 				;;
 		esac
 	done
+
+	if [[ -e ${lock_file} ]]
+	then
+		>&2 printf -- \
+			'ERROR: %s lock detected - aborting\n' \
+			"${0##*/}"
+		exit 1
+	fi
+
+	trap __cleanup \
+		EXIT INT TERM
+	__create_lock
 
 	if (( timeout > 0 ))
 	then
