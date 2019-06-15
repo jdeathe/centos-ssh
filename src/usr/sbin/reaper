@@ -89,6 +89,30 @@ function __reap ()
 	__cleanup
 }
 
+function __usage ()
+{
+	cat <<-EOF
+	Usage: ${0##*/} [OPTIONS]
+	       ${0##*/} [{-h|--help}]
+
+	Options:
+	  -g, --get KEY              Used to get values from a running ${0##*/}
+	                             process. The keys and values they return are:
+	                             - start : returns session start timestamp.
+	                             - end : returns session end timestamp.
+	                             - ttl : returns remaining session time to live.
+	  -h, --help                 Show this help and exit.
+	  -p, --pid PID              Send the termination signal to the process with
+	                             the pid value PID.
+	                             If not specified the default is pid 1.
+	  -s, --signal SIG           Send the signal SIG to the process.
+	                             If not specified the default is SIGTERM.
+	  -v, --verbose              Output informational messages.
+	                             If not specified the default is quiet.
+	EOF
+	exit 1
+}
+
 function main ()
 {
 	local -r lock_file="/var/lock/subsys/reaper"
@@ -118,6 +142,9 @@ function main ()
 				get="${2}"
 				shift 2 || break
 				;;
+			-h|--help)
+				__usage
+				;;
 			--pid=*)
 				pid="${1#*=}"
 				shift 1
@@ -142,7 +169,7 @@ function main ()
 				>&2 printf -- \
 					'ERROR: Unknown option %s\n' \
 					"${1}"
-				exit 1
+				__usage
 				;;
 		esac
 	done
@@ -180,7 +207,7 @@ function main ()
 					>&2 printf -- \
 						'ERROR: Unknown get value %s\n' \
 						"${get}"
-					exit 1
+					__usage
 					;;
 			esac
 
@@ -191,6 +218,12 @@ function main ()
 				"${0##*/}"
 			exit 1
 		fi
+	elif [[ -n ${get} ]]
+	then
+		>&2 printf -- \
+			'ERROR: %s is not running\n' \
+			"${0##*/}"
+		__usage
 	fi
 
 	trap __cleanup \
