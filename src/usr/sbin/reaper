@@ -80,6 +80,11 @@ function __is_valid_reaper_timeout ()
 	__is_valid_positive_integer "${@}"
 }
 
+function __is_valid_wall_timeout ()
+{
+	__is_valid_positive_integer "${@}"
+}
+
 function __reap ()
 {
 	kill \
@@ -109,6 +114,10 @@ function __usage ()
 	                             If not specified the default is SIGTERM.
 	  -v, --verbose              Output informational messages.
 	                             If not specified the default is quiet.
+	  -w, --wall MESSAGE         Set a wall message to send before session end.
+	  -T, --wall-timeout SECONDS Set the time before session end to send the
+	                             wall message. The default is 30 seconds.
+	                             Set to 0 to disable sending a wall message.
 	EOF
 	exit 1
 }
@@ -129,7 +138,8 @@ function main ()
 	local session_end
 	local state_value
 	local verbose="false"
-	local warning_timeout="30"
+	local wall_message
+	local wall_timeout="30"
 
 	while [[ "${#}" -gt 0 ]]
 	do
@@ -163,6 +173,22 @@ function main ()
 				;;
 			-v|--verbose)
 				verbose="true"
+				shift 1
+				;;
+			-w|--wall)
+				wall_message="${2}"
+				shift 2 || break
+				;;
+			--wall=*)
+				wall_message="${1#*=}"
+				shift 1
+				;;
+			--wall-timeout)
+				wall_timeout="${2}"
+				shift 2 || break
+				;;
+			--wall-timeout=*)
+				wall_timeout="${1#*=}"
 				shift 1
 				;;
 			*)
@@ -230,14 +256,22 @@ function main ()
 		EXIT INT TERM
 	__create_lock
 
+	if ! __is_valid_wall_timeout "${wall_timeout}"
+	then
+		>&2 printf -- \
+			'ERROR: Invalid --wall-timeout\n' \
+		__usage
+	fi
+
 	if (( timeout > 0 ))
 	then
 		trap __reap \
 			EXIT INT TERM
 
-		if (( timeout <= warning_timeout ))
+		if [[ -z ${wall_message} ]] \
+			|| (( timeout <= wall_timeout ))
 		then
-			warning_timeout="0"
+			wall_timeout="0"
 		fi
 
 		session_start="$(
@@ -246,20 +280,18 @@ function main ()
 
 		__create_state
 
-		if coproc read -t "$(( ${timeout} - ${warning_timeout} ))"
+		if coproc read -t "$(( ${timeout} - ${wall_timeout} ))"
 		then
 			wait "${!}" || :
 
-			if (( warning_timeout > 0 ))
+			if (( wall_timeout > 0 ))
 			then
-				wall "Session expires in ${warning_timeout} seconds." || :
+				wall "${wall_message}" || :
 
-				if coproc read -t "${warning_timeout}"
+				if coproc read -t "${wall_timeout}"
 				then
 					wait "${!}" || :
 				fi
-			else
-				wall "Session expired." || :
 			fi
 		fi
 
