@@ -23,10 +23,10 @@ STARTUP_TIME ?= 2
 # ------------------------------------------------------------------------------
 # Application container configuration
 # ------------------------------------------------------------------------------
+ENABLE_SSHD_BOOTSTRAP ?= true
+ENABLE_SSHD_WRAPPER ?= true
+ENABLE_SUPERVISOR_STDOUT ?= false
 SSH_AUTHORIZED_KEYS ?=
-SSH_AUTOSTART_SSHD ?= true
-SSH_AUTOSTART_SSHD_BOOTSTRAP ?= true
-SSH_AUTOSTART_SUPERVISOR_STDOUT ?= false
 SSH_CHROOT_DIRECTORY ?= %h
 SSH_INHERIT_ENVIRONMENT ?= false
 SSH_PASSWORD_AUTHENTICATION ?= false

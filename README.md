@@ -327,20 +327,20 @@ Using `SSH_AUTHORIZED_KEYS` with a container file path allows for the authorized
 ...
 ```
 
-##### SSH_AUTOSTART_SSHD & SSH_AUTOSTART_SSHD_BOOTSTRAP
+##### ENABLE_SSHD_BOOTSTRAP & ENABLE_SSHD_WRAPPER
 
-It may be desirable to prevent the startup of the sshd daemon and/or sshd-bootstrap script. For example, when using an image built from this Dockerfile as the source for another Dockerfile you could disable both sshd and sshd-booststrap from startup by setting `SSH_AUTOSTART_SSHD` and `SSH_AUTOSTART_SSHD_BOOTSTRAP` to `false`. The benefit of this is to reduce the number of running processes in the final container.
+It may be desirable to prevent the startup of the sshd-bootstrap script and/or sshd daemon. For example, when using an image built from this Dockerfile as the source for another Dockerfile you could disable both sshd-booststrap and sshd from startup by setting `ENABLE_SSHD_BOOTSTRAP` and `ENABLE_SSHD_WRAPPER` to `false`. The benefit of this is to reduce the number of running processes in the final container.
 
 ```
 ...
-  --env "SSH_AUTOSTART_SSHD=false" \
-  --env "SSH_AUTOSTART_SSHD_BOOTSTRAP=false" \
+  --env "ENABLE_SSHD_BOOTSTRAP=false" \
+  --env "ENABLE_SSHD_WRAPPER=false" \
 ...
 ```
 
-##### SSH_AUTOSTART_SUPERVISOR_STDOUT
+##### ENABLE_SUPERVISOR_STDOUT
 
-This image has `supervisor_stdout` installed which can be used to allow a process controlled by supervisord to send output to both a log file and stdout. It is recommended to simply output to stdout in order to reduce the number of running processes to a minimum. Setting `SSH_AUTOSTART_SUPERVISOR_STDOUT` to "false" will prevent the startup of `supervisor_stdout`. Where an image requires this feature for its logging output `SSH_AUTOSTART_SUPERVISOR_STDOUT` should be set to "true".
+This image has `supervisor_stdout` installed which can be used to allow a process controlled by supervisord to send output to both a log file and stdout. It is recommended to simply output to stdout in order to reduce the number of running processes to a minimum. Setting `ENABLE_SUPERVISOR_STDOUT` to "false" will prevent the startup of `supervisor_stdout`. Where an image requires this feature for its logging output `ENABLE_SUPERVISOR_STDOUT` should be set to "true".
 
 ##### SSH_CHROOT_DIRECTORY
 
