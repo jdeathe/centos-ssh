@@ -35,20 +35,6 @@ function __delete_lock ()
 	fi
 }
 
-function __get_reaper_timeout ()
-{
-	local -r default_value="${1:-3600}"
-
-	local value="${REAPER_TIMEOUT}"
-
-	if ! __is_valid_reaper_timeout "${value}"
-	then
-		value="${default_value}"
-	fi
-
-	printf -- '%s' "${value}"
-}
-
 function __is_valid_get ()
 {
 	local -r get_options='^(end|start|ttl)$'
@@ -75,7 +61,7 @@ function __is_valid_positive_integer ()
 	return 1
 }
 
-function __is_valid_reaper_timeout ()
+function __is_valid_timeout ()
 {
 	__is_valid_positive_integer "${@}"
 }
@@ -112,6 +98,9 @@ function __usage ()
 	                             If not specified the default is pid 1.
 	  -s, --signal SIG           Send the signal SIG to the process.
 	                             If not specified the default is SIGTERM.
+	  -t, --timeout SECONDS      Time in seconds to wait before sending the
+	                             signal to the process. The default is 0 seconds
+	                             which indicates no delay.
 	  -v, --verbose              Output informational messages.
 	                             If not specified the default is quiet.
 	  -w, --wall MESSAGE         Set a wall message to send before session end.
@@ -126,9 +115,6 @@ function main ()
 {
 	local -r lock_file="/var/lock/subsys/reaper"
 	local -r state_file="/var/lib/misc/reaper"
-	local -r timeout="$(
-		__get_reaper_timeout
-	)"
 
 	local current_time
 	local get
@@ -137,6 +123,7 @@ function main ()
 	local session_start
 	local session_end
 	local state_value
+	local timeout="0"
 	local verbose="false"
 	local wall_message
 	local wall_timeout="30"
@@ -170,6 +157,14 @@ function main ()
 			-s|--signal)
 				signal="${2}"
 				shift 2 || break
+				;;
+			-t|--timeout)
+				timeout="${2}"
+				shift 2 || break
+				;;
+			--timeout=*)
+				timeout="${1#*=}"
+				shift 1
 				;;
 			-v|--verbose)
 				verbose="true"
@@ -256,6 +251,13 @@ function main ()
 		EXIT INT TERM
 	__create_lock
 
+	if ! __is_valid_timeout "${timeout}"
+	then
+		>&2 printf -- \
+			'ERROR: Invalid --timeout\n' \
+		__usage
+	fi
+
 	if ! __is_valid_wall_timeout "${wall_timeout}"
 	then
 		>&2 printf -- \
@@ -263,23 +265,23 @@ function main ()
 		__usage
 	fi
 
+	if [[ -z ${wall_message} ]] \
+		|| (( timeout <= wall_timeout ))
+	then
+		wall_timeout="0"
+	fi
+
+	session_start="$(
+		date -u +%s
+	)"
+
+	trap __reap \
+		EXIT INT TERM
+
+	__create_state
+
 	if (( timeout > 0 ))
 	then
-		trap __reap \
-			EXIT INT TERM
-
-		if [[ -z ${wall_message} ]] \
-			|| (( timeout <= wall_timeout ))
-		then
-			wall_timeout="0"
-		fi
-
-		session_start="$(
-			date -u +%s
-		)"
-
-		__create_state
-
 		if coproc read -t "$(( ${timeout} - ${wall_timeout} ))"
 		then
 			wait "${!}" || :
@@ -294,13 +296,13 @@ function main ()
 				fi
 			fi
 		fi
+	fi
 
-		if [[ ${verbose} == true ]]
-		then
-			printf -- \
-				'INFO: %s expiring session.\n' \
-				"${0##*/}"
-		fi
+	if [[ ${verbose} == true ]]
+	then
+		printf -- \
+			'INFO: %s expiring session.\n' \
+			"${0##*/}"
 	fi
 
 	exit 0

@@ -17,7 +17,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Adds improved `clean` Makefile target; includes exited containers and dangling images.
 - Adds feature to optionally exit the container after a specified timout period.
 - Adds `ENABLE_REAPER` with a default value of `false` to enable the `reaper` service.
-- Adds `REAPER_TIMEOUT` with a default value of `3600` seconds (i.e 1 hour).
+- Adds `REAPER_TIMEOUT` with a default value of `0` seconds (i.e no timeout delay).
 - Fixes port incrementation failures when installing systemd units via `scmi`.
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
 - Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.

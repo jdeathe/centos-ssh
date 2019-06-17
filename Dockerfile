@@ -94,7 +94,7 @@ EXPOSE 22
 # ------------------------------------------------------------------------------
 ENV \
 	ENABLE_REAPER="false" \
-	REAPER_TIMEOUT="3600" \
+	REAPER_TIMEOUT="0" \
 	SSH_AUTHORIZED_KEYS="" \
 	SSH_AUTOSTART_SSHD="true" \
 	SSH_AUTOSTART_SSHD_BOOTSTRAP="true" \

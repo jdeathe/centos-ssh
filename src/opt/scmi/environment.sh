@@ -25,7 +25,7 @@ STARTUP_TIME="${STARTUP_TIME:-2}"
 # Application container configuration
 # ------------------------------------------------------------------------------
 ENABLE_REAPER="${ENABLE_REAPER:-false}"
-REAPER_TIMEOUT="${REAPER_TIMEOUT:-3600}"
+REAPER_TIMEOUT="${REAPER_TIMEOUT:-0}"
 SSH_AUTHORIZED_KEYS="${SSH_AUTHORIZED_KEYS:-}"
 SSH_AUTOSTART_SSHD="${SSH_AUTOSTART_SSHD:-true}"
 SSH_AUTOSTART_SSHD_BOOTSTRAP="${SSH_AUTOSTART_SSHD_BOOTSTRAP:-true}"
