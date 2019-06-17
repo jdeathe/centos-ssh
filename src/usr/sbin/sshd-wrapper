@@ -62,10 +62,10 @@ function __is_valid_enable_sshd_bootstrap ()
 
 function main ()
 {
-	local -r autostart_bootstrap="$(
+	local -r bin="/usr/sbin/sshd"
+	local -r bootstrap_enabled="$(
 		__get_enable_sshd_bootstrap
 	)"
-	local -r bin="/usr/sbin/sshd"
 	local -r bootstrap_state_file="/var/lib/misc/sshd-bootstrap"
 	local -r lock_file="/var/lock/subsys/sshd-wrapper"
 	local -r nice="/bin/nice"
@@ -101,7 +101,7 @@ function main ()
 		__get_options
 	)"
 
-	if [[ ${autostart_bootstrap} == false ]]
+	if [[ ${bootstrap_enabled} == false ]]
 	then
 		# block.
 		sleep infinity
