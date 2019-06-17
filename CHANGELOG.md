@@ -6,9 +6,12 @@ Summary of release changes for Version 1 - CentOS-6
 
 ### 1.11.0 - Unreleased
 
+- Deprecates `SSH_AUTOSTART_SSHD`, replaced with `ENABLE_SSHD_WRAPPER`.
+- Deprecates `SSH_AUTOSTART_SSHD_BOOTSTRAP`, replaced with `ENABLE_SSHD_BOOTSTRAP`.
+- Deprecates `SSH_AUTOSTART_SUPERVISOR_STDOUT`, replaced with `ENABLE_SUPERVISOR_STDOUT`.
 - Updates source image from `centos6.10` tag to `6.10`.
 - Updates supervisord to 3.4.0.
-- Updates default value of `SSH_AUTOSTART_SUPERVISOR_STDOUT` to false.
+- Updates default value of `ENABLE_SUPERVISOR_STDOUT` to false.
 - Updates `sshd-bootstrap` and `sshd-wrapper` configuration to send error log output to stderr.
 - Updates order of values in SSH/SFTP Details log output.
 - Adds reference to `python-setuptools` in README; removed in error.
