@@ -43,7 +43,7 @@ function main ()
 		exit 1
 	fi
 
-	if [[ ${SSH_AUTOSTART_SSHD_BOOTSTRAP} == true ]]
+	if [[ ${ENABLE_SSHD_BOOTSTRAP} == true ]]
 	then
 		if [[ -e /var/lock/subsys/sshd-bootstrap ]]
 		then
@@ -62,7 +62,7 @@ function main ()
 		fi
 	fi
 
-	if [[ ${SSH_AUTOSTART_SSHD} == true ]]
+	if [[ ${ENABLE_SSHD_WRAPPER} == true ]]
 	then
 		if ! ps axo command | grep -qE '^/usr/sbin/sshd -D' \
 			|| [[ ! -s /var/run/sshd.pid ]]

@@ -6,9 +6,12 @@ Summary of release changes for Version 2 - CentOS-7
 
 ### 2.6.0 - Unreleased
 
+- Deprecates `SSH_AUTOSTART_SSHD`, replaced with `ENABLE_SSHD_WRAPPER`.
+- Deprecates `SSH_AUTOSTART_SSHD_BOOTSTRAP`, replaced with `ENABLE_SSHD_BOOTSTRAP`.
+- Deprecates `SSH_AUTOSTART_SUPERVISOR_STDOUT`, replaced with `ENABLE_SUPERVISOR_STDOUT`.
 - Updates source tag to CentOS 7.6.1810.
 - Updates supervisord to 4.0.3.
-- Updates default value of `SSH_AUTOSTART_SUPERVISOR_STDOUT` to false.
+- Updates default value of `ENABLE_SUPERVISOR_STDOUT` to false.
 - Updates `sshd-bootstrap` and `sshd-wrapper` configuration to send error log output to stderr.
 - Updates order of values in SSH/SFTP Details log output.
 - Adds reference to `python-setuptools` in README; removed in error.
