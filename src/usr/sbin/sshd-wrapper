@@ -33,13 +33,13 @@ function __get_options ()
 		"${options}"
 }
 
-function __get_ssh_autostart_sshd_bootstrap ()
+function __get_enable_sshd_bootstrap ()
 {
 	local -r default_value="${1:-true}"
 
-	local value="${SSH_AUTOSTART_SSHD_BOOTSTRAP}"
+	local value="${ENABLE_SSHD_BOOTSTRAP}"
 
-	if ! __is_valid_ssh_autostart_sshd_bootstrap "${value}"
+	if ! __is_valid_enable_sshd_bootstrap "${value}"
 	then
 		value="${default_value}"
 	fi
@@ -47,7 +47,7 @@ function __get_ssh_autostart_sshd_bootstrap ()
 	printf -- '%s' "${value}"
 }
 
-function __is_valid_ssh_autostart_sshd_bootstrap ()
+function __is_valid_enable_sshd_bootstrap ()
 {
 	local -r boolean_value='^(true|false)$'
 	local -r value="${1}"
@@ -62,10 +62,10 @@ function __is_valid_ssh_autostart_sshd_bootstrap ()
 
 function main ()
 {
-	local -r autostart_bootstrap="$(
-		__get_ssh_autostart_sshd_bootstrap
-	)"
 	local -r bin="/usr/sbin/sshd"
+	local -r bootstrap_enabled="$(
+		__get_enable_sshd_bootstrap
+	)"
 	local -r bootstrap_state_file="/var/lib/misc/sshd-bootstrap"
 	local -r lock_file="/var/lock/subsys/sshd-wrapper"
 	local -r nice="/bin/nice"
@@ -101,9 +101,8 @@ function main ()
 		__get_options
 	)"
 
-	if [[ ${autostart_bootstrap} == false ]]
+	if [[ ${bootstrap_enabled} == false ]]
 	then
-		# block.
 		sleep infinity
 	fi
 
