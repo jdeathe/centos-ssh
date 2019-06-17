@@ -103,7 +103,6 @@ function main ()
 
 	if [[ ${bootstrap_enabled} == false ]]
 	then
-		# block.
 		sleep infinity
 	fi
 
