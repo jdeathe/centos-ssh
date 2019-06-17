@@ -254,14 +254,16 @@ $ docker logs ssh.1
 The output of the logs will show the auto-generated password for the user specified by `SSH_USER` on first run.
 
 ```
-2019-06-09 10:20:09,504 WARN No file matches via include "/etc/supervisord.d/*.ini"
-2019-06-09 10:20:09,504 INFO Included extra file "/etc/supervisord.d/00-supervisor_stdout.conf" during parsing
-2019-06-09 10:20:09,504 INFO Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
-2019-06-09 10:20:09,504 INFO Included extra file "/etc/supervisord.d/sshd-wrapper.conf" during parsing
-2019-06-09 10:20:09,504 INFO Set uid to user 0 succeeded
-2019-06-09 10:20:09,506 INFO supervisord started with pid 1
-2019-06-09 10:20:10,510 INFO spawned: 'sshd-bootstrap' with pid 9
-2019-06-09 10:20:10,513 INFO spawned: 'sshd-wrapper' with pid 10
+2019-06-17 23:41:07,498 WARN No file matches via include "/etc/supervisord.d/*.ini"
+2019-06-17 23:41:07,499 INFO Included extra file "/etc/supervisord.d/00-supervisor_stdout.conf" during parsing
+2019-06-17 23:41:07,499 INFO Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
+2019-06-17 23:41:07,499 INFO Included extra file "/etc/supervisord.d/sshd-wrapper.conf" during parsing
+2019-06-17 23:41:07,499 INFO Set uid to user 0 succeeded
+2019-06-17 23:41:07,501 INFO supervisord started with pid 1
+2019-06-17 23:41:08,505 INFO spawned: 'sshd-bootstrap' with pid 8
+2019-06-17 23:41:08,508 INFO spawned: 'sshd-wrapper' with pid 9
+INFO: sshd-wrapper waiting on sshd-bootstrap
+2019-06-17 23:41:08,519 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
 
 ================================================================================
 SSH Details
@@ -271,25 +273,24 @@ home : /home/app-admin
 id : 500:500
 key fingerprints :
 dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6 (insecure key)
-password : buSoRzQB3dyXw67L
+password : 1RZuwErfrDA9kF3U
 password authentication : no
 rsa private key fingerprint :
 N/A
 rsa host key fingerprint :
-5d:29:c0:f0:ee:4b:6a:d5:fe:76:a4:1d:1e:c4:e8:4d
+1e:7d:6d:38:0a:7b:7b:df:73:51:e9:d4:ba:84:ce:ba
 shell : /bin/bash
 sudo : ALL=(ALL) ALL
 timezone : UTC
 user : app-admin
 --------------------------------------------------------------------------------
-0.355662
+0.377392
 
-2019-06-09 10:20:10,880 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-2019-06-09 10:20:10,880 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-2019-06-09 10:20:10,883 INFO exited: sshd-bootstrap (exit status 0; expected)
 INFO: sshd-wrapper starting sshd
+2019-06-17 23:41:08,901 INFO exited: sshd-bootstrap (exit status 0; expected)
 Server listening on 0.0.0.0 port 22.
 Server listening on :: port 22.
+2019-06-17 23:41:13,893 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
 ```
 
 #### Environment Variables
