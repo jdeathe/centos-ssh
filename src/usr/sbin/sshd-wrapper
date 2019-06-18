@@ -73,8 +73,6 @@ function main ()
 
 	until [[ -e ${bootstrap_state_file} ]]
 	do
-		set +e
-
 		if [[ ${verbose} == true ]]
 		then
 			printf -- \
@@ -83,18 +81,18 @@ function main ()
 				"${bootstrap_state_file##*/}"
 		fi
 
+		set +e
 		inotifywait \
 			-qq \
 			-t ${bootstrap_timeout} \
 			-e "create" \
 			"${bootstrap_state_file%/*}"
+		set -e
 
 		if [[ ${?} -eq 2 ]]
 		then
 			break
 		fi
-
-		set -e
 	done
 
 	if ! [[ -e ${bootstrap_state_file} ]]
