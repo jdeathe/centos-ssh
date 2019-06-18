@@ -41,6 +41,7 @@ function main ()
 	local -r lock_file="/var/lock/subsys/sshd-wrapper"
 	local -r nice="/bin/nice"
 	local -r niceness="10"
+	local -r timed_out_with_no_events="2"
 
 	local options
 	local verbose="false"
@@ -71,16 +72,16 @@ function main ()
 		__get_options
 	)"
 
+	if [[ ${verbose} == true ]]
+	then
+		printf -- \
+			'INFO: %s waiting on %s\n' \
+			"${0##*/}" \
+			"${bootstrap_state_file##*/}"
+	fi
+
 	until [[ -e ${bootstrap_state_file} ]]
 	do
-		if [[ ${verbose} == true ]]
-		then
-			printf -- \
-				'INFO: %s waiting on %s\n' \
-				"${0##*/}" \
-				"${bootstrap_state_file##*/}"
-		fi
-
 		set +e
 		inotifywait \
 			-qq \
@@ -89,7 +90,7 @@ function main ()
 			"${bootstrap_state_file%/*}"
 		set -e
 
-		if [[ ${?} -eq 2 ]]
+		if [[ ${?} -eq ${timed_out_with_no_events} ]]
 		then
 			break
 		fi
