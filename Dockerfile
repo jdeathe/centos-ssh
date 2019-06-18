@@ -23,6 +23,10 @@ RUN rpm --rebuilddb \
 		centos-release-scl-rh \
 		epel-release \
 		https://centos6.iuscommunity.org/ius-release.rpm \
+	&& yum -y install \
+			--setopt=tsflags=nodocs \
+			--disableplugin=fastestmirror \
+		inotify-tools-3.14-1.el6 \
 		openssh-clients-5.3p1-123.el6_9 \
 		openssh-server-5.3p1-123.el6_9 \
 		python-setuptools-0.6.10-4.el6_9 \
@@ -30,6 +34,7 @@ RUN rpm --rebuilddb \
 		yum-plugin-versionlock-1.1.30-42.el6_10 \
 		xz-4.999.9-0.5.beta.20091007git.el6 \
 	&& yum versionlock add \
+		inotify-tools \
 		openssh \
 		openssh-clients \
 		openssh-server \
