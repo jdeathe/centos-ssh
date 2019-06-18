@@ -33,48 +33,19 @@ function __get_options ()
 		"${options}"
 }
 
-function __get_enable_sshd_bootstrap ()
-{
-	local -r default_value="${1:-true}"
-
-	local value="${ENABLE_SSHD_BOOTSTRAP}"
-
-	if ! __is_valid_enable_sshd_bootstrap "${value}"
-	then
-		value="${default_value}"
-	fi
-
-	printf -- '%s' "${value}"
-}
-
-function __is_valid_enable_sshd_bootstrap ()
-{
-	local -r boolean_value='^(true|false)$'
-	local -r value="${1}"
-
-	if [[ ${value} =~ ${boolean_value} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
 function main ()
 {
 	local -r bin="/usr/sbin/sshd"
-	local -r bootstrap_enabled="$(
-		__get_enable_sshd_bootstrap
-	)"
 	local -r bootstrap_state_file="/var/lib/misc/sshd-bootstrap"
+	local -r bootstrap_timeout="4"
 	local -r lock_file="/var/lock/subsys/sshd-wrapper"
 	local -r nice="/bin/nice"
 	local -r niceness="10"
+	local -r timed_out_with_no_events="2"
 
 	local options
 	local verbose="false"
 
-	# Parse options
 	while [[ "${#}" -gt 0 ]]
 	do
 		case "${1}" in
@@ -101,15 +72,38 @@ function main ()
 		__get_options
 	)"
 
-	if [[ ${bootstrap_enabled} == false ]]
+	if [[ ${verbose} == true ]]
 	then
-		sleep infinity
+		printf -- \
+			'INFO: %s waiting on %s\n' \
+			"${0##*/}" \
+			"${bootstrap_state_file##*/}"
 	fi
 
 	until [[ -e ${bootstrap_state_file} ]]
 	do
-		sleep 0.1
+		set +e
+		inotifywait \
+			-qq \
+			-t ${bootstrap_timeout} \
+			-e "create" \
+			"${bootstrap_state_file%/*}"
+
+		if [[ ${?} -eq ${timed_out_with_no_events} ]]
+		then
+			break
+		fi
+		set -e
 	done
+
+	if ! [[ -e ${bootstrap_state_file} ]]
+	then
+		>&2 printf -- \
+			'ERROR: %s timed out - aborting %s\n' \
+			"${bootstrap_state_file##*/}" \
+			"${0##*/}"
+		exit 1
+	fi
 
 	if [[ ${verbose} == true ]]
 	then

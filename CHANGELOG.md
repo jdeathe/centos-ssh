@@ -18,6 +18,7 @@ Summary of release changes for Version 1 - CentOS-6
 - Adds `inspect`, `reload` and `top` Makefile targets.
 - Adds improved lock/state file implementation in bootstrap and wrapper scripts.
 - Adds improved `clean` Makefile target; includes exited containers and dangling images.
+- Adds improved wait on bootstrap completion in wrapper script.
 - Fixes port incrementation failures when installing systemd units via `scmi`.
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
 - Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.
