@@ -586,7 +586,7 @@ function __get_ssh_user_uid ()
 function __get_timer_total ()
 {
 	local -r timer_end="$(
-		date +%s.%N
+		date -u +%s.%N
 	)"
 	local -r timer_start="${1}"
 
@@ -985,7 +985,7 @@ function main ()
 	local -r redacted_value="********"
 	local -r state_file="/var/lib/misc/sshd-bootstrap"
 	local -r timer_start="$(
-		date +%s.%N
+		date -u +%s.%N
 	)"
 
 	local env
