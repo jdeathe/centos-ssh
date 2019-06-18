@@ -88,12 +88,12 @@ function main ()
 			-t ${bootstrap_timeout} \
 			-e "create" \
 			"${bootstrap_state_file%/*}"
-		set -e
 
 		if [[ ${?} -eq ${timed_out_with_no_events} ]]
 		then
 			break
 		fi
+		set -e
 	done
 
 	if ! [[ -e ${bootstrap_state_file} ]]
