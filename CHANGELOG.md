@@ -15,6 +15,8 @@ Summary of release changes for Version 2 - CentOS-7
 - Updates `sshd-bootstrap` and `sshd-wrapper` configuration to send error log output to stderr.
 - Updates order of values in SSH/SFTP Details log output.
 - Updates bootstrap timer to use UTC date timestamps.
+- Updates bootstrap supervisord configuration file/priority to `20-sshd-bootstrap.conf`/`20`.
+- Updates wrapper supervisord configuration file/priority to `50-sshd-wrapper.conf`/`50`.
 - Adds reference to `python-setuptools` in README; removed in error.
 - Adds `inspect`, `reload` and `top` Makefile targets.
 - Adds improved lock/state file implementation in bootstrap and wrapper scripts.
