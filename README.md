@@ -16,7 +16,7 @@ The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` 
 
 The Dockerfile can be used to build a base image that is the bases for several other docker images.
 
-Included in the build are the [SCL](https://www.softwarecollections.org/), [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/) and [vim-minimal](http://www.vim.org/) are along with python-setuptools, [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
+Included in the build are the [SCL](https://www.softwarecollections.org/), [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [inotify-tools](https://github.com/rvoicilas/inotify-tools/wiki), [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/), [vim-minimal](http://www.vim.org/), python-setuptools, [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
 
 [Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run.
 
@@ -297,6 +297,21 @@ Server listening on :: port 22.
 
 There are several environmental variables defined at runtime these allow the operator to customise the running container.
 
+##### ENABLE_SSHD_BOOTSTRAP & ENABLE_SSHD_WRAPPER
+
+It may be desirable to prevent the startup of the sshd-bootstrap script and/or sshd daemon. For example, when using an image built from this Dockerfile as the source for another Dockerfile you could disable both sshd-booststrap and sshd from startup by setting `ENABLE_SSHD_BOOTSTRAP` and `ENABLE_SSHD_WRAPPER` to `false`. The benefit of this is to reduce the number of running processes in the final container.
+
+```
+...
+  --env "ENABLE_SSHD_BOOTSTRAP=false" \
+  --env "ENABLE_SSHD_WRAPPER=false" \
+...
+```
+
+##### ENABLE_SUPERVISOR_STDOUT
+
+This image has `supervisor_stdout` installed which can be used to allow a process controlled by supervisord to send output to both a log file and stdout. It is recommended to simply output to stdout in order to reduce the number of running processes to a minimum. Setting `ENABLE_SUPERVISOR_STDOUT` to "false" will prevent the startup of `supervisor_stdout`. Where an image requires this feature for its logging output `ENABLE_SUPERVISOR_STDOUT` should be set to "true".
+
 ##### SSH_AUTHORIZED_KEYS
 
 As detailed below the public key added for the SSH user is insecure by default. This is intentional and allows for access using a known private key. Using `SSH_AUTHORIZED_KEYS` you can replace the insecure public key with another one (or several). Further details on how to create your own private + public key pair are provided below. If adding more than one key it is recommended to either base64 encode the value or use a container file path in combination with a bind mounted file or Docker Swarm config etc.
@@ -327,21 +342,6 @@ Using `SSH_AUTHORIZED_KEYS` with a container file path allows for the authorized
   --env "SSH_AUTHORIZED_KEYS=/var/run/config/authorized_keys"
 ...
 ```
-
-##### ENABLE_SSHD_BOOTSTRAP & ENABLE_SSHD_WRAPPER
-
-It may be desirable to prevent the startup of the sshd-bootstrap script and/or sshd daemon. For example, when using an image built from this Dockerfile as the source for another Dockerfile you could disable both sshd-booststrap and sshd from startup by setting `ENABLE_SSHD_BOOTSTRAP` and `ENABLE_SSHD_WRAPPER` to `false`. The benefit of this is to reduce the number of running processes in the final container.
-
-```
-...
-  --env "ENABLE_SSHD_BOOTSTRAP=false" \
-  --env "ENABLE_SSHD_WRAPPER=false" \
-...
-```
-
-##### ENABLE_SUPERVISOR_STDOUT
-
-This image has `supervisor_stdout` installed which can be used to allow a process controlled by supervisord to send output to both a log file and stdout. It is recommended to simply output to stdout in order to reduce the number of running processes to a minimum. Setting `ENABLE_SUPERVISOR_STDOUT` to "false" will prevent the startup of `supervisor_stdout`. Where an image requires this feature for its logging output `ENABLE_SUPERVISOR_STDOUT` should be set to "true".
 
 ##### SSH_CHROOT_DIRECTORY
 
