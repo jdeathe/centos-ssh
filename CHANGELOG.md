@@ -4,7 +4,7 @@
 
 Summary of release changes for Version 1 - CentOS-6
 
-### 1.11.0 - Unreleased
+### 1.11.0 - 2019-06-20
 
 - Deprecates `SSH_AUTOSTART_SSHD`, replaced with `ENABLE_SSHD_WRAPPER`.
 - Deprecates `SSH_AUTOSTART_SSHD_BOOTSTRAP`, replaced with `ENABLE_SSHD_BOOTSTRAP`.

@@ -1,1 +1,1 @@
-CentOS-6 6.10 x86_64 / CentOS-7 7.5.1804 x86_64 - SCL/EPEL/IUS Repos / Supervisor / OpenSSH.
+CentOS-6 6.10 x86_64 / CentOS-7 7.6.1810 x86_64 - SCL/EPEL/IUS Repos / Supervisor / OpenSSH.
