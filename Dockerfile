@@ -86,9 +86,9 @@ RUN ln -sf \
 		-e "s~{{RELEASE_VERSION}}~${RELEASE_VERSION}~g" \
 		/etc/systemd/system/centos-ssh@.service \
 	&& chmod 644 \
-		/etc/{supervisord.conf,supervisord.d/sshd-{bootstrap,wrapper}.conf} \
+		/etc/{supervisord.conf,supervisord.d/{20-sshd-bootstrap,50-sshd-wrapper}.conf} \
 	&& chmod 700 \
-		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper}}}
+		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper},system-{timezone,timezone-wrapper}}}
 
 EXPOSE 22
 
@@ -104,7 +104,6 @@ ENV \
 	SSH_INHERIT_ENVIRONMENT="false" \
 	SSH_PASSWORD_AUTHENTICATION="false" \
 	SSH_SUDO="ALL=(ALL) ALL" \
-	SSH_TIMEZONE="UTC" \
 	SSH_USER="app-admin" \
 	SSH_USER_FORCE_SFTP="false" \
 	SSH_USER_HOME="/home/%u" \
@@ -112,7 +111,8 @@ ENV \
 	SSH_USER_PASSWORD="" \
 	SSH_USER_PASSWORD_HASHED="false" \
 	SSH_USER_PRIVATE_KEY="" \
-	SSH_USER_SHELL="/bin/bash"
+	SSH_USER_SHELL="/bin/bash" \
+	SYSTEM_TIMEZONE="UTC"
 
 # ------------------------------------------------------------------------------
 # Set image metadata
