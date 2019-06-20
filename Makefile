@@ -745,9 +745,9 @@ rm-exited: \
 			"$(PREFIX_STEP)" \
 			"Removing exited containers"; \
 		$(docker) rm -f \
-			"$$($(docker) ps -aq \
+			$$($(docker) ps -aq \
 				--filter "status=exited" \
-			)" \
+			) \
 			1> /dev/null; \
 	fi
 

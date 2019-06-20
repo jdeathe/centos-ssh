@@ -30,6 +30,7 @@ Summary of release changes for Version 1 - CentOS-6
 - Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.
 - Fixes use of printf binary instead of builtin in systemd unit files.
 - Fixes docker host connection status check in Makefile.
+- Fixes make clean error thrown when removing exited containers.
 - Removes support for long image tags (i.e. centos-6-1.x.x).
 - Removes system time zone setup from `sshd-bootstrap`.
 
