@@ -1,6 +1,6 @@
-FROM centos:centos6.10
+FROM centos:6.10
 
-ARG RELEASE_VERSION="1.10.1"
+ARG RELEASE_VERSION="1.11.0"
 
 # ------------------------------------------------------------------------------
 # - Import the RPM GPG keys for repositories
@@ -23,6 +23,10 @@ RUN rpm --rebuilddb \
 		centos-release-scl-rh \
 		epel-release \
 		https://centos6.iuscommunity.org/ius-release.rpm \
+	&& yum -y install \
+			--setopt=tsflags=nodocs \
+			--disableplugin=fastestmirror \
+		inotify-tools-3.14-1.el6 \
 		openssh-clients-5.3p1-123.el6_9 \
 		openssh-server-5.3p1-123.el6_9 \
 		python-setuptools-0.6.10-4.el6_9 \
@@ -30,6 +34,7 @@ RUN rpm --rebuilddb \
 		yum-plugin-versionlock-1.1.30-42.el6_10 \
 		xz-4.999.9-0.5.beta.20091007git.el6 \
 	&& yum versionlock add \
+		inotify-tools \
 		openssh \
 		openssh-clients \
 		openssh-server \
@@ -45,7 +50,7 @@ RUN rpm --rebuilddb \
 		sysvinit-tools \
 	&& yum clean all \
 	&& easy_install \
-		'supervisor == 3.3.5' \
+		'supervisor == 3.4.0' \
 		'supervisor-stdout == 0.1.1' \
 	&& mkdir -p \
 		/var/log/supervisor/ \
@@ -93,9 +98,9 @@ RUN ln -sf \
 		-e "s~{{RELEASE_VERSION}}~${RELEASE_VERSION}~g" \
 		/etc/systemd/system/centos-ssh@.service \
 	&& chmod 644 \
-		/etc/{supervisord.conf,supervisord.d/sshd-{bootstrap,wrapper}.conf} \
+		/etc/{supervisord.conf,supervisord.d/{20-sshd-bootstrap,50-sshd-wrapper}.conf} \
 	&& chmod 700 \
-		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper}}}
+		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper},system-{timezone,timezone-wrapper}}}
 
 EXPOSE 22
 
@@ -103,15 +108,14 @@ EXPOSE 22
 # Set default environment variables
 # ------------------------------------------------------------------------------
 ENV \
+	ENABLE_SSHD_BOOTSTRAP="true" \
+	ENABLE_SSHD_WRAPPER="true" \
+	ENABLE_SUPERVISOR_STDOUT="false" \
 	SSH_AUTHORIZED_KEYS="" \
-	SSH_AUTOSTART_SSHD="true" \
-	SSH_AUTOSTART_SSHD_BOOTSTRAP="true" \
-	SSH_AUTOSTART_SUPERVISOR_STDOUT="true" \
 	SSH_CHROOT_DIRECTORY="%h" \
 	SSH_INHERIT_ENVIRONMENT="false" \
 	SSH_PASSWORD_AUTHENTICATION="false" \
 	SSH_SUDO="ALL=(ALL) ALL" \
-	SSH_TIMEZONE="UTC" \
 	SSH_USER="app-admin" \
 	SSH_USER_FORCE_SFTP="false" \
 	SSH_USER_HOME="/home/%u" \
@@ -119,7 +123,8 @@ ENV \
 	SSH_USER_PASSWORD="" \
 	SSH_USER_PASSWORD_HASHED="false" \
 	SSH_USER_PRIVATE_KEY="" \
-	SSH_USER_SHELL="/bin/bash"
+	SSH_USER_SHELL="/bin/bash" \
+	SYSTEM_TIMEZONE="UTC"
 
 # ------------------------------------------------------------------------------
 # Set image metadata
