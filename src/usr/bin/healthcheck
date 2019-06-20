@@ -63,14 +63,14 @@ function __is_valid_zone ()
 
 function main ()
 {
-	local -r system_zone="$(
-		system-timezone -qq
+	local -r system_timezone="$(
+		__get_system_timezone
 	)"
 	local -r user="$(
 		__get_ssh_user
 	)"
 	local -r zone="$(
-		__get_system_timezone
+		system-timezone -qq
 	)"
 
 	if ! ps axo command | grep -qE '^/usr/bin/python /usr/bin/supervisord'
@@ -81,7 +81,7 @@ function main ()
 		exit 1
 	fi
 
-	if [[ ${system_zone} != "${zone}" ]]
+	if [[ ${system_timezone} != "${zone}" ]]
 	then
 		>&2 printf -- \
 			'%s\n' \
