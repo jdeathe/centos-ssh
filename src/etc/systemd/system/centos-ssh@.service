@@ -64,7 +64,6 @@ Environment="SSH_CHROOT_DIRECTORY=%%h"
 Environment="SSH_INHERIT_ENVIRONMENT=false"
 Environment="SSH_PASSWORD_AUTHENTICATION=false"
 Environment="SSH_SUDO=ALL=(ALL) ALL"
-Environment="SSH_TIMEZONE=UTC"
 Environment="SSH_USER=app-admin"
 Environment="SSH_USER_FORCE_SFTP=false"
 Environment="SSH_USER_HOME=/home/%%u"
@@ -73,6 +72,7 @@ Environment="SSH_USER_PASSWORD="
 Environment="SSH_USER_PASSWORD_HASHED=false"
 Environment="SSH_USER_PRIVATE_KEY="
 Environment="SSH_USER_SHELL=/bin/bash"
+Environment="SYSTEM_TIMEZONE=UTC"
 
 # Initialisation: Load image from local storage if available, otherwise pull.
 ExecStartPre=/bin/bash -c \
@@ -137,7 +137,7 @@ ExecStart=/bin/bash -c \
     --env \"SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT}\" \
     --env \"SSH_PASSWORD_AUTHENTICATION=${SSH_PASSWORD_AUTHENTICATION}\" \
     --env \"SSH_SUDO=${SSH_SUDO}\" \
-    --env \"SSH_TIMEZONE=${SSH_TIMEZONE}\" \
+    --env \"SYSTEM_TIMEZONE=${SYSTEM_TIMEZONE}\" \
     --env \"SSH_USER=${SSH_USER}\" \
     --env \"SSH_USER_FORCE_SFTP=${SSH_USER_FORCE_SFTP}\" \
     --env \"SSH_USER_HOME=${SSH_USER_HOME}\" \

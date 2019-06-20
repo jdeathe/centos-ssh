@@ -29,10 +29,48 @@ function __get_ssh_user ()
 	printf -- '%s' "${value}"
 }
 
+function __get_system_timezone ()
+{
+	local -r default_value="${1:-UTC}"
+
+	local value="${SYSTEM_TIMEZONE}"
+
+	if ! __is_valid_system_timezone "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __is_valid_system_timezone ()
+{
+	__is_valid_zone "${@}"
+}
+
+function __is_valid_zone ()
+{
+	local zone="${1}"
+
+	if [[ -n ${zone} ]] \
+		&& [[ -f /usr/share/zoneinfo/${zone} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
 function main ()
 {
+	local -r system_zone="$(
+		system-timezone -qq
+	)"
 	local -r user="$(
 		__get_ssh_user
+	)"
+	local -r zone="$(
+		__get_system_timezone
 	)"
 
 	if ! ps axo command | grep -qE '^/usr/bin/python /usr/bin/supervisord'
@@ -40,6 +78,14 @@ function main ()
 		>&2 printf -- \
 			'%s\n' \
 			"supervisord not running."
+		exit 1
+	fi
+
+	if [[ ${system_zone} != "${zone}" ]]
+	then
+		>&2 printf -- \
+			'%s\n' \
+			"system-timezone zone mismatch."
 		exit 1
 	fi
 

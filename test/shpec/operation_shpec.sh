@@ -1693,7 +1693,7 @@ function test_custom_ssh_configuration ()
 			docker run \
 				--detach \
 				--name ssh.1 \
-				--env "SSH_TIMEZONE=Europe/London" \
+				--env "SYSTEM_TIMEZONE=Europe/London" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null

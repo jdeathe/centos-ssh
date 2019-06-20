@@ -9,6 +9,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Deprecates `SSH_AUTOSTART_SSHD`, replaced with `ENABLE_SSHD_WRAPPER`.
 - Deprecates `SSH_AUTOSTART_SSHD_BOOTSTRAP`, replaced with `ENABLE_SSHD_BOOTSTRAP`.
 - Deprecates `SSH_AUTOSTART_SUPERVISOR_STDOUT`, replaced with `ENABLE_SUPERVISOR_STDOUT`.
+- Deprecates `SSH_TIMEZONE`, replaced with `SYSTEM_TIMEZONE`.
 - Updates source tag to CentOS 7.6.1810.
 - Updates supervisord to 4.0.3.
 - Updates default value of `ENABLE_SUPERVISOR_STDOUT` to false.
@@ -22,12 +23,15 @@ Summary of release changes for Version 2 - CentOS-7
 - Adds improved lock/state file implementation in bootstrap and wrapper scripts.
 - Adds improved `clean` Makefile target; includes exited containers and dangling images.
 - Adds improved wait on bootstrap completion in wrapper script.
+- Adds `system-timezone` and `system-timezone-wrapper` to handle system time zone setup.
+- Adds system time zone validation to healthcheck.
 - Fixes port incrementation failures when installing systemd units via `scmi`.
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
 - Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.
 - Fixes use of printf binary instead of builtin in systemd unit files.
 - Fixes docker host connection status check in Makefile.
 - Removes support for long image tags (i.e. centos-7-2.x.x).
+- Removes system time zone setup from `sshd-bootstrap`.
 
 ### 2.5.1 - 2019-02-28
 
