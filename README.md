@@ -254,16 +254,28 @@ $ docker logs ssh.1
 The output of the logs should show the auto-generated password for the app-admin and root users, (if not try again after a few seconds).
 
 ```
-2019-06-17 23:41:07,498 WARN No file matches via include "/etc/supervisord.d/*.ini"
-2019-06-17 23:41:07,499 INFO Included extra file "/etc/supervisord.d/00-supervisor_stdout.conf" during parsing
-2019-06-17 23:41:07,499 INFO Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
-2019-06-17 23:41:07,499 INFO Included extra file "/etc/supervisord.d/sshd-wrapper.conf" during parsing
-2019-06-17 23:41:07,499 INFO Set uid to user 0 succeeded
-2019-06-17 23:41:07,501 INFO supervisord started with pid 1
-2019-06-17 23:41:08,505 INFO spawned: 'sshd-bootstrap' with pid 8
-2019-06-17 23:41:08,508 INFO spawned: 'sshd-wrapper' with pid 9
+2019-06-20 00:10:35,306 WARN No file matches via include "/etc/supervisord.d/*.ini"
+2019-06-20 00:10:35,306 INFO Included extra file "/etc/supervisord.d/00-supervisor_stdout.conf" during parsing
+2019-06-20 00:10:35,307 INFO Included extra file "/etc/supervisord.d/10-system-timezone-wrapper.conf" during parsing
+2019-06-20 00:10:35,307 INFO Included extra file "/etc/supervisord.d/20-sshd-bootstrap.conf" during parsing
+2019-06-20 00:10:35,307 INFO Included extra file "/etc/supervisord.d/50-sshd-wrapper.conf" during parsing
+2019-06-20 00:10:35,307 INFO Set uid to user 0 succeeded
+2019-06-20 00:10:35,310 INFO supervisord started with pid 1
+2019-06-20 00:10:36,315 INFO spawned: 'system-timezone-wrapper' with pid 9
+2019-06-20 00:10:36,318 INFO spawned: 'sshd-bootstrap' with pid 10
+2019-06-20 00:10:36,320 INFO spawned: 'sshd-wrapper' with pid 11
 INFO: sshd-wrapper waiting on sshd-bootstrap
-2019-06-17 23:41:08,519 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-06-20 00:10:36,328 INFO success: system-timezone-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-06-20 00:10:36,328 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+
+================================================================================
+System Time Zone Details
+--------------------------------------------------------------------------------
+timezone : UTC
+--------------------------------------------------------------------------------
+0.00640178
+
+2019-06-20 00:10:36,346 INFO exited: system-timezone-wrapper (exit status 0; expected)
 
 ================================================================================
 SSH Details
@@ -273,24 +285,23 @@ home : /home/app-admin
 id : 500:500
 key fingerprints :
 dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6 (insecure key)
-password : 1RZuwErfrDA9kF3U
+password : uIEqLkiacCvxaN45
 password authentication : no
 rsa private key fingerprint :
 N/A
 rsa host key fingerprint :
-1e:7d:6d:38:0a:7b:7b:df:73:51:e9:d4:ba:84:ce:ba
+7d:6f:d2:e8:7e:84:dd:ff:98:05:5e:6f:35:66:51:53
 shell : /bin/bash
 sudo : ALL=(ALL) ALL
-timezone : UTC
 user : app-admin
 --------------------------------------------------------------------------------
-0.377392
+0.516901
 
 INFO: sshd-wrapper starting sshd
-2019-06-17 23:41:08,901 INFO exited: sshd-bootstrap (exit status 0; expected)
+2019-06-20 00:10:36,852 INFO exited: sshd-bootstrap (exit status 0; expected)
 Server listening on 0.0.0.0 port 22.
 Server listening on :: port 22.
-2019-06-17 23:41:13,893 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
+2019-06-20 00:10:41,872 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
 ```
 
 #### Environment Variables
@@ -383,16 +394,6 @@ On first run the SSH user is created with a the sudo rule `ALL=(ALL)  ALL` which
 ...
 ```
 
-##### SSH_TIMEZONE
-
-If you require a locale based system time zone `SSH_TIMEZONE` can be used when running the container.
-
-```
-...
-  --env "SSH_TIMEZONE=Europe/London" \
-...
-```
-
 ##### SSH_USER
 
 On first run the SSH user is created with the default username of "app-admin". If you require an alternative username `SSH_USER` can be used when running the container.
@@ -473,6 +474,16 @@ If set to a valid container file path the value will be read from the file - thi
   --env "SSH_USER_PRIVATE_KEY=$(
     base64 -i ${HOME}/.ssh/id_rsa
   )" \
+...
+```
+
+##### SYSTEM_TIMEZONE
+
+If you require a locale based system time zone `SYSTEM_TIMEZONE` can be used when running the container.
+
+```
+...
+  --env "SYSTEM_TIMEZONE=Europe/London" \
 ...
 ```
 
