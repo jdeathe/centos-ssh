@@ -23,6 +23,10 @@ RUN rpm --rebuilddb \
 		centos-release-scl-rh \
 		epel-release \
 		https://centos7.iuscommunity.org/ius-release.rpm \
+	&& yum -y install \
+			--setopt=tsflags=nodocs \
+			--disableplugin=fastestmirror \
+		inotify-tools-3.14-8.el7 \
 		openssh-clients-7.4p1-16.el7 \
 		openssh-server-7.4p1-16.el7 \
 		openssl-1.0.2k-16.el7 \
@@ -31,6 +35,7 @@ RUN rpm --rebuilddb \
 		sysvinit-tools-2.88-14.dsf.el7 \
 		yum-plugin-versionlock-1.1.31-50.el7 \
 	&& yum versionlock add \
+		inotify-tools \
 		openssh \
 		openssh-server \
 		openssh-clients \
@@ -83,9 +88,9 @@ RUN ln -sf \
 		-e "s~{{RELEASE_VERSION}}~${RELEASE_VERSION}~g" \
 		/etc/systemd/system/centos-ssh@.service \
 	&& chmod 644 \
-		/etc/{supervisord.conf,supervisord.d/sshd-{bootstrap,wrapper}.conf} \
+		/etc/{supervisord.conf,supervisord.d/{20-sshd-bootstrap,50-sshd-wrapper}.conf} \
 	&& chmod 700 \
-		/usr/{bin/healthcheck,sbin/{reaper,scmi,sshd-{bootstrap,wrapper}}}
+		/usr/{bin/healthcheck,sbin/{reaper,scmi,sshd-{bootstrap,wrapper},system-{timezone,timezone-wrapper}}}
 
 EXPOSE 22
 
@@ -94,16 +99,15 @@ EXPOSE 22
 # ------------------------------------------------------------------------------
 ENV \
 	ENABLE_REAPER="false" \
+	ENABLE_SSHD_BOOTSTRAP="true" \
+	ENABLE_SSHD_WRAPPER="true" \
+	ENABLE_SUPERVISOR_STDOUT="false" \
 	REAPER_TIMEOUT="0" \
 	SSH_AUTHORIZED_KEYS="" \
-	SSH_AUTOSTART_SSHD="true" \
-	SSH_AUTOSTART_SSHD_BOOTSTRAP="true" \
-	SSH_AUTOSTART_SUPERVISOR_STDOUT="false" \
 	SSH_CHROOT_DIRECTORY="%h" \
 	SSH_INHERIT_ENVIRONMENT="false" \
 	SSH_PASSWORD_AUTHENTICATION="false" \
 	SSH_SUDO="ALL=(ALL) ALL" \
-	SSH_TIMEZONE="UTC" \
 	SSH_USER="app-admin" \
 	SSH_USER_FORCE_SFTP="false" \
 	SSH_USER_HOME="/home/%u" \
@@ -111,7 +115,8 @@ ENV \
 	SSH_USER_PASSWORD="" \
 	SSH_USER_PASSWORD_HASHED="false" \
 	SSH_USER_PRIVATE_KEY="" \
-	SSH_USER_SHELL="/bin/bash"
+	SSH_USER_SHELL="/bin/bash" \
+	SYSTEM_TIMEZONE="UTC"
 
 # ------------------------------------------------------------------------------
 # Set image metadata

@@ -397,20 +397,6 @@ function __get_ssh_sudo ()
 	printf -- '%s' "${value}"
 }
 
-function __get_ssh_timezone ()
-{
-	local -r default_value="${1:-UTC}"
-
-	local value="${SSH_TIMEZONE}"
-
-	if ! __is_valid_ssh_timezone "${value}"
-	then
-		value="${default_value}"
-	fi
-
-	printf -- '%s' "${value}"
-}
-
 function __get_ssh_user ()
 {
 	local -r default_value="${1:-app-admin}"
@@ -586,7 +572,7 @@ function __get_ssh_user_uid ()
 function __get_timer_total ()
 {
 	local -r timer_end="$(
-		date +%s.%N
+		date -u +%s.%N
 	)"
 	local -r timer_start="${1}"
 
@@ -745,23 +731,6 @@ function __is_valid_ssh_sudo ()
 	return 1
 }
 
-function __is_valid_ssh_timezone ()
-{
-	local -r zone="${1}"
-
-	if [[ -z ${zone} ]]
-	then
-		return 1
-	fi
-
-	if [[ -f /usr/share/zoneinfo/${zone} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
 function __is_valid_ssh_user ()
 {
 	local -r safe_user='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
@@ -892,32 +861,6 @@ function __is_valid_ssh_user_shell ()
 	return 1
 }
 
-function __set_ssh_timezone ()
-{
-	local -r zone="${1:-UTC}"
-
-	if ! __is_valid_ssh_timezone "${zone}"
-	then
-		>&2 printf -- \
-			'ERROR: Unknown time zone: %s\n' \
-			"${zone}"
-		return 1
-	else
-		if [[ -f /etc/sysconfig/clock ]]
-		then
-			sed -i \
-				-e "s~^\(ZONE=\).*$~\1${zone}~" \
-				/etc/sysconfig/clock
-		fi
-
-		ln -sf \
-			/usr/share/zoneinfo/"${zone}" \
-			/etc/localtime
-
-		return "${?}"
-	fi
-}
-
 function __set_ssh_user_password ()
 {
 	local -r password_hashed="${2:-"$(
@@ -985,7 +928,7 @@ function main ()
 	local -r redacted_value="********"
 	local -r state_file="/var/lib/misc/sshd-bootstrap"
 	local -r timer_start="$(
-		date +%s.%N
+		date -u +%s.%N
 	)"
 
 	local env
@@ -993,7 +936,6 @@ function main ()
 		[SSH_CHROOT_DIRECTORY]=__is_valid_ssh_chroot_directory
 		[SSH_PASSWORD_AUTHENTICATION]=__is_valid_ssh_password_authentication
 		[SSH_SUDO]=__is_valid_ssh_sudo
-		[SSH_TIMEZONE]=__is_valid_ssh_timezone
 		[SSH_USER]=__is_valid_ssh_user
 		[SSH_USER_FORCE_SFTP]=__is_valid_ssh_user_force_sftp
 		[SSH_USER_HOME]=__is_valid_ssh_user_home
@@ -1012,7 +954,6 @@ function main ()
 	local ssh_key_fingerprints
 	local ssh_password_authentication
 	local ssh_sudo
-	local ssh_timezone
 	local ssh_user
 	local ssh_user_force_sftp
 	local ssh_user_groups="users,wheel"
@@ -1027,7 +968,6 @@ function main ()
 	local sshd_command="SSH"
 	local timer_total
 
-	# Parse options
 	while [[ "${#}" -gt 0 ]]
 	do
 		case "${1}" in
@@ -1061,412 +1001,397 @@ function main ()
 		EXIT INT TERM
 	__create_lock
 
+	ssh_authorized_keys="$(
+		__get_ssh_authorized_keys
+	)"
+	ssh_inherit_environment="$(
+		__get_ssh_inherit_environment
+	)"
+	ssh_password_authentication="$(
+		__get_ssh_password_authentication
+	)"
+	ssh_sudo="$(
+		__get_ssh_sudo
+	)"
+	ssh_user="$(
+		__get_ssh_user
+	)"
+	ssh_user_force_sftp="$(
+		__get_ssh_user_force_sftp
+	)"
 	ssh_user_home="$(
 		__get_ssh_user_home
 	)"
+	ssh_user_password_hashed="$(
+		__get_ssh_user_password_hashed
+	)"
+	ssh_user_password="${SSH_USER_PASSWORD:-"$(
+		__get_password "${password_length}"
+	)"}"
+	ssh_user_private_key="$(
+		__get_ssh_user_private_key
+	)"
+	ssh_user_shell="$(
+		__get_ssh_user_shell
+	)"
+	ssh_user_uid="$(
+		__get_ssh_user_uid
+	)"
+	ssh_user_gid="$(
+		__get_ssh_user_gid
+	)"
 
-	if [[ ! -d ${ssh_user_home}/.ssh ]]
+	if [[ ${ssh_inherit_environment} == true ]]
 	then
-		ssh_authorized_keys="$(
-			__get_ssh_authorized_keys
-		)"
-		ssh_inherit_environment="$(
-			__get_ssh_inherit_environment
-		)"
-		ssh_password_authentication="$(
-			__get_ssh_password_authentication
-		)"
-		ssh_sudo="$(
-			__get_ssh_sudo
-		)"
-		ssh_timezone="$(
-			__get_ssh_timezone
-		)"
-		ssh_user="$(
-			__get_ssh_user
-		)"
-		ssh_user_force_sftp="$(
-			__get_ssh_user_force_sftp
-		)"
-		ssh_user_password_hashed="$(
-			__get_ssh_user_password_hashed
-		)"
-		ssh_user_password="${SSH_USER_PASSWORD:-"$(
-			__get_password "${password_length}"
-		)"}"
-		ssh_user_private_key="$(
-			__get_ssh_user_private_key
-		)"
-		ssh_user_shell="$(
-			__get_ssh_user_shell
-		)"
-		ssh_user_uid="$(
-			__get_ssh_user_uid
-		)"
-		ssh_user_gid="$(
-			__get_ssh_user_gid
-		)"
+		env \
+		| grep -Ev "${env_exclude_pattern}" \
+			> /etc/environment
+	fi
 
-		if [[ ${ssh_inherit_environment} == true ]]
-		then
-			env \
-			| grep -Ev "${env_exclude_pattern}" \
-				> /etc/environment
-		fi
-
-		if [[ ${ssh_password_authentication} == true ]]
-		then
-			password_authentication="yes"
-
-			if [[ ${ssh_user} == root ]]
-			then
-				sed -i \
-					-e 's~^\(PasswordAuthentication \)no$~\1yes~g' \
-					-e 's~^\(PermitRootLogin \)no$~\1yes~g' \
-					/etc/ssh/sshd_config
-			else
-				sed -i \
-					-e 's~^\(PasswordAuthentication \)no$~\1yes~g' \
-					/etc/ssh/sshd_config
-			fi
-		elif [[ ${ssh_user} == root ]]
-		then
-			sed -i \
-				-e 's~^\(PermitRootLogin \)no$~\1without-password~g' \
-				/etc/ssh/sshd_config
-		fi
-
-		# Warn operator if any supplied environment variable values failed
-		# validation and have been set to a safe default.
-		if [[ ${verbose} == true ]]
-		then
-			for env in "${!env_validation_with_defaults[@]}"
-			do
-				if ! ${env_validation_with_defaults[${env}]} "${!env}"
-				then
-					printf -- \
-						'WARNING: Validation failed on %s - setting to default.\n' \
-						"${env}"
-				fi
-			done
-		fi
-
-		if ! __set_ssh_timezone "${ssh_timezone}"
-		then
-			>&2 printf -- \
-				'ERROR: Could not set timezone - aborting.\n'
-			exit 1
-		fi
-
-		$(
-			__generate_ssh_host_keys
-		) &
-		pids[0]="${!}"
+	if [[ ${ssh_password_authentication} == true ]]
+	then
+		password_authentication="yes"
 
 		if [[ ${ssh_user} == root ]]
 		then
-			chsh \
-				-s "${ssh_user_shell}" \
-				"${ssh_user}" \
-				&> /dev/null
-		else
-			# Create base directory for home
-			if [[ -n ${ssh_user_home%/*} ]] \
-				&& [[ ! -d ${ssh_user_home%/*} ]]
-			then
-				mkdir -pm 755 \
-					"${ssh_user_home%/*}"
-			fi
-
-			groupadd \
-				-f \
-				-g "${ssh_user_gid}" \
-				"${ssh_user}"
-
-			useradd \
-				-u "${ssh_user_uid}" \
-				-g "${ssh_user_gid}" \
-				-m \
-				-G "${ssh_user_groups}" \
-				-d "${ssh_user_home}" \
-				-s "${ssh_user_shell}" \
-				"${ssh_user}"
-
-			# Set root user password
-			$(
-				printf -- \
-					'%s:%s\n' \
-					"root" \
-					"$(
-						__get_password "${password_length}"
-					)" \
-				| chpasswd
-			) &
-			pids[1]="${!}"
-		fi
-
-		if ! __set_ssh_user_password "${ssh_user_password}"
-		then
-			>&2 printf -- \
-				'ERROR: Could not set password - aborting.\n'
-			exit 1
-		fi
-
-		if [[ ${ssh_user_force_sftp} == true ]]
-		then
-			sshd_command="SFTP"
-			ssh_sudo="N/A"
-			ssh_user_groups="users"
-			ssh_chroot_directory="$(
-				__get_ssh_chroot_directory
-			)"
-			ssh_chroot_directory_path="$(
-				__get_ssh_chroot_directory_path "${ssh_chroot_directory}"
-			)"
-
-			if [[ ! -d ${ssh_chroot_directory_path} ]] \
-				|| [[ ${ssh_chroot_directory_path} != "${ssh_user_home}" ]]
-			then
-				# ChrootDirectory like /chroot/%u or /home/chroot/%u
-				printf -v ssh_chroot_home_directory_path \
-					-- \
-					'%s%s' \
-					"${ssh_chroot_directory_path}" \
-					"${ssh_user_home}"
-				mkdir -pm 711 \
-					"${ssh_chroot_directory_path}"
-				mkdir -pm 755 \
-					"${ssh_chroot_home_directory_path}"
-			else
-				# ChrootDirectory %h
-				ssh_chroot_home_directory_path="${ssh_user_home}"
-				chmod 750 \
-					"${ssh_chroot_home_directory_path}"
-			fi
-
-			# Create a user writeable data directory if no other directories
-			# are mounted.
-			if ! grep -q '^d' <<< "$(
-					ls -l "${ssh_chroot_home_directory_path}"/
-				)"
-			then
-				# Make and set user permissions on new _data directory
-				mkdir -m 700 \
-					"${ssh_chroot_home_directory_path}"/_data
-				chown -R \
-					"${ssh_user}":"${ssh_user}" \
-					"${ssh_chroot_home_directory_path}"/_data
-			elif [[ -d ${ssh_chroot_home_directory_path}/_data ]]
-			then
-				# Set user permissions on _data directory where it exists
-				chmod 700 \
-					"${ssh_chroot_home_directory_path}"/_data
-				chown -R \
-					"${ssh_user}":"${ssh_user}" \
-					"${ssh_chroot_home_directory_path}"/_data
-			fi
-
-			# ChrootDirectory must be owned by root user
-			if [[ ${ssh_chroot_directory_path} != "${ssh_user_home}" ]]
-			then
-				chown \
-					root:root \
-					"${ssh_chroot_directory_path}"
-				chmod 711 \
-					"${ssh_chroot_directory_path}"
-			else
-				chown \
-					root:"${ssh_user}" \
-					"${ssh_chroot_directory_path}"
-			fi
-
-			# Add user specific sshd configuration
-			tee -a /etc/ssh/sshd_config > /dev/null <<-EOT
-				# Force SFTP
-				Match User ${ssh_user}
-				AllowTcpForwarding no
-				X11Forwarding no
-				ChrootDirectory ${ssh_chroot_directory}
-				ForceCommand internal-sftp
-			EOT
+			sed -i \
+				-e 's~^\(PasswordAuthentication \)no$~\1yes~g' \
+				-e 's~^\(PermitRootLogin \)no$~\1yes~g' \
+				/etc/ssh/sshd_config
 		else
 			sed -i \
-				-e '/# Force SFTP/,/ForceCommand internal-sftp/ { d; }' \
+				-e 's~^\(PasswordAuthentication \)no$~\1yes~g' \
 				/etc/ssh/sshd_config
 		fi
-
-		# SSH require files
-		mkdir -m 700 \
-			"${ssh_user_home}"/.ssh
-		touch \
-			"${ssh_user_home}"/.ssh/authorized_keys
-		chown -R \
-			"${ssh_user}":"${ssh_user}" \
-			"${ssh_user_home}"/.ssh
-		chmod 600 \
-			"${ssh_user_home}"/.ssh/authorized_keys
-
-		# Details output for SSH public key fingerprints
-		if [[ ${ssh_password_authentication} == true ]] \
-			&& [[ -z ${SSH_AUTHORIZED_KEYS} ]]
-		then
-			if [[ ${verbose} == true ]]
-			then
-				ssh_key_fingerprints="N/A"
-			fi
-		elif ! __is_valid_ssh_authorized_keys "${ssh_authorized_keys}"
-		then
-			if [[ ${verbose} == true ]]
-			then
-				printf -v ssh_key_fingerprints \
-					-- \
-					'%s\nUnable to populate %s/.ssh/authorized_key' \
-					"ERROR: Public key validation failed." \
-					"${ssh_user_home}"
-			fi
-		else
-			printf -- \
-				'%s\n' \
-				"${ssh_authorized_keys}" \
-				> "${ssh_user_home}"/.ssh/authorized_keys
-
-			if [[ ${verbose} == true ]]
-			then
-				ssh_key_fingerprints="$(
-					__get_ssh_authorized_key_fingerprints
-				)"
-			fi
-		fi
-
-		# Details output for SSH private key fingerprint
-		if [[ -z ${ssh_user_private_key} ]] \
-			|| [[ ${ssh_user_force_sftp} == true ]]
-		then
-			if [[ ${verbose} == true ]]
-			then
-				ssh_user_private_key_fingerprint="N/A"
-			fi
-		elif ! __is_valid_ssh_key "${ssh_user_private_key}"
-		then
-			if [[ ${verbose} == true ]]
-			then
-				printf -v ssh_user_private_key_fingerprint \
-					-- \
-					'%s\nUnable to populate %s/.ssh/id_rsa' \
-					"ERROR: Private key validation failed." \
-					"${ssh_user_home}"
-			fi
-		else
-			printf -- \
-				'%s\n' \
-				"${ssh_user_private_key}" \
-				> "${ssh_user_home}"/.ssh/id_rsa
-			chown \
-				"${ssh_user}":"${ssh_user}" \
-				"${ssh_user_home}"/.ssh/id_rsa
-			chmod 600 \
-				"${ssh_user_home}"/.ssh/id_rsa
-
-			if [[ ${verbose} == true ]]
-			then
-				ssh_user_private_key_fingerprint="$(
-					__get_ssh_key_fingerprint_hash_output \
-						"${ssh_user_private_key}"
-				)"
-			fi
-		fi
-
-		# Set sudo access for the wheel group
+	elif [[ ${ssh_user} == root ]]
+	then
 		sed -i \
-			-e "s~^%wheel\\t.*$~%wheel\\t${ssh_sudo}~g" \
-			/etc/sudoers
+			-e 's~^\(PermitRootLogin \)no$~\1without-password~g' \
+			/etc/ssh/sshd_config
+	fi
 
-		tee -a /etc/sudoers > /dev/null <<-EOT
+	# Warn operator if any supplied environment variable values failed
+	# validation and have been set to a safe default.
+	if [[ ${verbose} == true ]]
+	then
+		for env in "${!env_validation_with_defaults[@]}"
+		do
+			if ! ${env_validation_with_defaults[${env}]} "${!env}"
+			then
+				printf -- \
+					'WARNING: Validation failed on %s - setting to default.\n' \
+					"${env}"
+			fi
+		done
+	fi
 
-			# ${ssh_user}
-			Defaults:root secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
+	$(
+		__generate_ssh_host_keys
+	) &
+	pids[0]="${!}"
+
+	if [[ ${ssh_user} == root ]]
+	then
+		chsh \
+			-s "${ssh_user_shell}" \
+			"${ssh_user}" \
+			&> /dev/null
+	else
+		# Create base directory for home
+		if [[ -n ${ssh_user_home%/*} ]] \
+			&& [[ ! -d ${ssh_user_home%/*} ]]
+		then
+			mkdir -pm 755 \
+				"${ssh_user_home%/*}"
+		fi
+
+		groupadd \
+			-f \
+			-g "${ssh_user_gid}" \
+			"${ssh_user}"
+
+		useradd \
+			-u "${ssh_user_uid}" \
+			-g "${ssh_user_gid}" \
+			-m \
+			-G "${ssh_user_groups}" \
+			-d "${ssh_user_home}" \
+			-s "${ssh_user_shell}" \
+			"${ssh_user}"
+
+		# Set root user password
+		$(
+			printf -- \
+				'%s:%s\n' \
+				"root" \
+				"$(
+					__get_password "${password_length}"
+				)" \
+			| chpasswd
+		) &
+		pids[1]="${!}"
+	fi
+
+	if ! __set_ssh_user_password "${ssh_user_password}"
+	then
+		>&2 printf -- \
+			'ERROR: Could not set password - aborting.\n'
+		exit 1
+	fi
+
+	if [[ ${ssh_user_force_sftp} == true ]]
+	then
+		sshd_command="SFTP"
+		ssh_sudo="N/A"
+		ssh_user_groups="users"
+		ssh_chroot_directory="$(
+			__get_ssh_chroot_directory
+		)"
+		ssh_chroot_directory_path="$(
+			__get_ssh_chroot_directory_path "${ssh_chroot_directory}"
+		)"
+
+		if [[ ! -d ${ssh_chroot_directory_path} ]] \
+			|| [[ ${ssh_chroot_directory_path} != "${ssh_user_home}" ]]
+		then
+			# ChrootDirectory like /chroot/%u or /home/chroot/%u
+			printf -v ssh_chroot_home_directory_path \
+				-- \
+				'%s%s' \
+				"${ssh_chroot_directory_path}" \
+				"${ssh_user_home}"
+			mkdir -pm 711 \
+				"${ssh_chroot_directory_path}"
+			mkdir -pm 755 \
+				"${ssh_chroot_home_directory_path}"
+		else
+			# ChrootDirectory %h
+			ssh_chroot_home_directory_path="${ssh_user_home}"
+			chmod 750 \
+				"${ssh_chroot_home_directory_path}"
+		fi
+
+		# Create a user writeable data directory if no other directories
+		# are mounted.
+		if ! grep -q '^d' <<< "$(
+				ls -l "${ssh_chroot_home_directory_path}"/
+			)"
+		then
+			# Make and set user permissions on new _data directory
+			mkdir -m 700 \
+				"${ssh_chroot_home_directory_path}"/_data
+			chown -R \
+				"${ssh_user}":"${ssh_user}" \
+				"${ssh_chroot_home_directory_path}"/_data
+		elif [[ -d ${ssh_chroot_home_directory_path}/_data ]]
+		then
+			# Set user permissions on _data directory where it exists
+			chmod 700 \
+				"${ssh_chroot_home_directory_path}"/_data
+			chown -R \
+				"${ssh_user}":"${ssh_user}" \
+				"${ssh_chroot_home_directory_path}"/_data
+		fi
+
+		# ChrootDirectory must be owned by root user
+		if [[ ${ssh_chroot_directory_path} != "${ssh_user_home}" ]]
+		then
+			chown \
+				root:root \
+				"${ssh_chroot_directory_path}"
+			chmod 711 \
+				"${ssh_chroot_directory_path}"
+		else
+			chown \
+				root:"${ssh_user}" \
+				"${ssh_chroot_directory_path}"
+		fi
+
+		# Add user specific sshd configuration
+		tee -a /etc/ssh/sshd_config > /dev/null <<-EOT
+			# Force SFTP
+			Match User ${ssh_user}
+			AllowTcpForwarding no
+			X11Forwarding no
+			ChrootDirectory ${ssh_chroot_directory}
+			ForceCommand internal-sftp
 		EOT
+	else
+		sed -i \
+			-e '/# Force SFTP/,/ForceCommand internal-sftp/ { d; }' \
+			/etc/ssh/sshd_config
+	fi
 
-		# Wait for background processes - Host key generation
-		wait ${pids[0]}
+	# SSH require files
+	mkdir -m 700 \
+		"${ssh_user_home}"/.ssh
+	touch \
+		"${ssh_user_home}"/.ssh/authorized_keys
+	chown -R \
+		"${ssh_user}":"${ssh_user}" \
+		"${ssh_user_home}"/.ssh
+	chmod 600 \
+		"${ssh_user_home}"/.ssh/authorized_keys
+
+	# Details output for SSH public key fingerprints
+	if [[ ${ssh_password_authentication} == true ]] \
+		&& [[ -z ${SSH_AUTHORIZED_KEYS} ]]
+	then
+		if [[ ${verbose} == true ]]
+		then
+			ssh_key_fingerprints="N/A"
+		fi
+	elif ! __is_valid_ssh_authorized_keys "${ssh_authorized_keys}"
+	then
+		if [[ ${verbose} == true ]]
+		then
+			printf -v ssh_key_fingerprints \
+				-- \
+				'%s\nUnable to populate %s/.ssh/authorized_key' \
+				"ERROR: Public key validation failed." \
+				"${ssh_user_home}"
+		fi
+	else
+		printf -- \
+			'%s\n' \
+			"${ssh_authorized_keys}" \
+			> "${ssh_user_home}"/.ssh/authorized_keys
 
 		if [[ ${verbose} == true ]]
 		then
-			ssh_host_key_fingerprint_rsa="$(
-				__get_ssh_host_key_fingerprint rsa
+			ssh_key_fingerprints="$(
+				__get_ssh_authorized_key_fingerprints
 			)"
 		fi
+	fi
 
-		# Wait for background processes - Set password for root user
-		if [[ -n ${pids[1]+isset} ]]
+	# Details output for SSH private key fingerprint
+	if [[ -z ${ssh_user_private_key} ]] \
+		|| [[ ${ssh_user_force_sftp} == true ]]
+	then
+		if [[ ${verbose} == true ]]
 		then
-			wait ${pids[1]}
+			ssh_user_private_key_fingerprint="N/A"
 		fi
-
-		# Only show user password if auto-generated and password is required
-		# for password authentication or sudo.
-		if [[ -n ${SSH_USER_PASSWORD} ]]
+	elif ! __is_valid_ssh_key "${ssh_user_private_key}"
+	then
+		if [[ ${verbose} == true ]]
 		then
-			ssh_user_password="${redacted_value}"
-		elif [[ ${ssh_password_authentication} == false ]] \
-			&& [[ ${ssh_user_force_sftp} == true ]]
-		then
-			ssh_user_password="${redacted_value}"
-		elif [[ ${ssh_password_authentication} == false ]] \
-			&& [[ ${ssh_user} != root ]] \
-			&& __is_sudo_no_password_all "${ssh_sudo}"
-		then
-			ssh_user_password="${redacted_value}"
-		elif [[ ${ssh_password_authentication} == false ]] \
-			&& [[ ${ssh_user} == root ]]
-		then
-			ssh_user_password="${redacted_value}"
+			printf -v ssh_user_private_key_fingerprint \
+				-- \
+				'%s\nUnable to populate %s/.ssh/id_rsa' \
+				"ERROR: Private key validation failed." \
+				"${ssh_user_home}"
 		fi
+	else
+		printf -- \
+			'%s\n' \
+			"${ssh_user_private_key}" \
+			> "${ssh_user_home}"/.ssh/id_rsa
+		chown \
+			"${ssh_user}":"${ssh_user}" \
+			"${ssh_user_home}"/.ssh/id_rsa
+		chmod 600 \
+			"${ssh_user_home}"/.ssh/id_rsa
 
 		if [[ ${verbose} == true ]]
 		then
-			timer_total="$(
-				__get_timer_total \
-					"${timer_start}"
+			ssh_user_private_key_fingerprint="$(
+				__get_ssh_key_fingerprint_hash_output \
+					"${ssh_user_private_key}"
 			)"
-
-			cat <<-EOT
-
-				================================================================================
-				${sshd_command} Details
-				--------------------------------------------------------------------------------
-				chroot path : ${ssh_chroot_directory_path}
-				home : ${ssh_user_home}
-				id : ${ssh_user_uid}:${ssh_user_gid}
-				key fingerprints :
-				${ssh_key_fingerprints}
-				password : ${ssh_user_password}
-				password authentication : ${password_authentication}
-				rsa private key fingerprint :
-				${ssh_user_private_key_fingerprint}
-				rsa host key fingerprint :
-				${ssh_host_key_fingerprint_rsa}
-				shell : ${ssh_user_shell}
-				sudo : ${ssh_sudo}
-				timezone : ${ssh_timezone}
-				user : ${ssh_user}
-				--------------------------------------------------------------------------------
-				${timer_total}
-
-			EOT
-		elif [[ ${ssh_user_password} != "${redacted_value}" ]]
-		then
-			# Mininal ouput when required
-			cat <<-EOT
-
-				================================================================================
-				${sshd_command} Details
-				--------------------------------------------------------------------------------
-				password : ${ssh_user_password}
-				--------------------------------------------------------------------------------
-
-			EOT
 		fi
+	fi
+
+	# Set sudo access for the wheel group
+	sed -i \
+		-e "s~^%wheel\\t.*$~%wheel\\t${ssh_sudo}~g" \
+		/etc/sudoers
+
+	tee -a /etc/sudoers > /dev/null <<-EOT
+
+		# ${ssh_user}
+		Defaults:root secure_path = /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin
+	EOT
+
+	# Wait for background processes - Host key generation
+	wait ${pids[0]}
+
+	if [[ ${verbose} == true ]]
+	then
+		ssh_host_key_fingerprint_rsa="$(
+			__get_ssh_host_key_fingerprint rsa
+		)"
+	fi
+
+	# Wait for background processes - Set password for root user
+	if [[ -n ${pids[1]+isset} ]]
+	then
+		wait ${pids[1]}
+	fi
+
+	# Only show user password if auto-generated and password is required
+	# for password authentication or sudo.
+	if [[ -n ${SSH_USER_PASSWORD} ]]
+	then
+		ssh_user_password="${redacted_value}"
+	elif [[ ${ssh_password_authentication} == false ]] \
+		&& [[ ${ssh_user_force_sftp} == true ]]
+	then
+		ssh_user_password="${redacted_value}"
+	elif [[ ${ssh_password_authentication} == false ]] \
+		&& [[ ${ssh_user} != root ]] \
+		&& __is_sudo_no_password_all "${ssh_sudo}"
+	then
+		ssh_user_password="${redacted_value}"
+	elif [[ ${ssh_password_authentication} == false ]] \
+		&& [[ ${ssh_user} == root ]]
+	then
+		ssh_user_password="${redacted_value}"
+	fi
+
+	if [[ ${verbose} == true ]]
+	then
+		timer_total="$(
+			__get_timer_total \
+				"${timer_start}"
+		)"
+
+		cat <<-EOT
+
+			================================================================================
+			${sshd_command} Details
+			--------------------------------------------------------------------------------
+			chroot path : ${ssh_chroot_directory_path}
+			home : ${ssh_user_home}
+			id : ${ssh_user_uid}:${ssh_user_gid}
+			key fingerprints :
+			${ssh_key_fingerprints}
+			password : ${ssh_user_password}
+			password authentication : ${password_authentication}
+			rsa private key fingerprint :
+			${ssh_user_private_key_fingerprint}
+			rsa host key fingerprint :
+			${ssh_host_key_fingerprint_rsa}
+			shell : ${ssh_user_shell}
+			sudo : ${ssh_sudo}
+			user : ${ssh_user}
+			--------------------------------------------------------------------------------
+			${timer_total}
+
+		EOT
+	elif [[ ${ssh_user_password} != "${redacted_value}" ]]
+	then
+		# Mininal ouput when required
+		cat <<-EOT
+
+			================================================================================
+			${sshd_command} Details
+			--------------------------------------------------------------------------------
+			password : ${ssh_user_password}
+			--------------------------------------------------------------------------------
+
+		EOT
 	fi
 
 	# Trigger cleanup trap.

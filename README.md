@@ -16,7 +16,7 @@ The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` 
 
 The Dockerfile can be used to build a base image that is the bases for several other docker images.
 
-Included in the build are the [SCL](https://www.softwarecollections.org/), [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/) and [vim-minimal](http://www.vim.org/) are along with python-setuptools, [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
+Included in the build are the [SCL](https://www.softwarecollections.org/), [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [inotify-tools](https://github.com/rvoicilas/inotify-tools/wiki), [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/), [vim-minimal](http://www.vim.org/), python-setuptools, [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
 
 [Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run.
 
@@ -254,14 +254,28 @@ $ docker logs ssh.1
 The output of the logs will show the auto-generated password for the user specified by `SSH_USER` on first run.
 
 ```
-2019-06-09 10:20:09,504 WARN No file matches via include "/etc/supervisord.d/*.ini"
-2019-06-09 10:20:09,504 INFO Included extra file "/etc/supervisord.d/00-supervisor_stdout.conf" during parsing
-2019-06-09 10:20:09,504 INFO Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
-2019-06-09 10:20:09,504 INFO Included extra file "/etc/supervisord.d/sshd-wrapper.conf" during parsing
-2019-06-09 10:20:09,504 INFO Set uid to user 0 succeeded
-2019-06-09 10:20:09,506 INFO supervisord started with pid 1
-2019-06-09 10:20:10,510 INFO spawned: 'sshd-bootstrap' with pid 9
-2019-06-09 10:20:10,513 INFO spawned: 'sshd-wrapper' with pid 10
+2019-06-20 00:10:35,306 WARN No file matches via include "/etc/supervisord.d/*.ini"
+2019-06-20 00:10:35,306 INFO Included extra file "/etc/supervisord.d/00-supervisor_stdout.conf" during parsing
+2019-06-20 00:10:35,307 INFO Included extra file "/etc/supervisord.d/10-system-timezone-wrapper.conf" during parsing
+2019-06-20 00:10:35,307 INFO Included extra file "/etc/supervisord.d/20-sshd-bootstrap.conf" during parsing
+2019-06-20 00:10:35,307 INFO Included extra file "/etc/supervisord.d/50-sshd-wrapper.conf" during parsing
+2019-06-20 00:10:35,307 INFO Set uid to user 0 succeeded
+2019-06-20 00:10:35,310 INFO supervisord started with pid 1
+2019-06-20 00:10:36,315 INFO spawned: 'system-timezone-wrapper' with pid 9
+2019-06-20 00:10:36,318 INFO spawned: 'sshd-bootstrap' with pid 10
+2019-06-20 00:10:36,320 INFO spawned: 'sshd-wrapper' with pid 11
+INFO: sshd-wrapper waiting on sshd-bootstrap
+2019-06-20 00:10:36,328 INFO success: system-timezone-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-06-20 00:10:36,328 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+
+================================================================================
+System Time Zone Details
+--------------------------------------------------------------------------------
+timezone : UTC
+--------------------------------------------------------------------------------
+0.00640178
+
+2019-06-20 00:10:36,346 INFO exited: system-timezone-wrapper (exit status 0; expected)
 
 ================================================================================
 SSH Details
@@ -271,30 +285,43 @@ home : /home/app-admin
 id : 500:500
 key fingerprints :
 dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6 (insecure key)
-password : buSoRzQB3dyXw67L
+password : uIEqLkiacCvxaN45
 password authentication : no
 rsa private key fingerprint :
 N/A
 rsa host key fingerprint :
-5d:29:c0:f0:ee:4b:6a:d5:fe:76:a4:1d:1e:c4:e8:4d
+7d:6f:d2:e8:7e:84:dd:ff:98:05:5e:6f:35:66:51:53
 shell : /bin/bash
 sudo : ALL=(ALL) ALL
-timezone : UTC
 user : app-admin
 --------------------------------------------------------------------------------
-0.355662
+0.516901
 
-2019-06-09 10:20:10,880 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-2019-06-09 10:20:10,880 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-2019-06-09 10:20:10,883 INFO exited: sshd-bootstrap (exit status 0; expected)
 INFO: sshd-wrapper starting sshd
+2019-06-20 00:10:36,852 INFO exited: sshd-bootstrap (exit status 0; expected)
 Server listening on 0.0.0.0 port 22.
 Server listening on :: port 22.
+2019-06-20 00:10:41,872 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
 ```
 
 #### Environment Variables
 
 There are several environmental variables defined at runtime these allow the operator to customise the running container.
+
+##### ENABLE_SSHD_BOOTSTRAP & ENABLE_SSHD_WRAPPER
+
+It may be desirable to prevent the startup of the sshd-bootstrap script and/or sshd daemon. For example, when using an image built from this Dockerfile as the source for another Dockerfile you could disable both sshd-booststrap and sshd from startup by setting `ENABLE_SSHD_BOOTSTRAP` and `ENABLE_SSHD_WRAPPER` to `false`. The benefit of this is to reduce the number of running processes in the final container.
+
+```
+...
+  --env "ENABLE_SSHD_BOOTSTRAP=false" \
+  --env "ENABLE_SSHD_WRAPPER=false" \
+...
+```
+
+##### ENABLE_SUPERVISOR_STDOUT
+
+This image has `supervisor_stdout` installed which can be used to allow a process controlled by supervisord to send output to both a log file and stdout. It is recommended to simply output to stdout in order to reduce the number of running processes to a minimum. Setting `ENABLE_SUPERVISOR_STDOUT` to "false" will prevent the startup of `supervisor_stdout`. Where an image requires this feature for its logging output `ENABLE_SUPERVISOR_STDOUT` should be set to "true".
 
 ##### SSH_AUTHORIZED_KEYS
 
@@ -326,21 +353,6 @@ Using `SSH_AUTHORIZED_KEYS` with a container file path allows for the authorized
   --env "SSH_AUTHORIZED_KEYS=/var/run/config/authorized_keys"
 ...
 ```
-
-##### SSH_AUTOSTART_SSHD & SSH_AUTOSTART_SSHD_BOOTSTRAP
-
-It may be desirable to prevent the startup of the sshd daemon and/or sshd-bootstrap script. For example, when using an image built from this Dockerfile as the source for another Dockerfile you could disable both sshd and sshd-booststrap from startup by setting `SSH_AUTOSTART_SSHD` and `SSH_AUTOSTART_SSHD_BOOTSTRAP` to `false`. The benefit of this is to reduce the number of running processes in the final container.
-
-```
-...
-  --env "SSH_AUTOSTART_SSHD=false" \
-  --env "SSH_AUTOSTART_SSHD_BOOTSTRAP=false" \
-...
-```
-
-##### SSH_AUTOSTART_SUPERVISOR_STDOUT
-
-This image has `supervisor_stdout` installed which can be used to allow a process controlled by supervisord to send output to both a log file and stdout. It is recommended to simply output to stdout in order to reduce the number of running processes to a minimum. Setting `SSH_AUTOSTART_SUPERVISOR_STDOUT` to "false" will prevent the startup of `supervisor_stdout`. Where an image requires this feature for its logging output `SSH_AUTOSTART_SUPERVISOR_STDOUT` should be set to "true".
 
 ##### SSH_CHROOT_DIRECTORY
 
@@ -379,16 +391,6 @@ On first run the SSH user is created with a the sudo rule `ALL=(ALL)  ALL` which
 ```
 ...
   --env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
-...
-```
-
-##### SSH_TIMEZONE
-
-If you require a locale based system time zone `SSH_TIMEZONE` can be used when running the container.
-
-```
-...
-  --env "SSH_TIMEZONE=Europe/London" \
 ...
 ```
 
@@ -472,6 +474,16 @@ If set to a valid container file path the value will be read from the file - thi
   --env "SSH_USER_PRIVATE_KEY=$(
     base64 -i ${HOME}/.ssh/id_rsa
   )" \
+...
+```
+
+##### SYSTEM_TIMEZONE
+
+If you require a locale based system time zone `SYSTEM_TIMEZONE` can be used when running the container.
+
+```
+...
+  --env "SYSTEM_TIMEZONE=Europe/London" \
 ...
 ```
 

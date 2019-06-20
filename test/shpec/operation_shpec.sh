@@ -1693,7 +1693,7 @@ function test_custom_ssh_configuration ()
 			docker run \
 				--detach \
 				--name ssh.1 \
-				--env "SSH_TIMEZONE=Europe/London" \
+				--env "SYSTEM_TIMEZONE=Europe/London" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
@@ -1741,7 +1741,7 @@ function test_custom_ssh_configuration ()
 			docker run \
 				--detach \
 				--name ssh.1 \
-				--env "SSH_AUTOSTART_SUPERVISOR_STDOUT=true" \
+				--env "ENABLE_SUPERVISOR_STDOUT=true" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
@@ -1764,7 +1764,7 @@ function test_custom_ssh_configuration ()
 			docker run \
 				--detach \
 				--name ssh.1 \
-				--env "SSH_AUTOSTART_SUPERVISOR_STDOUT=false" \
+				--env "ENABLE_SUPERVISOR_STDOUT=false" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
@@ -1787,7 +1787,7 @@ function test_custom_ssh_configuration ()
 			docker run \
 				--detach \
 				--name ssh.1 \
-				--env "SSH_AUTOSTART_SSHD_BOOTSTRAP=false" \
+				--env "ENABLE_SSHD_BOOTSTRAP=false" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
@@ -1811,7 +1811,7 @@ function test_custom_ssh_configuration ()
 			docker run \
 				--detach \
 				--name ssh.1 \
-				--env "SSH_AUTOSTART_SSHD=false" \
+				--env "ENABLE_SSHD_WRAPPER=false" \
 				--publish ${DOCKER_PORT_MAP_TCP_22}:22 \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
@@ -2090,8 +2090,8 @@ function test_custom_sftp_configuration ()
 			docker run \
 				--detach \
 				--name www-data.pool-1.1.1 \
-				--env "SSH_AUTOSTART_SSHD=false" \
-				--env "SSH_AUTOSTART_SSHD_BOOTSTRAP=true" \
+				--env "ENABLE_SSHD_WRAPPER=false" \
+				--env "ENABLE_SSHD_BOOTSTRAP=true" \
 				--volume www-data.pool-1.1.1:/var/www \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
@@ -2283,7 +2283,7 @@ function test_healthcheck ()
 			docker run \
 				--detach \
 				--name ssh.1 \
-				--env SSH_AUTOSTART_SSHD=false \
+				--env ENABLE_SSHD_WRAPPER=false \
 				jdeathe/centos-ssh:latest \
 			&> /dev/null
 
