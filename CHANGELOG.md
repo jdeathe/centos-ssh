@@ -33,6 +33,7 @@ Summary of release changes for Version 2 - CentOS-7
 - Fixes make clean error thrown when removing exited containers.
 - Removes support for long image tags (i.e. centos-7-2.x.x).
 - Removes system time zone setup from `sshd-bootstrap`.
+- Removes redundant directory test from `sshd-bootstrap`; state file ensures it's a one-shot process.
 
 ### 2.5.1 - 2019-02-28
 
