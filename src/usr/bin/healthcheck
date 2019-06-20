@@ -29,10 +29,48 @@ function __get_ssh_user ()
 	printf -- '%s' "${value}"
 }
 
+function __get_system_timezone ()
+{
+	local -r default_value="${1:-UTC}"
+
+	local value="${SYSTEM_TIMEZONE}"
+
+	if ! __is_valid_system_timezone "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __is_valid_system_timezone ()
+{
+	__is_valid_zone "${@}"
+}
+
+function __is_valid_zone ()
+{
+	local zone="${1}"
+
+	if [[ -n ${zone} ]] \
+		&& [[ -f /usr/share/zoneinfo/${zone} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
 function main ()
 {
+	local -r system_timezone="$(
+		__get_system_timezone
+	)"
 	local -r user="$(
 		__get_ssh_user
+	)"
+	local -r zone="$(
+		system-timezone -qq
 	)"
 
 	if ! ps axo command | grep -qE '^/usr/bin/python /usr/bin/supervisord'
@@ -43,7 +81,15 @@ function main ()
 		exit 1
 	fi
 
-	if [[ ${SSH_AUTOSTART_SSHD_BOOTSTRAP} == true ]]
+	if [[ ${system_timezone} != "${zone}" ]]
+	then
+		>&2 printf -- \
+			'%s\n' \
+			"system-timezone zone mismatch."
+		exit 1
+	fi
+
+	if [[ ${ENABLE_SSHD_BOOTSTRAP} == true ]]
 	then
 		if [[ -e /var/lock/subsys/sshd-bootstrap ]]
 		then
@@ -62,7 +108,7 @@ function main ()
 		fi
 	fi
 
-	if [[ ${SSH_AUTOSTART_SSHD} == true ]]
+	if [[ ${ENABLE_SSHD_WRAPPER} == true ]]
 	then
 		if ! ps axo command | grep -qE '^/usr/sbin/sshd -D' \
 			|| [[ ! -s /var/run/sshd.pid ]]

@@ -4,6 +4,37 @@
 
 Summary of release changes for Version 2 - CentOS-7
 
+### 2.6.0 - 2019-06-20
+
+- Deprecates `SSH_AUTOSTART_SSHD`, replaced with `ENABLE_SSHD_WRAPPER`.
+- Deprecates `SSH_AUTOSTART_SSHD_BOOTSTRAP`, replaced with `ENABLE_SSHD_BOOTSTRAP`.
+- Deprecates `SSH_AUTOSTART_SUPERVISOR_STDOUT`, replaced with `ENABLE_SUPERVISOR_STDOUT`.
+- Deprecates `SSH_TIMEZONE`, replaced with `SYSTEM_TIMEZONE`.
+- Updates source tag to CentOS 7.6.1810.
+- Updates supervisord to 4.0.3.
+- Updates default value of `ENABLE_SUPERVISOR_STDOUT` to false.
+- Updates `sshd-bootstrap` and `sshd-wrapper` configuration to send error log output to stderr.
+- Updates order of values in SSH/SFTP Details log output.
+- Updates bootstrap timer to use UTC date timestamps.
+- Updates bootstrap supervisord configuration file/priority to `20-sshd-bootstrap.conf`/`20`.
+- Updates wrapper supervisord configuration file/priority to `50-sshd-wrapper.conf`/`50`.
+- Adds reference to `python-setuptools` in README; removed in error.
+- Adds `inspect`, `reload` and `top` Makefile targets.
+- Adds improved lock/state file implementation in bootstrap and wrapper scripts.
+- Adds improved `clean` Makefile target; includes exited containers and dangling images.
+- Adds improved wait on bootstrap completion in wrapper script.
+- Adds `system-timezone` and `system-timezone-wrapper` to handle system time zone setup.
+- Adds system time zone validation to healthcheck.
+- Fixes port incrementation failures when installing systemd units via `scmi`.
+- Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
+- Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.
+- Fixes use of printf binary instead of builtin in systemd unit files.
+- Fixes docker host connection status check in Makefile.
+- Fixes make clean error thrown when removing exited containers.
+- Removes support for long image tags (i.e. centos-7-2.x.x).
+- Removes system time zone setup from `sshd-bootstrap`.
+- Removes redundant directory test from `sshd-bootstrap`; state file ensures it's a one-shot process.
+
 ### 2.5.1 - 2019-02-28
 
 - Deprecates use of `supervisor_stdout` - the default value of `SSH_AUTOSTART_SUPERVISOR_STDOUT` will be switched to "false" in a future release.
