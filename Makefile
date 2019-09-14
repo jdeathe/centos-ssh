@@ -45,6 +45,7 @@ Targets:
   stop                      Stop the container when in a running state.
   terminate                 Unpause, stop and remove the container.
   test                      Run all test cases.
+  test-setup                Install test dependencies.
   top [ps OPTIONS]          Display the running processes of the container.
   unpause                   Unpause the container when in a paused state.
 
@@ -161,6 +162,7 @@ endef
 	_require-docker-image-tag \
 	_require-docker-release-tag \
 	_require-package-path \
+	_require-root \
 	_test-prerequisites \
 	_usage \
 	all \
@@ -191,6 +193,7 @@ endef
 	stop \
 	terminate \
 	test \
+	test-setup \
 	top \
 	unpause
 
@@ -365,9 +368,17 @@ _require-package-path:
 		exit 1; \
 	fi
 
+_require-root:
+	@ if [[ $${EUID} -ne 0 ]]; \
+	then \
+	>&2 printf -- '%sMust be run as root\n' \
+		"$(PREFIX_STEP_NEGATIVE)"; \
+	exit 1; \
+	fi
+
 _test-prerequisites:
 ifeq ($(shpec),)
-	$(error "Please install shpec.")
+	$(error "Please install shpec. Try: DOCKER_NAME=$(DOCKER_NAME) make test-setup")
 endif
 
 _usage:
@@ -979,6 +990,18 @@ test: \
 		"$(PREFIX_STEP)" \
 		"Functional test"
 	@ SHPEC_ROOT=$(SHPEC_ROOT) $(shpec)
+
+test-setup: \
+	_require-root
+	@ printf -- '%s%s\n' \
+		"$(PREFIX_STEP)" \
+		"Installing shpec"
+	@ bash -c "$$(curl -LSs \
+			https://raw.githubusercontent.com/rylnd/shpec/master/install.sh \
+		)"
+	@ ln -sf \
+		/usr/local/bin/shpec \
+		/usr/bin/shpec
 
 unpause: \
 	_prerequisites \

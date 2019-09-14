@@ -1,8 +1,12 @@
 # Change Log
 
-## centos-6
+## 1 - centos-6
 
-Summary of release changes for Version 1 - CentOS-6
+Summary of release changes.
+
+### 1.11.1 - Unreleased
+
+- Adds improved test workflow; added `test-setup` target to Makefile.
 
 ### 1.11.0 - 2019-06-20
 
