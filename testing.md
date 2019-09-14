@@ -2,20 +2,12 @@
 
 ## Functional
 
-### Installation
-
 The functional test cases are written in [shpec](https://github.com/rylnd/shpec). 
 
-To run the tests install shpec with the installer.
+To run the tests use the `test` Makefile target after building.
+
+> *Note:* You might need to run via sudo if your environment requires root privileges to run docker.
 
 ```
-$ bash -c "$(curl -L https://raw.github.com/rylnd/shpec/master/install.sh)"
-```
-
-### Usage
-
-To manually run the test cases, from the project root:
-
-```
-$ env SHPEC_ROOT=test/shpec shpec
+$ make build test
 ```

@@ -1,8 +1,12 @@
 # Change Log
 
-## centos-7
+## 2 - centos-7
 
-Summary of release changes for Version 2 - CentOS-7
+Summary of release changes.
+
+### 2.6.1 - Unreleased
+
+- Adds improved test workflow; added `test-setup` target to Makefile.
 
 ### 2.6.0 - 2019-06-20
 
