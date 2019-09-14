@@ -50,6 +50,7 @@ RUN rpm --rebuilddb \
 		sysvinit-tools \
 	&& yum clean all \
 	&& easy_install \
+		'meld3 == 1.0.2' \
 		'supervisor == 3.4.0' \
 		'supervisor-stdout == 0.1.1' \
 	&& mkdir -p \
