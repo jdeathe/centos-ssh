@@ -6,8 +6,10 @@ Summary of release changes.
 
 ### 1.11.1 - Unreleased
 
+- Updates `test/health_status` helper script with for consistency.
 - Adds improved test workflow; added `test-setup` target to Makefile.
 - Fixes build error due to supervisord dependency resolution for `meld3`; pin to `1.0.2`.
+- Fixes validation failure of 0 second --timeout value in `test/health_status`.
 
 ### 1.11.0 - 2019-06-20
 
