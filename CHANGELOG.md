@@ -7,6 +7,8 @@ Summary of release changes.
 ### 2.6.1 - Unreleased
 
 - Adds improved test workflow; added `test-setup` target to Makefile.
+- Updates `test/health_status` helper script with for consistency.
+- Fixes validation failure of 0 second --timeout value in `test/health_status`.
 
 ### 2.6.0 - 2019-06-20
 
