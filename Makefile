@@ -25,10 +25,11 @@ Targets:
   images                    Show container's image details.
   load                      Loads from the distribution package. Requires
                             DOCKER_IMAGE_TAG variable.
-  logs                      Display log output from the running container.
-  logs-delayed              Display log output from the running container after
-                            backing off for STARTUP_TIME seconds. This can be
-                            necessary when chaining make targets together.
+  logs [OPTIONS]            Display log output from the container.
+  logsdef                   Display log output from the container deferred for
+                            STARTUP_TIME seconds. This will work in a chain
+                            unlike the logs target.
+  logs-delayed              [DEPRECATED] Replaced with logsdef.
   pause                     Pause the running container.
   pull                      Pull the release image from the registry. Requires
                             the DOCKER_IMAGE_TAG variable.
@@ -178,6 +179,7 @@ endef
 	images \
 	load \
 	logs \
+	logsdef \
 	logs-delayed \
 	pause \
 	pull \
@@ -592,13 +594,19 @@ install: | \
 logs: \
 	_prerequisites \
 	_require-docker-container
-	@ $(docker) logs $(DOCKER_NAME)
+	@ $(docker) logs \
+		$(filter-out $@, $(MAKECMDGOALS)) \
+		$(DOCKER_NAME)
+%:; @:
 
-logs-delayed: \
+logsdef: \
 	_prerequisites \
 	_require-docker-container
 	@ sleep $(STARTUP_TIME)
 	@ $(MAKE) logs
+
+logs-delayed: \
+	logsdef
 
 load: \
 	_prerequisites \
