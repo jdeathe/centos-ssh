@@ -10,6 +10,7 @@ Summary of release changes.
 - Updates supervisord to 4.0.4.
 - Updates `test/health_status` helper script with for consistency.
 - Updates Makefile target `logs` to accept `[OPTIONS]` (e.g `make -- logs -ft`).
+- Updates `healthcheck` script; state file existence confirms bootstrap completion.
 - Adds improved test workflow; added `test-setup` target to Makefile.
 - Adds Makefile target `logsdef` to handle deferred logs output within a target chain.
 - Fixes validation failure of 0 second --timeout value in `test/health_status`.
