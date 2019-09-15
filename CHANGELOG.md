@@ -14,6 +14,7 @@ Summary of release changes.
 - Updates `system-timezone-wrapper` to improve timer accuracy.
 - Adds improved test workflow; added `test-setup` target to Makefile.
 - Adds Makefile target `logsdef` to handle deferred logs output within a target chain.
+- Adds exec proxy function to `sshd-wrapper` used to pass through nice.
 - Fixes validation failure of 0 second --timeout value in `test/health_status`.
 
 ### 2.6.0 - 2019-06-20
