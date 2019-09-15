@@ -43,7 +43,7 @@ RUN rpm --rebuilddb \
 		yum-plugin-versionlock \
 	&& yum clean all \
 	&& easy_install \
-		'supervisor == 4.0.3' \
+		'supervisor == 4.0.4' \
 		'supervisor-stdout == 0.1.1' \
 	&& mkdir -p \
 		/var/log/supervisor/ \

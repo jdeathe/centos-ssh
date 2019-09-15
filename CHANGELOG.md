@@ -7,6 +7,7 @@ Summary of release changes.
 ### 2.6.1 - Unreleased
 
 - Deprecate Makefile target `logs-delayed`; replaced with `logsdef`.
+- Updates supervisord to 4.0.4.
 - Updates `test/health_status` helper script with for consistency.
 - Updates Makefile target `logs` to accept `[OPTIONS]` (e.g `make -- logs -ft`).
 - Adds improved test workflow; added `test-setup` target to Makefile.
