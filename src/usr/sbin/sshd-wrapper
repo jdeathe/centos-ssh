@@ -33,6 +33,14 @@ function __get_options ()
 		"${options}"
 }
 
+function __get_proxy ()
+{
+	printf -- \
+		'%s -n %s' \
+		"${nice}" \
+		"${niceness}"
+}
+
 function main ()
 {
 	local -r bin="/usr/sbin/sshd"
@@ -43,6 +51,7 @@ function main ()
 	local -r niceness="10"
 
 	local options
+	local proxy
 	local verbose="false"
 
 	while [[ "${#}" -gt 0 ]]
@@ -69,6 +78,9 @@ function main ()
 
 	options="$(
 		__get_options
+	)"
+	proxy="$(
+		__get_proxy
 	)"
 
 	if [[ ${verbose} == true ]]
@@ -113,8 +125,7 @@ function main ()
 	trap - \
 		EXIT INT TERM
 
-	exec ${nice} \
-		-n ${niceness} \
+	exec ${proxy} \
 		${bin} \
 		${options}
 }
