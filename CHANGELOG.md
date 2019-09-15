@@ -9,6 +9,7 @@ Summary of release changes.
 - Deprecate Makefile target `logs-delayed`; replaced with `logsdef`.
 - Updates `test/health_status` helper script with for consistency.
 - Updates Makefile target `logs` to accept `[OPTIONS]` (e.g `make -- logs -ft`).
+- Updates `healthcheck` script; state file existence confirms bootstrap completion.
 - Adds improved test workflow; added `test-setup` target to Makefile.
 - Adds Makefile target `logsdef` to handle deferred logs output within a target chain.
 - Fixes build error due to supervisord dependency resolution for `meld3`; pin to `1.0.2`.
