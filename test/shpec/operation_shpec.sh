@@ -2275,7 +2275,7 @@ function test_healthcheck ()
 			end
 		end
 
-		describe "Autostart false"
+		describe "Disabled wrapper"
 			__terminate_container \
 				ssh.1 \
 			&> /dev/null
@@ -2331,15 +2331,48 @@ function test_healthcheck ()
 					"${health_status}" \
 					"✓ healthy"
 			end
+		end
+
+		describe "Bootstrap failure"
+			__terminate_container \
+				ssh.1 \
+			&> /dev/null
+
+			docker run \
+				--detach \
+				--name ssh.1 \
+				jdeathe/centos-ssh:latest \
+			&> /dev/null
+
+			docker exec -t \
+				ssh.1 \
+				bash -c "sed -i \
+					-e 's~^main .*~sleep infinity~' \
+					/usr/sbin/sshd-bootstrap"
+
+			events_since_timestamp="$(
+				date +%s
+			)"
+
+			container_id="$(
+				docker ps \
+					--quiet \
+					--filter "name=ssh.1"
+			)"
+
+			it "Returns a valid status on starting."
+				health_status="$(
+					docker inspect \
+						--format='{{json .State.Health.Status}}' \
+						ssh.1
+				)"
+
+				assert __shpec_matcher_egrep \
+					"${health_status}" \
+					"\"(starting|healthy|unhealthy)\""
+			end
 
 			it "Returns unhealthy on failure."
-				# sshd-bootstrap failure
-				docker exec -t \
-					ssh.1 \
-					bash -c "sed -i \
-						-e 's~# app-admin~~' \
-						/etc/sudoers"
-
 				events_since_timestamp="$(
 					date +%s
 				)"
