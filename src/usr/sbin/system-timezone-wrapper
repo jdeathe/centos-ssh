@@ -163,11 +163,6 @@ function main ()
 			__get_options \
 				"${system_timezone}"
 		)"
-
-		timer_total="$(
-			__get_timer_total \
-				"${timer_start}"
-		)"
 	else
 		options="$(
 			__get_options
@@ -186,6 +181,11 @@ function main ()
 
 	if [[ ${verbose} == true ]]
 	then
+		timer_total="$(
+			__get_timer_total \
+				"${timer_start}"
+		)"
+
 		cat \
 			<<-EOT
 
