@@ -14,6 +14,7 @@ Summary of release changes.
 - Adds improved test workflow; added `test-setup` target to Makefile.
 - Adds Makefile target `logsdef` to handle deferred logs output within a target chain.
 - Adds exec proxy function to `sshd-wrapper` used to pass through nice.
+- Adds double quotes around value containing spaces.
 - Fixes build error due to supervisord dependency resolution for `meld3`; pin to `1.0.2`.
 - Fixes validation failure of 0 second --timeout value in `test/health_status`.
 
