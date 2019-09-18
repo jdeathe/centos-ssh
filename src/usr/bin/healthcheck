@@ -48,16 +48,14 @@ function main ()
 	if ! ps axo command | grep -qE '^/usr/bin/python /usr/bin/supervisord'
 	then
 		>&2 printf -- \
-			'%s\n' \
-			"supervisord not running."
+			"supervisord not running"
 		exit 1
 	fi
 
 	if [[ ${system_timezone} != "${zone}" ]]
 	then
 		>&2 printf -- \
-			'%s\n' \
-			"system-timezone zone mismatch."
+			"system-timezone zone mismatch"
 		exit 1
 	fi
 
@@ -66,16 +64,14 @@ function main ()
 		if [[ -f ${bootstrap_lock_file} ]]
 		then
 			>&2 printf -- \
-				'%s\n' \
-				"sshd-bootstrap in progress."
+				"sshd-bootstrap in progress"
 			exit 1
 		fi
 
 		if [[ ! -f ${bootstrap_state_file} ]]
 		then
 			>&2 printf -- \
-				'%s\n' \
-				"sshd-bootstrap incomplete."
+				"sshd-bootstrap incomplete"
 			exit 1
 		fi
 	fi
@@ -86,8 +82,7 @@ function main ()
 			|| [[ ! -s /var/run/sshd.pid ]]
 		then
 			>&2 printf -- \
-				'%s\n' \
-				"sshd not running."
+				"sshd not running"
 			exit 1
 		fi
 	fi
