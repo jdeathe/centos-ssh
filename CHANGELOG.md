@@ -17,6 +17,7 @@ Summary of release changes.
 - Updates `healthcheck` script; state file existence confirms bootstrap completion.
 - Updates `system-timezone-wrapper` to improve timer accuracy.
 - Updates scripts to explicitly check for a file when handling lock/state files.
+- Updates method used for returning current script.
 - Adds improved test workflow; added `test-setup` target to Makefile.
 - Adds Makefile target `logsdef` to handle deferred logs output within a target chain.
 - Adds exec proxy function to `sshd-wrapper` used to pass through nice.
