@@ -204,7 +204,7 @@ function scmi ()
 		export SCMI_CHROOT_PATH="${SCMI_CHROOT_PATH}"
 	else
 		scmi_print_message "error" \
-			"Invalid chroot path."
+			"Invalid chroot path"
 		exit 1
 	fi
 
@@ -566,7 +566,7 @@ function scmi_docker_require_container ()
 	if [[ -z $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]
 	then
 		scmi_print_message "step_error" \
-			"This operation requires the ${DOCKER_NAME} docker container."
+			"This operation requires the ${DOCKER_NAME} docker container"
 		exit 1
 	fi
 }
@@ -576,7 +576,7 @@ function scmi_docker_require_container_not ()
 	if [[ -n $(${docker} ps -aq --filter "name=${DOCKER_NAME}") ]]
 	then
 		scmi_print_message "step_error" \
-			"This operation requires the ${DOCKER_NAME} docker container be removed (or renamed)."
+			"This operation requires the ${DOCKER_NAME} docker container be removed (or renamed)"
 		scmi_print_message "sub_step_info" \
 			"Try removing it with: docker rm -f ${DOCKER_NAME}"
 		exit 1
@@ -592,7 +592,7 @@ function scmi_docker_require_container_not_status_paused ()
 		) ]]
 	then
 		scmi_print_message "step_error" \
-			"This operation requires the ${DOCKER_NAME} docker container to be unpaused."
+			"This operation requires the ${DOCKER_NAME} docker container to be unpaused"
 		scmi_print_message "sub_step_info" \
 			"Try unpausing it with: docker ${DOCKER_NAME} unpause"
 		exit 1
@@ -1058,7 +1058,7 @@ function scmi_manager_type_command_prerequisites ()
 	if [[ -z $(${docker} info) ]]
 	then
 		scmi_print_message "error" \
-			"docker failed to connect to host."
+			"docker failed to connect to host"
 		exit 1
 	fi
 }
@@ -1400,7 +1400,7 @@ function scmi_systemd_get_unit_file_path ()
 	if [[ -z ${UNIT_FILE} ]]
 	then
 		scmi_print_message "error" \
-			"Missing unit file name."
+			"Missing unit file name"
 		exit 1
 	fi
 
