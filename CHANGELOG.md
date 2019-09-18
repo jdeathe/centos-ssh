@@ -7,6 +7,10 @@ Summary of release changes.
 ### 2.6.1 - Unreleased
 
 - Deprecate Makefile target `logs-delayed`; replaced with `logsdef`.
+- Updates `openssh` package to 7.4p1-21.el7.
+- Updates `openssl` package to 1.0.2k-19.el7.
+- Updates `sudo` package to 1.8.23-4.el7.
+- Updates `yum-plugin-versionlock` package to 1.1.31-52.el7.
 - Updates supervisord to 4.0.4.
 - Updates `test/health_status` helper script with for consistency.
 - Updates Makefile target `logs` to accept `[OPTIONS]` (e.g `make -- logs -ft`).
