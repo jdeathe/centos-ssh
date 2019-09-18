@@ -11,7 +11,7 @@ Summary of release changes.
 - Updates Makefile target `logs` to accept `[OPTIONS]` (e.g `make -- logs -ft`).
 - Updates `healthcheck` script; state file existence confirms bootstrap completion.
 - Updates `system-timezone-wrapper` to improve timer accuracy.
-- Updates scripts to expicitly check for a file when handling lock/state files.
+- Updates scripts to explicitly check for a file when handling lock/state files.
 - Adds improved test workflow; added `test-setup` target to Makefile.
 - Adds Makefile target `logsdef` to handle deferred logs output within a target chain.
 - Adds exec proxy function to `sshd-wrapper` used to pass through nice.
