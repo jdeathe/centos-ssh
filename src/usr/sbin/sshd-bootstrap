@@ -32,7 +32,7 @@ function __create_state ()
 
 function __delete_lock ()
 {
-	if [[ -e ${lock_file} ]]
+	if [[ -f ${lock_file} ]]
 	then
 		rm -f "${lock_file}"
 	fi
@@ -1278,7 +1278,7 @@ function main ()
 		esac
 	done
 
-	if [[ -e ${state_file} ]]
+	if [[ -f ${state_file} ]]
 	then
 		if [[ ${verbose} == true ]]
 		then
@@ -1289,7 +1289,7 @@ function main ()
 		exit 0
 	fi
 
-	if [[ -e ${lock_file} ]]
+	if [[ -f ${lock_file} ]]
 	then
 		>&2 printf -- \
 			'ERROR: %s lock detected - aborting.\n' \
