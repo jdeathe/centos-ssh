@@ -17,7 +17,7 @@ function __create_lock ()
 
 function __delete_lock ()
 {
-	if [[ -e ${lock_file} ]]
+	if [[ -f ${lock_file} ]]
 	then
 		rm -f "${lock_file}"
 	fi
@@ -64,7 +64,7 @@ function main ()
 		esac
 	done
 
-	if [[ -e ${lock_file} ]]
+	if [[ -f ${lock_file} ]]
 	then
 		>&2 printf -- \
 			'ERROR: %s lock detected - aborting\n' \
@@ -92,7 +92,7 @@ function main ()
 	fi
 
 	set +e
-	until [[ -e ${bootstrap_state_file} ]]
+	until [[ -f ${bootstrap_state_file} ]]
 	do
 		if ! inotifywait -qq \
 			-e "create" \
@@ -104,7 +104,7 @@ function main ()
 	done
 	set -e
 
-	if ! [[ -e ${bootstrap_state_file} ]]
+	if [[ ! -f ${bootstrap_state_file} ]]
 	then
 		>&2 printf -- \
 			'ERROR: %s timed out waiting on %s\n' \
