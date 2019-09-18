@@ -35,7 +35,7 @@ function scmi ()
 	if [[ ${EUID} -ne 0 ]]
 	then
 		scmi_print_message "error" \
-			"Run as root or use: sudo -E $(basename ${0})"
+			"Run as root or use: sudo -E ${0##*/}"
 		exit 1
 	fi
 
@@ -1781,8 +1781,8 @@ function scmi_systemd_uninstall_template_unit_file_drop_in ()
 function scmi_usage ()
 {
 	cat <<-EOF
-	Usage: $(basename ${0}) <COMMAND> [OPTIONS]
-	       $(basename ${0}) [{-h|--help}]
+	Usage: ${0##*/} <COMMAND> [OPTIONS]
+	       ${0##*/} [{-h|--help}]
 
 	SCMI simplifes the creation and removal of docker container instances.
 
