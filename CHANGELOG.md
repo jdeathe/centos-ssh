@@ -20,6 +20,7 @@ Summary of release changes.
 - Updates README.md to simplify contents and improve readability.
 - Updates README-short.txt to apply to all image variants.
 - Updates Dockerfile `org.deathe.description` metadata LABEL for consistency.
+- Updates ordering of Tags and respective Dockerfile links in README.md for readability.
 - Adds improved test workflow; added `test-setup` target to Makefile.
 - Adds Makefile target `logsdef` to handle deferred logs output within a target chain.
 - Adds exec proxy function to `sshd-wrapper` used to pass through nice.
