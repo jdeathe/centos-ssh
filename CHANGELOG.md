@@ -20,6 +20,7 @@ Summary of release changes.
 - Adds Makefile target `logsdef` to handle deferred logs output within a target chain.
 - Adds exec proxy function to `sshd-wrapper` used to pass through nice.
 - Adds double quotes around value containing spaces.
+- Adds `/docs` directory for supplementary documentation and simplify README.
 - Fixes build error due to supervisord dependency resolution for `meld3`; pin to `1.0.2`.
 - Fixes validation failure of 0 second --timeout value in `test/health_status`.
 - Removes `ENABLE_SSHD_BOOTSTRAP` from docker-compose example configuration.
