@@ -145,7 +145,7 @@ jdeathe/centos-ssh:${RELEASE_VERSION} \
 	org.deathe.license="MIT" \
 	org.deathe.vendor="jdeathe" \
 	org.deathe.url="https://github.com/jdeathe/centos-ssh" \
-	org.deathe.description="CentOS-7 7.6.1810 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
+	org.deathe.description="OpenSSH 7.4 / Supervisor 4.0 / EPEL/IUS/SCL Repositories - CentOS-7 7.6.1810 x86_64."
 
 HEALTHCHECK \
 	--interval=1s \
