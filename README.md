@@ -1,28 +1,22 @@
-centos-ssh
-==========
-
-Docker Images of CentOS-6 6.10 x86_64 / CentOS-7 7.6.1810 x86_64
-
-Includes public key authentication, Automated password generation and supports custom configuration via environment variables.
-
-## Overview & links
-
-The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag as shown in the examples.
-
-### Tags and respective `Dockerfile` links
+## Tags and respective `Dockerfile` links
 
 - `centos-7`,[`2.6.0`](https://github.com/jdeathe/centos-ssh/releases/tag/2.6.0) [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
 - `centos-6`,[`1.11.0`](https://github.com/jdeathe/centos-ssh/releases/tag/1.11.0) [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
 
-The Dockerfile can be used to build a base image that is the bases for several other docker images.
+## Overview
 
-Included in the build are the [SCL](https://www.softwarecollections.org/), [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [inotify-tools](https://github.com/rvoicilas/inotify-tools/wiki), [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/), [vim-minimal](http://www.vim.org/), python-setuptools, [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
+Included in the build are the [EPEL](http://fedoraproject.org/wiki/EPEL), [IUS](https://ius.io) and [SCL](https://www.softwarecollections.org/) repositories. Installed packages include [inotify-tools](https://github.com/rvoicilas/inotify-tools/wiki), [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/), [vim-minimal](http://www.vim.org/), python-setuptools, [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
 
-[Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run.
+[Supervisor](http://supervisord.org/) is used to start the `sshd` daemon when a docker container based on this image is run.
 
 SSH access is by public key authentication and, by default, the [Vagrant](http://www.vagrantup.com/) [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant) is required.
 
-### SSH Alternatives
+### Image variants
+
+- [OpenSSH 7.4 / Supervisor 4.0 / EPEL/IUS/SCL Repositories - CentOS-7](https://github.com/jdeathe/centos-ssh/tree/centos-7)
+- [OpenSSH 5.3 / Supervisor 3.4 / EPEL/IUS/SCL Repositories - CentOS-6](https://github.com/jdeathe/centos-ssh/tree/centos-6)
+
+### SSH alternatives
 
 SSH is not required in order to access a terminal for the running container. The simplest method is to use the docker exec command to run bash (or sh) as follows:
 
@@ -32,9 +26,11 @@ $ docker exec -it {{container-name-or-id}} bash
 
 For cases where access to docker exec is not possible the preferred method is to use Command Keys and the nsenter command. See [docs/command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-7/docs/command-keys.md) for details on how to set this up.
 
-## Quick Example
+## Quick start
 
-### SSH Mode
+> For production use, it is recommended to select a specific release tag as shown in the examples.
+
+### SSH mode
 
 Run up an SSH container named 'ssh.1' from the docker image 'jdeathe/centos-ssh' on port 2020 of your docker host.
 
@@ -75,7 +71,7 @@ $ ssh -p 2020 -i id_rsa_insecure \
   app-admin@{{docker-host-ip}}
 ```
 
-### SFTP Mode
+### SFTP mode
 
 Run up an SFTP container named 'sftp.1' from the docker image 'jdeathe/centos-ssh' on port 2021 of your docker host.
 
@@ -104,6 +100,8 @@ $ sftp \
 ### Running
 
 To run the a docker container from this image you can use the standard docker commands. Alternatively, there's a [docker-compose.yml](https://github.com/jdeathe/centos-ssh/blob/centos-7/docker-compose.yml) example.
+
+For production use, it is recommended to select a specific release tag as shown in the examples.
 
 #### Using scmi
 
