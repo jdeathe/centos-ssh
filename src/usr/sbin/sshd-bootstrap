@@ -32,7 +32,7 @@ function __create_state ()
 
 function __delete_lock ()
 {
-	if [[ -e ${lock_file} ]]
+	if [[ -f ${lock_file} ]]
 	then
 		rm -f "${lock_file}"
 	fi
@@ -80,9 +80,11 @@ function __generate_ssh_host_key ()
 
 			;;
 		*)
-			printf -- \
-				'Unknown key type %s - skipping.\n' \
+			>&2 printf -- \
+				'ERROR: %s unknown key type %s\n' \
+				"${0##*/}" \
 				"${type}"
+			return 1
 			;;
 	esac
 }
@@ -103,7 +105,8 @@ function __generate_ssh_host_keys ()
 		)"
 	else
 		>&2 printf -- \
-			'ERROR: Unknown EL release.\n'
+			'ERROR: %s unknown EL release\n' \
+			"${0##*/}"
 		return 1
 	fi
 
@@ -121,9 +124,11 @@ function __generate_ssh_host_keys ()
 			__generate_ssh_host_key "${replace}" ed25519
 			;;
 		*)
-			printf -- \
-				'Unknown EL release %s - skipping.\n' \
+			>&2 printf -- \
+				'ERROR: %s unknown EL release %s\n' \
+				"${0##*/}" \
 				"${version}"
+			return 1
 			;;
 	esac
 }
@@ -279,13 +284,15 @@ function __get_ssh_host_key_fingerprint ()
 				__get_ssh_key_fingerprint_hash_output "${ssh_key}"
 			else
 				>&2 printf -- \
-					'ERROR: invalid host key\n'
+					'ERROR: %s invalid host key\n' \
+					"${0##*/}"
 				return 1
 			fi
 			;;
 		*)
 			>&2 printf -- \
-				'ERROR: invalid key type\n'
+				'ERROR: %s invalid key type\n' \
+				"${0##*/}"
 			return 1
 			;;
 	esac
@@ -580,7 +587,8 @@ function __get_timer_total ()
 		|| [[ ${timer_start//.} -gt ${timer_end//.} ]]
 	then
 		>&2 printf -- \
-			'ERROR: invalid timer start: %s\n' \
+			'ERROR: %s invalid timer start: %s\n' \
+			"${0##*/}" \
 			"${timer_start}"
 		printf -- \
 			'0.000000'
@@ -882,7 +890,8 @@ function __set_ssh_user_password ()
 	if ! __is_valid_ssh_user "${user}"
 	then
 		>&2 printf -- \
-			'ERROR: Invalid user\n'
+			'ERROR: %s invalid user\n' \
+			"${0##*/}"
 		return 1
 	else
 		if [[ ${password_hashed} == true ]]
@@ -890,7 +899,8 @@ function __set_ssh_user_password ()
 			if ! __is_valid_ssh_user_password_hash "${password}"
 			then
 				>&2 printf -- \
-					'ERROR: Invalid password - requires SHA-512 hash\n'
+					'ERROR: %s invalid password - requires SHA-512 hash\n' \
+					"${0##*/}"
 				return 1
 			else
 				printf -- \
@@ -905,7 +915,8 @@ function __set_ssh_user_password ()
 			if [[ -z ${password} ]]
 			then
 				>&2 printf -- \
-					'ERROR: Invalid password - empty\n'
+					'ERROR: %s invalid password - empty\n' \
+					"${0##*/}"
 				return 1
 			else
 				printf -- \
@@ -978,21 +989,21 @@ function main ()
 		esac
 	done
 
-	if [[ -e ${state_file} ]]
+	if [[ -f ${state_file} ]]
 	then
 		if [[ ${verbose} == true ]]
 		then
 			printf -- \
-				'INFO: %s finished - skipping.\n' \
+				'INFO: %s finished - skipping\n' \
 				"${0##*/}"
 		fi
 		exit 0
 	fi
 
-	if [[ -e ${lock_file} ]]
+	if [[ -f ${lock_file} ]]
 	then
 		>&2 printf -- \
-			'ERROR: %s lock detected - aborting.\n' \
+			'ERROR: %s lock detected - aborting\n' \
 			"${0##*/}"
 		exit 1
 	fi
@@ -1135,7 +1146,8 @@ function main ()
 	if ! __set_ssh_user_password "${ssh_user_password}"
 	then
 		>&2 printf -- \
-			'ERROR: Could not set password - aborting.\n'
+			'ERROR: %s could not set password - aborting\n' \
+			"${0##*/}"
 		exit 1
 	fi
 
@@ -1247,8 +1259,9 @@ function main ()
 		then
 			printf -v ssh_key_fingerprints \
 				-- \
-				'%s\nUnable to populate %s/.ssh/authorized_key' \
-				"ERROR: Public key validation failed." \
+				'ERROR: %s %s\nUnable to populate %s/.ssh/authorized_key' \
+				"${0##*/}" \
+				"public key validation failed" \
 				"${ssh_user_home}"
 		fi
 	else
@@ -1279,8 +1292,9 @@ function main ()
 		then
 			printf -v ssh_user_private_key_fingerprint \
 				-- \
-				'%s\nUnable to populate %s/.ssh/id_rsa' \
-				"ERROR: Private key validation failed." \
+				'ERROR: %s %s\nUnable to populate %s/.ssh/id_rsa' \
+				"${0##*/}" \
+				"private key validation failed" \
 				"${ssh_user_home}"
 		fi
 	else

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 function __cleanup ()
 {
 	local -r fifo_path="${1}"
@@ -71,9 +73,10 @@ function __print_status ()
 function __usage()
 {
 	cat <<-EOF
-	Usage: $(basename ${0}) -c <name or id> [OPTIONS]
-	       $(basename ${0}) --container=<name or id> [OPTIONS]
-	       $(basename ${0}) [-h|--help]
+
+	Usage: ${0##*/} -c <name or id> [OPTIONS]
+	       ${0##*/} --container=<name or id> [OPTIONS]
+	       ${0##*/} [-h|--help]
 
 	Gets health_status events and returns the status.
 
@@ -116,7 +119,6 @@ function health_status ()
 	local until_timestamp
 	local until
 
-	# Parse install options
 	while [[ "${#}" -gt 0 ]]
 	do
 		case "${1}" in
@@ -128,17 +130,17 @@ function health_status ()
 				option_monochrome=true
 				shift 1
 				;;
-			-c)
+			--container=*)
+				container="${1#*=}"
+				shift 1
+				;;
+			-c|--container)
 				if [[ -z ${2} ]]
 				then
 					__usage
 				fi
 				container="${2}"
 				shift 2
-				;;
-			--container=*)
-				container="${1#*=}"
-				shift 1
 				;;
 			-q|--quiet)
 				option_quiet=true
@@ -148,17 +150,17 @@ function health_status ()
 				since_timestamp="${1#*=}"
 				shift 1
 				;;
-			-t)
+			--timeout=*)
+				timeout="${1#*=}"
+				shift 1
+				;;
+			-t|--timeout)
 				if [[ -z ${2} ]]
 				then
 					__usage
 				fi
 				timeout="${2}"
 				shift 2
-				;;
-			--timeout=*)
-				timeout="${1#*=}"
-				shift 1
 				;;
 			*)
 				__usage
@@ -173,9 +175,9 @@ function health_status ()
 
 	if ! [[ ${timeout} =~ ${pattern_timeout} ]]
 	then
-		printf -- \
-			'[ERROR] Invalid --time value.\n' \
-			>&2
+		>&2 printf -- \
+			'ERROR: %s invalid --timeout value\n' \
+			"${0##*/}"
 		__usage
 	fi
 
@@ -198,12 +200,12 @@ function health_status ()
 	fi
 
 	# Fail if operator attempts start time limit before end limit.
-	if ! [[ ${since_timestamp} =~ ${pattern_timestamp} ]] \
-		|| (( since_timestamp > until_timestamp ))
+	if (( timeout > 0 )) && (( since_timestamp > until_timestamp )) \
+		|| ! [[ ${since_timestamp} =~ ${pattern_timestamp} ]]
 	then
-		printf -- \
-			'[ERROR] Invalid --since value.\n' \
-			>&2
+		>&2 printf -- \
+			'ERROR: %s invalid --since value\n' \
+			"${0##*/}"
 		__usage
 	fi
 
@@ -216,34 +218,33 @@ function health_status ()
 
 	trap \
 		"__cleanup \"${fifo_path}\"" \
-		INT TERM EXIT
+		EXIT INT TERM
 
 	mkfifo \
 		-m 0600 \
 		"${fifo_path}"
 
+	cd /
 	docker events \
 		--format '{{.Status}}' \
 		--filter "event=health_status" \
 		--filter "container=${container}" \
 		${since} \
 		${until} \
-		> "${fifo_path}" \
-	&
+		0> /dev/null \
+		1> "${fifo_path}" \
+		2> /dev/null \
+	& disown
 	pid="${!}"
-	disown
+	cd - \
+		> /dev/null
 
 	trap \
 		"__cleanup \"${fifo_path}\" \"${pid}\"" \
-		INT TERM EXIT
+		EXIT INT TERM
 
 	while IFS= read -r health_status || [[ -n ${health_status} ]]
 	do
-		if [[ ${health_status} =~ ${pattern_starting} ]]
-		then
-			__print_status "starting"
-		fi
-
 		if [[ ${health_status} =~ ${pattern_healthy} ]]
 		then
 			__print_status "healthy"

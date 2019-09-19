@@ -25,10 +25,11 @@ Targets:
   images                    Show container's image details.
   load                      Loads from the distribution package. Requires
                             DOCKER_IMAGE_TAG variable.
-  logs                      Display log output from the running container.
-  logs-delayed              Display log output from the running container after
-                            backing off for STARTUP_TIME seconds. This can be
-                            necessary when chaining make targets together.
+  logs [OPTIONS]            Display log output from the container.
+  logsdef                   Display log output from the container deferred for
+                            STARTUP_TIME seconds. This will work in a chain
+                            unlike the logs target.
+  logs-delayed              [DEPRECATED] Replaced with logsdef.
   pause                     Pause the running container.
   pull                      Pull the release image from the registry. Requires
                             the DOCKER_IMAGE_TAG variable.
@@ -45,6 +46,7 @@ Targets:
   stop                      Stop the container when in a running state.
   terminate                 Unpause, stop and remove the container.
   test                      Run all test cases.
+  test-setup                Install test dependencies.
   top [ps OPTIONS]          Display the running processes of the container.
   unpause                   Unpause the container when in a paused state.
 
@@ -161,6 +163,7 @@ endef
 	_require-docker-image-tag \
 	_require-docker-release-tag \
 	_require-package-path \
+	_require-root \
 	_test-prerequisites \
 	_usage \
 	all \
@@ -176,6 +179,7 @@ endef
 	images \
 	load \
 	logs \
+	logsdef \
 	logs-delayed \
 	pause \
 	pull \
@@ -191,6 +195,7 @@ endef
 	stop \
 	terminate \
 	test \
+	test-setup \
 	top \
 	unpause
 
@@ -365,9 +370,17 @@ _require-package-path:
 		exit 1; \
 	fi
 
+_require-root:
+	@ if [[ $${EUID} -ne 0 ]]; \
+	then \
+	>&2 printf -- '%sMust be run as root\n' \
+		"$(PREFIX_STEP_NEGATIVE)"; \
+	exit 1; \
+	fi
+
 _test-prerequisites:
 ifeq ($(shpec),)
-	$(error "Please install shpec.")
+	$(error "Please install shpec. Try: DOCKER_NAME=$(DOCKER_NAME) make test-setup")
 endif
 
 _usage:
@@ -581,13 +594,19 @@ install: | \
 logs: \
 	_prerequisites \
 	_require-docker-container
-	@ $(docker) logs $(DOCKER_NAME)
+	@ $(docker) logs \
+		$(filter-out $@, $(MAKECMDGOALS)) \
+		$(DOCKER_NAME)
+%:; @:
 
-logs-delayed: \
+logsdef: \
 	_prerequisites \
 	_require-docker-container
 	@ sleep $(STARTUP_TIME)
 	@ $(MAKE) logs
+
+logs-delayed: \
+	logsdef
 
 load: \
 	_prerequisites \
@@ -979,6 +998,18 @@ test: \
 		"$(PREFIX_STEP)" \
 		"Functional test"
 	@ SHPEC_ROOT=$(SHPEC_ROOT) $(shpec)
+
+test-setup: \
+	_require-root
+	@ printf -- '%s%s\n' \
+		"$(PREFIX_STEP)" \
+		"Installing shpec"
+	@ bash -c "$$(curl -LSs \
+			https://raw.githubusercontent.com/rylnd/shpec/master/install.sh \
+		)"
+	@ ln -sf \
+		/usr/local/bin/shpec \
+		/usr/bin/shpec
 
 unpause: \
 	_prerequisites \

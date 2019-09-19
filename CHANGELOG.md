@@ -1,10 +1,44 @@
 # Change Log
 
-## centos-7
+## 2 - centos-7
 
-Summary of release changes for Version 2 - CentOS-7
+Summary of release changes.
 
-### 2.6.0 - Unreleased
+### 2.6.1 - Unreleased
+
+- Deprecate Makefile target `logs-delayed`; replaced with `logsdef`.
+- Updates `openssh` package to 7.4p1-21.el7.
+- Updates `openssl` package to 1.0.2k-19.el7.
+- Updates `sudo` package to 1.8.23-4.el7.
+- Updates `yum-plugin-versionlock` package to 1.1.31-52.el7.
+- Updates supervisord to 4.0.4.
+- Updates `test/health_status` helper script with for consistency.
+- Updates Makefile target `logs` to accept `[OPTIONS]` (e.g `make -- logs -ft`).
+- Updates `healthcheck` script; state file existence confirms bootstrap completion.
+- Updates `system-timezone-wrapper` to improve timer accuracy.
+- Updates scripts to explicitly check for a file when handling lock/state files.
+- Updates method used for returning current script.
+- Updates info/error output for consistency.
+- Updates healthcheck failure messages to remove EOL character that is rendered in status response.
+- Updates wrapper script; only emit "waiting on" info message if bootstrap hasn't completed.
+- Updates CHANGELOG.md to simplify maintenance.
+- Updates README.md to simplify contents and improve readability.
+- Updates README-short.txt to apply to all image variants.
+- Updates Dockerfile `org.deathe.description` metadata LABEL for consistency.
+- Updates ordering of Tags and respective Dockerfile links in README.md for readability.
+- Adds improved test workflow; added `test-setup` target to Makefile.
+- Adds Makefile target `logsdef` to handle deferred logs output within a target chain.
+- Adds exec proxy function to `sshd-wrapper` used to pass through nice.
+- Adds double quotes around value containing spaces.
+- Adds `/docs` directory for supplementary documentation and simplify README.
+- Adds feature to optionally exit the container after a specified timout period.
+- Adds `ENABLE_REAPER` with a default value of `false` to enable the `reaper` service.
+- Adds `REAPER_TIMEOUT` with a default value of `0` seconds (i.e no timeout delay).
+- Fixes validation failure of 0 second --timeout value in `test/health_status`.
+- Removes `ENABLE_SSHD_BOOTSTRAP` from docker-compose example configuration.
+- Removes `ENABLE_SSHD_WRAPPER` from docker-compose example configuration.
+
+### 2.6.0 - 2019-06-20
 
 - Deprecates `SSH_AUTOSTART_SSHD`, replaced with `ENABLE_SSHD_WRAPPER`.
 - Deprecates `SSH_AUTOSTART_SSHD_BOOTSTRAP`, replaced with `ENABLE_SSHD_BOOTSTRAP`.
@@ -25,9 +59,6 @@ Summary of release changes for Version 2 - CentOS-7
 - Adds improved wait on bootstrap completion in wrapper script.
 - Adds `system-timezone` and `system-timezone-wrapper` to handle system time zone setup.
 - Adds system time zone validation to healthcheck.
-- Adds feature to optionally exit the container after a specified timout period.
-- Adds `ENABLE_REAPER` with a default value of `false` to enable the `reaper` service.
-- Adds `REAPER_TIMEOUT` with a default value of `0` seconds (i.e no timeout delay).
 - Fixes port incrementation failures when installing systemd units via `scmi`.
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
 - Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.
