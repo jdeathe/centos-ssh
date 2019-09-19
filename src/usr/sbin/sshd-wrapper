@@ -83,7 +83,8 @@ function main ()
 		__get_proxy
 	)"
 
-	if [[ ${verbose} == true ]]
+	if [[ ${verbose} == true ]] \
+		&& [[ ! -f ${bootstrap_state_file} ]]
 	then
 		printf -- \
 			'INFO: %s waiting on %s\n' \

@@ -20,6 +20,7 @@ Summary of release changes.
 - Updates method used for returning current script.
 - Updates info/error output for consistency.
 - Updates healthcheck failure messages to remove EOL character that is rendered in status response.
+- Updates wrapper script; only emit "waiting on" info message if bootstrap hasn't completed.
 - Adds improved test workflow; added `test-setup` target to Makefile.
 - Adds Makefile target `logsdef` to handle deferred logs output within a target chain.
 - Adds exec proxy function to `sshd-wrapper` used to pass through nice.
