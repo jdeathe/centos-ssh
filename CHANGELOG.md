@@ -25,6 +25,8 @@ Summary of release changes.
 - Adds exec proxy function to `sshd-wrapper` used to pass through nice.
 - Adds double quotes around value containing spaces.
 - Fixes validation failure of 0 second --timeout value in `test/health_status`.
+- Removes `ENABLE_SSHD_BOOTSTRAP` from docker-compose example configuration.
+- Removes `ENABLE_SSHD_WRAPPER` from docker-compose example configuration.
 
 ### 2.6.0 - 2019-06-20
 
