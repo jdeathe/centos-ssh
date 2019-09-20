@@ -89,7 +89,10 @@ function __print_message ()
 	esac
 
 	if [[ ${quiet} == true ]] \
-		|| [[ ${silent} == true ]] \
+		&& [[ ! ${type} =~ ^(error|warn)$ ]]
+	then
+		return 0
+	elif [[ ${silent} == true ]] \
 		&& [[ ${type} != error ]]
 	then
 		return 0
@@ -263,6 +266,15 @@ function main ()
 			-p|--pid)
 				pid="${2}"
 				shift 2 || break
+				;;
+			-q|--quiet)
+				quiet="true"
+				shift 1
+				;;
+			-qq|--silent)
+				quiet="true"
+				silent="true"
+				shift 1
 				;;
 			--signal=*)
 				signal="${1#*=}"
