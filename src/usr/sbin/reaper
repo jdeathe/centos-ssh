@@ -29,9 +29,80 @@ function __create_state ()
 
 function __delete_lock ()
 {
-	if [[ -e ${lock_file} ]]
+	if [[ -f ${lock_file} ]]
 	then
 		rm -f "${lock_file}"
+	fi
+}
+
+function __print_message ()
+{
+	local -r type="${1}"
+
+	local colour_negative='\033[1;31m'
+	local colour_positive='\033[1;32m'
+	local colour_reset='\033[0m'
+	local exit_code="${3:-0}"
+	local message="${2}"
+	local prefix=""
+	local quiet="${quiet:-false}"
+	local silent="${silent:-false}"
+
+	if [[ ${monochrome} == true ]]
+	then
+		unset \
+			colour_negative \
+			colour_positive \
+			colour_reset
+	fi
+
+	case "${type}" in
+		error)
+			prefix="$(
+				printf -- \
+					'%bERROR:%b ' \
+					"${colour_negative}" \
+					"${colour_reset}"
+			)"
+			;;
+		info)
+			prefix="$(
+				printf -- \
+					'%bINFO:%b ' \
+					"${colour_positive}" \
+					"${colour_reset}"
+			)"
+			;;
+		*)
+			message="${type}"
+			;;
+	esac
+
+	if [[ ${quiet} == true ]] \
+		|| [[ ${silent} == true ]] \
+		&& [[ ${type} != error ]]
+	then
+		return 0
+	elif [[ ${silent} == true ]] \
+		&& [[ ${type} == error ]]
+	then
+		return 1
+	elif [[ ${type} == error ]]
+	then
+		>&2 printf -- \
+			'%s%s\n' \
+			"${prefix}" \
+			"${message}"
+	else
+		printf -- \
+			'%s%s\n' \
+			"${prefix}" \
+			"${message}"
+	fi
+
+	if [[ ${exit_code} -gt 0 ]]
+	then
+		exit ${exit_code}
 	fi
 }
 
@@ -82,33 +153,49 @@ function __reap ()
 
 function __usage ()
 {
-	cat <<-EOF
-	Usage: ${0##*/} [OPTIONS]
-	       ${0##*/} [{-h|--help}]
+	local help="${help:-false}"
+	local quiet="${quiet:-false}"
+	local silent="${silent:-false}"
 
-	Options:
-	  -g, --get KEY              Used to get values from a running ${0##*/}
-	                             process. The keys and values they return are:
-	                             - start : returns session start timestamp.
-	                             - end : returns session end timestamp.
-	                             - ttl : returns remaining session time to live.
-	  -h, --help                 Show this help and exit.
-	  -p, --pid PID              Send the termination signal to the process with
-	                             the pid value PID.
-	                             If not specified the default is pid 1.
-	  -s, --signal SIG           Send the signal SIG to the process.
-	                             If not specified the default is SIGTERM.
-	  -t, --timeout SECONDS      Time in seconds to wait before sending the
-	                             signal to the process. The default is 0 seconds
-	                             which indicates no delay.
-	  -v, --verbose              Output informational messages.
-	                             If not specified the default is quiet.
-	  -w, --wall MESSAGE         Set a wall message to send before session end.
-	  -T, --wall-timeout SECONDS Set the time before session end to send the
-	                             wall message. The default is 30 seconds.
-	                             Set to 0 to disable sending a wall message.
-	EOF
-	exit 1
+	if [[ ${silent} != true ]] \
+		|| [[ ${help} == true ]]
+	then
+		cat <<-USAGE
+
+		Usage: ${0##*/} [OPTIONS]
+		       ${0##*/} [{-h|--help}]
+
+		Options:
+		  -g, --get KEY              Used to get values from a running ${0##*/}
+		                             process. The keys and values they return are:
+		                             - start : returns session start timestamp.
+		                             - end : returns session end timestamp.
+		                             - ttl : returns remaining session time to live.
+		  -h, --help                 Show this help and exit.
+		  --monochrome               Output colour is suppressed.
+		  -p, --pid PID              Send the termination signal to the process with
+		                             the pid value PID.
+		                             If not specified the default is pid 1.
+		  -q, --quiet                Do not print information message output.
+		  -qq, --silent              Do not print error message output.
+		  -s, --signal SIG           Send the signal SIG to the process.
+		                             If not specified the default is SIGTERM.
+		  -t, --timeout SECONDS      Time in seconds to wait before sending the
+		                             signal to the process. The default is 0 seconds
+		                             which indicates no delay.
+		  -w, --wall MESSAGE         Set a wall message to send before session end.
+		  -T, --wall-timeout SECONDS Set the time before session end to send the
+		                             wall message. The default is 30 seconds.
+		                             Set to 0 to disable sending a wall message.
+		USAGE
+	fi
+
+	if [[ ${help} != true ]]
+	then
+		exit 1
+	fi
+
+	exit 0
 }
 
 function main ()
@@ -118,8 +205,12 @@ function main ()
 
 	local current_time
 	local get
+	local help
+	local monochrome="false"
 	local pid="1"
+	local quiet="false"
 	local signal="TERM"
+	local silent="false"
 	local session_start
 	local session_end
 	local state_value
@@ -127,6 +218,14 @@ function main ()
 	local verbose="false"
 	local wall_message
 	local wall_timeout="30"
+
+	if [[ ${EUID} -ne 0 ]]
+	then
+		__print_message \
+			"error" \
+			"${0##*/} must be run as root" \
+			1
+	fi
 
 	while [[ "${#}" -gt 0 ]]
 	do
@@ -141,6 +240,10 @@ function main ()
 				;;
 			-h|--help)
 				__usage
+				;;
+			--monochrome)
+				monochrome="true"
+				shift 1
 				;;
 			--pid=*)
 				pid="${1#*=}"
@@ -158,49 +261,48 @@ function main ()
 				signal="${2}"
 				shift 2 || break
 				;;
-			-t|--timeout)
-				timeout="${2}"
-				shift 2 || break
-				;;
 			--timeout=*)
 				timeout="${1#*=}"
 				shift 1
 				;;
+			-t|--timeout)
+				timeout="${2}"
+				shift 2 || break
+				;;
 			-v|--verbose)
 				verbose="true"
+				shift 1
+				;;
+			--wall=*)
+				wall_message="${1#*=}"
 				shift 1
 				;;
 			-w|--wall)
 				wall_message="${2}"
 				shift 2 || break
 				;;
-			--wall=*)
-				wall_message="${1#*=}"
+			--wall-timeout=*)
+				wall_timeout="${1#*=}"
 				shift 1
 				;;
 			--wall-timeout)
 				wall_timeout="${2}"
 				shift 2 || break
 				;;
-			--wall-timeout=*)
-				wall_timeout="${1#*=}"
-				shift 1
-				;;
 			*)
-				>&2 printf -- \
-					'ERROR: Unknown option %s\n' \
-					"${1}"
+				__print_message \
+					"error" \
+					"${0##*/} unknown option ${1}"
 				__usage
 				;;
 		esac
 	done
 
-	if [[ -e ${lock_file} ]]
+	if [[ -f ${lock_file} ]]
 	then
 		if [[ -n ${get} ]]
 		then
 			state_value="$(< "${state_file}")"
-
 			session_end="${state_value##* }"
 			session_start="${state_value%% *}"
 
@@ -225,25 +327,25 @@ function main ()
 						"$(( ${session_end} - ${current_time} ))"
 					;;
 				*)
-					>&2 printf -- \
-						'ERROR: Unknown get value %s\n' \
-						"${get}"
+					__print_message \
+						"error" \
+						"${0##*/} unknown get value ${get}"
 					__usage
 					;;
 			esac
 
 			exit 0
 		else
-			>&2 printf -- \
-				'ERROR: %s lock detected - aborting\n' \
-				"${0##*/}"
-			exit 1
+			__print_message \
+				"error" \
+				"${0##*/} lock detected - aborting" \
+				1
 		fi
 	elif [[ -n ${get} ]]
 	then
-		>&2 printf -- \
-			'ERROR: %s is not running\n' \
-			"${0##*/}"
+		__print_message \
+			"error" \
+			"${0##*/} is not running"
 		__usage
 	fi
 
@@ -253,15 +355,17 @@ function main ()
 
 	if ! __is_valid_timeout "${timeout}"
 	then
-		>&2 printf -- \
-			'ERROR: Invalid --timeout\n' \
+		__print_message \
+			"error" \
+			"${0##*/} invalid --timeout"
 		__usage
 	fi
 
 	if ! __is_valid_wall_timeout "${wall_timeout}"
 	then
-		>&2 printf -- \
-			'ERROR: Invalid --wall-timeout\n' \
+		__print_message \
+			"error" \
+			"${0##*/} invalid --wall-timeout"
 		__usage
 	fi
 
@@ -298,12 +402,9 @@ function main ()
 		fi
 	fi
 
-	if [[ ${verbose} == true ]]
-	then
-		printf -- \
-			'INFO: %s expiring session.\n' \
-			"${0##*/}"
-	fi
+	__print_message \
+		"info" \
+		"${0##*/} expiring session"
 
 	exit 0
 }
