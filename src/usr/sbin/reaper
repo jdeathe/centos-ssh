@@ -239,6 +239,7 @@ function main ()
 				shift 2 || break
 				;;
 			-h|--help)
+				help="true"
 				__usage
 				;;
 			--monochrome)
