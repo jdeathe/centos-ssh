@@ -40,6 +40,7 @@ function __print_message ()
 	local -r type="${1}"
 
 	local colour_negative='\033[1;31m'
+	local colour_notice='\033[1;33m'
 	local colour_positive='\033[1;32m'
 	local colour_reset='\033[0m'
 	local exit_code="${3:-0}"
@@ -52,6 +53,7 @@ function __print_message ()
 	then
 		unset \
 			colour_negative \
+			colour_notice \
 			colour_positive \
 			colour_reset
 	fi
@@ -62,6 +64,14 @@ function __print_message ()
 				printf -- \
 					'%bERROR:%b ' \
 					"${colour_negative}" \
+					"${colour_reset}"
+			)"
+			;;
+		warn)
+			prefix="$(
+				printf -- \
+					'%bWARN:%b ' \
+					"${colour_notice}" \
 					"${colour_reset}"
 			)"
 			;;
@@ -404,7 +414,7 @@ function main ()
 	fi
 
 	__print_message \
-		"info" \
+		"warn" \
 		"${0##*/} expiring session"
 
 	exit 0
