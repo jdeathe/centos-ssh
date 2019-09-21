@@ -74,7 +74,8 @@ function __get_timer_total ()
 		|| [[ ${timer_start//.} -gt ${timer_end//.} ]]
 	then
 		>&2 printf -- \
-			'ERROR: invalid timer start: %s\n' \
+			'ERROR: %s invalid timer start: %s\n' \
+			"${0##*/}" \
 			"${timer_start}"
 		printf -- \
 			'0.000000'
@@ -135,7 +136,7 @@ function main ()
 		if [[ ${verbose} == true ]]
 		then
 			printf -- \
-				'INFO: %s finished - skipping.\n' \
+				'INFO: %s finished - skipping\n' \
 				"${0##*/}"
 		fi
 		exit 0
@@ -144,7 +145,7 @@ function main ()
 	if [[ -f ${lock_file} ]]
 	then
 		>&2 printf -- \
-			'ERROR: %s lock detected - aborting.\n' \
+			'ERROR: %s lock detected - aborting\n' \
 			"${0##*/}"
 		exit 1
 	fi
@@ -162,11 +163,6 @@ function main ()
 		options="$(
 			__get_options \
 				"${system_timezone}"
-		)"
-
-		timer_total="$(
-			__get_timer_total \
-				"${timer_start}"
 		)"
 	else
 		options="$(
@@ -186,6 +182,11 @@ function main ()
 
 	if [[ ${verbose} == true ]]
 	then
+		timer_total="$(
+			__get_timer_total \
+				"${timer_start}"
+		)"
+
 		cat \
 			<<-EOT
 
