@@ -4,7 +4,7 @@
 
 Summary of release changes.
 
-### 2.6.1 - Unreleased
+### 2.6.1 - 2019-09-21
 
 - Deprecate Makefile target `logs-delayed`; replaced with `logsdef`.
 - Updates `openssh` package to 7.4p1-21.el7.

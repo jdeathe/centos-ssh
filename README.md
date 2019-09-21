@@ -1,7 +1,7 @@
 ## Tags and respective `Dockerfile` links
 
-- [`2.6.0`](https://github.com/jdeathe/centos-ssh/releases/tag/2.6.0),`centos-7` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
-- [`1.11.0`](https://github.com/jdeathe/centos-ssh/releases/tag/1.11.0),`centos-6` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
+- [`2.6.1`](https://github.com/jdeathe/centos-ssh/releases/tag/2.6.1),`centos-7` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
+- [`1.11.1`](https://github.com/jdeathe/centos-ssh/releases/tag/1.11.1),`centos-6` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
 
 ## Overview
 
@@ -38,7 +38,7 @@ Run up an SSH container named 'ssh.1' from the docker image 'jdeathe/centos-ssh'
 $ docker run -d \
   --name ssh.1 \
   -p 2020:22 \
-  jdeathe/centos-ssh:2.6.0
+  jdeathe/centos-ssh:2.6.1
 ```
 
 Check the logs for the password (required for sudo).
@@ -80,7 +80,7 @@ $ docker run -d \
   --name sftp.1 \
   -p 2021:22 \
   -e SSH_USER_FORCE_SFTP=true \
-  jdeathe/centos-ssh:2.6.0
+  jdeathe/centos-ssh:2.6.1
 ```
 
 #### Connecting
@@ -122,7 +122,7 @@ $ docker stop ssh.1 && \
   --name ssh.1 \
   -p :22 \
   --env "SSH_USER=centos" \
-  jdeathe/centos-ssh:2.6.0
+  jdeathe/centos-ssh:2.6.1
 ```
 
 To identify the `SSH_USER` user's sudoer password, inspect the container's logs as follows:
