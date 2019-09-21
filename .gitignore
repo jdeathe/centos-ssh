@@ -1,3 +1,2 @@
-.env
-packages
-dist
+/.env
+/dist

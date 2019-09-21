@@ -2,33 +2,6 @@
 
 set -e
 
-function __is_valid_ssh_user ()
-{
-	local -r safe_user='^[a-z_][a-z0-9_-]{0,29}[$a-z0-9_]?$'
-	local -r user="${1}"
-
-	if [[ ${user} =~ ${safe_user} ]]
-	then
-		return 0
-	fi
-
-	return 1
-}
-
-function __get_ssh_user ()
-{
-	local -r default_value="${1:-app-admin}"
-
-	local value="${SSH_USER}"
-
-	if ! __is_valid_ssh_user "${value}"
-	then
-		value="${default_value}"
-	fi
-
-	printf -- '%s' "${value}"
-}
-
 function __get_system_timezone ()
 {
 	local -r default_value="${1:-UTC}"
@@ -63,11 +36,10 @@ function __is_valid_zone ()
 
 function main ()
 {
+	local -r bootstrap_lock_file="/var/lock/subsys/sshd-bootstrap"
+	local -r bootstrap_state_file="/var/lib/misc/sshd-bootstrap"
 	local -r system_timezone="$(
 		__get_system_timezone
-	)"
-	local -r user="$(
-		__get_ssh_user
 	)"
 	local -r zone="$(
 		system-timezone -qq
@@ -76,34 +48,30 @@ function main ()
 	if ! ps axo command | grep -qE '^/usr/bin/python /usr/bin/supervisord'
 	then
 		>&2 printf -- \
-			'%s\n' \
-			"supervisord not running."
+			"supervisord not running"
 		exit 1
 	fi
 
 	if [[ ${system_timezone} != "${zone}" ]]
 	then
 		>&2 printf -- \
-			'%s\n' \
-			"system-timezone zone mismatch."
+			"system-timezone zone mismatch"
 		exit 1
 	fi
 
 	if [[ ${ENABLE_SSHD_BOOTSTRAP} == true ]]
 	then
-		if [[ -e /var/lock/subsys/sshd-bootstrap ]]
+		if [[ -f ${bootstrap_lock_file} ]]
 		then
 			>&2 printf -- \
-				'%s\n' \
-				"sshd-bootstrap in progress."
+				"sshd-bootstrap in progress"
 			exit 1
 		fi
 
-		if ! grep -qE "^# ${user}" /etc/sudoers
+		if [[ ! -f ${bootstrap_state_file} ]]
 		then
 			>&2 printf -- \
-				'%s\n' \
-				"sshd-bootstrap incomplete."
+				"sshd-bootstrap incomplete"
 			exit 1
 		fi
 	fi
@@ -114,8 +82,7 @@ function main ()
 			|| [[ ! -s /var/run/sshd.pid ]]
 		then
 			>&2 printf -- \
-				'%s\n' \
-				"sshd not running."
+				"sshd not running"
 			exit 1
 		fi
 	fi

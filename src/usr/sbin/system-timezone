@@ -175,7 +175,7 @@ function main ()
 	then
 		__print_message \
 			"error" \
-			"${0##*/} must be run as root."
+			"${0##*/} must be run as root"
 		exit 1
 	fi
 
@@ -222,7 +222,7 @@ function main ()
 	then
 		__print_message \
 			"error" \
-			"${0##*/} lock detected - aborting."
+			"${0##*/} lock detected - aborting"
 		exit 1
 	fi
 

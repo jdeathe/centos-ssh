@@ -1,6 +1,6 @@
 FROM centos:6.10
 
-ARG RELEASE_VERSION="1.11.0"
+ARG RELEASE_VERSION="1.11.1"
 
 # ------------------------------------------------------------------------------
 # - Import the RPM GPG keys for repositories
@@ -50,6 +50,7 @@ RUN rpm --rebuilddb \
 		sysvinit-tools \
 	&& yum clean all \
 	&& easy_install \
+		'meld3 == 1.0.2' \
 		'supervisor == 3.4.0' \
 		'supervisor-stdout == 0.1.1' \
 	&& mkdir -p \
@@ -157,7 +158,7 @@ jdeathe/centos-ssh:${RELEASE_VERSION} \
 	org.deathe.license="MIT" \
 	org.deathe.vendor="jdeathe" \
 	org.deathe.url="https://github.com/jdeathe/centos-ssh" \
-	org.deathe.description="CentOS-6 6.10 x86_64 - SCL, EPEL and IUS Repositories / Supervisor / OpenSSH."
+	org.deathe.description="OpenSSH 5.3 / Supervisor 3.4 / EPEL/IUS/SCL Repositories - CentOS-6 6.10 x86_64."
 
 HEALTHCHECK \
 	--interval=1s \
