@@ -39,48 +39,76 @@ function __print_message ()
 {
 	local -r type="${1}"
 
-	local colour_negative='\033[1;31m'
-	local colour_notice='\033[1;33m'
-	local colour_positive='\033[1;32m'
+	local colour_err='\033[1;31m'
+	local colour_warning='\033[1;33m'
+	local colour_notice='\033[1;32m'
+	local colour_info='\033[1;37m'
+	local colour_debug='\033[1;30m'
 	local colour_reset='\033[0m'
 	local exit_code="${3:-0}"
 	local message="${2}"
+	local output_debug="${output_debug:-false}"
+	local output_verbose="${output_verbose:-false}"
+	local output_quiet="${output_quiet:-false}"
+	local output_silent="${output_silent:-false}"
 	local prefix=""
-	local quiet="${quiet:-false}"
-	local silent="${silent:-false}"
+
 
 	if [[ ${monochrome} == true ]]
 	then
 		unset \
-			colour_negative \
+			colour_err \
+			colour_warning \
 			colour_notice \
-			colour_positive \
+			colour_info \
+			colour_debug \
 			colour_reset
 	fi
 
 	case "${type}" in
-		error)
+		err|error)
 			prefix="$(
 				printf -- \
-					'%bERROR:%b ' \
-					"${colour_negative}" \
-					"${colour_reset}"
+					'%bERROR%b %s' \
+					"${colour_err}" \
+					"${colour_reset}" \
+					"${0##*/}"
 			)"
 			;;
-		warn)
+		warning|warn)
 			prefix="$(
 				printf -- \
-					'%bWARN:%b ' \
+					'%bWARN%b %s' \
+					"${colour_warning}" \
+					"${colour_reset}" \
+					"${0##*/}"
+			)"
+			;;
+		notice)
+			prefix="$(
+				printf -- \
+					'%bNOTICE%b %s: ' \
 					"${colour_notice}" \
-					"${colour_reset}"
+					"${colour_reset}" \
+					"${0##*/}"
 			)"
 			;;
 		info)
 			prefix="$(
 				printf -- \
-					'%bINFO:%b ' \
-					"${colour_positive}" \
-					"${colour_reset}"
+					'%bINFO%b %s: ' \
+					"${colour_info}" \
+					"${colour_reset}" \
+					"${0##*/}"
+			)"
+			;;
+		debug)
+			prefix="$(
+				printf -- \
+					'%bDEBUG%b %s: ' \
+					"${colour_debug}" \
+					"${colour_reset}" \
+					"${0##*/}"
 			)"
 			;;
 		*)
@@ -88,24 +116,42 @@ function __print_message ()
 			;;
 	esac
 
-	if [[ ${quiet} == true ]] \
-		&& [[ ! ${type} =~ ^(error|warn)$ ]]
+	if [[ ${output_quiet} == true ]] \
+		&& [[ ! ${type} =~ ^(err|error|warning|warn)$ ]]
 	then
 		return 0
-	elif [[ ${silent} == true ]] \
-		&& [[ ${type} != error ]]
+	elif [[ ${output_silent} == true ]] \
+		&& [[ ! ${type} =~ ^(err|error)$ ]]
 	then
 		return 0
-	elif [[ ${silent} == true ]] \
-		&& [[ ${type} == error ]]
+	elif [[ ${output_silent} == true ]] \
+		&& [[ ${type} =~ ^(err|error)$ ]]
 	then
 		return 1
-	elif [[ ${type} == error ]]
+	elif [[ ${type} =~ ^(err|error)$ ]]
 	then
-		>&2 printf -- \
-			'%s%s\n' \
-			"${prefix}" \
+		logger \
+			--priority "err" \
+			--stderr \
+			--tag "${prefix}" \
+			-- \
 			"${message}"
+	elif [[ ${type} =~ ^(warning|warn)$ ]]
+	then
+		logger \
+			--priority "warning" \
+			--stderr \
+			--tag "${prefix}" \
+			-- \
+			"${message}"
+	elif [[ ${output_debug} != true ]] \
+		&& [[ ${type} == debug  ]]
+	then
+		return 0
+	elif [[ ${output_verbose} != true ]] \
+		&& [[ ${type} == info  ]]
+	then
+		return 0
 	else
 		printf -- \
 			'%s%s\n' \
@@ -167,16 +213,15 @@ function __reap ()
 function __usage ()
 {
 	local help="${help:-false}"
-	local quiet="${quiet:-false}"
-	local silent="${silent:-false}"
+	local output_quiet="${output_quiet:-false}"
+	local output_silent="${output_silent:-false}"
 
-	if [[ ${silent} != true ]] \
+	if [[ ${output_silent} != true ]] \
 		|| [[ ${help} == true ]]
 	then
 		cat <<-USAGE
 
 		Usage: ${0##*/} [OPTIONS]
-		       ${0##*/} [{-h|--help}]
 
 		Options:
 		  -g, --get KEY              Used to get values from a running ${0##*/}
@@ -184,22 +229,24 @@ function __usage ()
 		                             - start : returns session start timestamp.
 		                             - end : returns session end timestamp.
 		                             - ttl : returns remaining session time to live.
-		  -h, --help                 Show this help and exit.
+		  -h, --help                 Display help text and exit.
 		  --monochrome               Output colour is suppressed.
 		  -p, --pid PID              Send the termination signal to the process with
 		                             the pid value PID.
 		                             If not specified the default is pid 1.
-		  -q, --quiet                Do not print information message output.
-		  -qq, --silent              Do not print error message output.
+		  -q, --quiet                Do not output notice, info or debug messages.
+		  -qq, --silent              Do not output any messages.
 		  -s, --signal SIG           Send the signal SIG to the process.
 		                             If not specified the default is SIGTERM.
-		  -t, --timeout SECONDS      Time in seconds to wait before sending the
-		                             signal to the process. The default is 0 seconds
-		                             which indicates no delay.
-		  -w, --wall MESSAGE         Set a wall message to send before session end.
 		  -T, --wall-timeout SECONDS Set the time before session end to send the
 		                             wall message. The default is 30 seconds.
 		                             Set to 0 to disable sending a wall message.
+		  -t, --timeout SECONDS      Time in seconds to wait before sending the
+		                             signal to the process. The default is 0 seconds
+		                             which indicates no delay.
+		  -v, --verbose              Output info messages.
+		  -vv, --debug               Output debug messages.
+		  -w, --wall MESSAGE         Set a wall message to send before session end.
 		USAGE
 	fi
 
@@ -220,15 +267,16 @@ function main ()
 	local get
 	local help
 	local monochrome="false"
+	local output_debug="false"
+	local output_verbose="false"
+	local output_quiet="false"
+	local output_silent="false"
 	local pid="1"
-	local quiet="false"
 	local signal="TERM"
-	local silent="false"
 	local session_start
 	local session_end
 	local state_value
 	local timeout="0"
-	local verbose="false"
 	local wall_message
 	local wall_timeout="30"
 
@@ -236,7 +284,7 @@ function main ()
 	then
 		__print_message \
 			"error" \
-			"${0##*/} must be run as root" \
+			"must be run as root" \
 			1
 	fi
 
@@ -268,12 +316,12 @@ function main ()
 				shift 2 || break
 				;;
 			-q|--quiet)
-				quiet="true"
+				output_quiet="true"
 				shift 1
 				;;
 			-qq|--silent)
-				quiet="true"
-				silent="true"
+				output_quiet="true"
+				output_silent="true"
 				shift 1
 				;;
 			--signal=*)
@@ -293,7 +341,12 @@ function main ()
 				shift 2 || break
 				;;
 			-v|--verbose)
-				verbose="true"
+				output_verbose="true"
+				shift 1
+				;;
+			-vv|--debug)
+				output_debug="true"
+				output_verbose="true"
 				shift 1
 				;;
 			--wall=*)
@@ -315,7 +368,7 @@ function main ()
 			*)
 				__print_message \
 					"error" \
-					"${0##*/} unknown option ${1}"
+					"unknown option ${1}"
 				__usage
 				;;
 		esac
@@ -352,7 +405,7 @@ function main ()
 				*)
 					__print_message \
 						"error" \
-						"${0##*/} unknown get value ${get}"
+						"unknown get value ${get}"
 					__usage
 					;;
 			esac
@@ -361,14 +414,14 @@ function main ()
 		else
 			__print_message \
 				"error" \
-				"${0##*/} lock detected - aborting" \
+				"lock detected - aborting" \
 				1
 		fi
 	elif [[ -n ${get} ]]
 	then
 		__print_message \
 			"error" \
-			"${0##*/} is not running"
+			"is not running"
 		__usage
 	fi
 
@@ -380,7 +433,7 @@ function main ()
 	then
 		__print_message \
 			"error" \
-			"${0##*/} invalid --timeout"
+			"invalid --timeout"
 		__usage
 	fi
 
@@ -388,7 +441,7 @@ function main ()
 	then
 		__print_message \
 			"error" \
-			"${0##*/} invalid --wall-timeout"
+			"invalid --wall-timeout"
 		__usage
 	fi
 
@@ -409,6 +462,10 @@ function main ()
 
 	if (( timeout > 0 ))
 	then
+		__print_message \
+			"info" \
+			"session will expire after ${timeout} seconds"
+
 		if coproc read -t "$(( ${timeout} - ${wall_timeout} ))"
 		then
 			wait "${!}" || :
@@ -426,8 +483,12 @@ function main ()
 	fi
 
 	__print_message \
+		"info" \
+		"expiring session after ${timeout} seconds"
+
+	__print_message \
 		"warn" \
-		"${0##*/} expiring session"
+		"expiring session"
 
 	exit 0
 }
