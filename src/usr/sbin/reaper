@@ -39,30 +39,29 @@ function __print_message ()
 {
 	local -r type="${1}"
 
-	local colour_err='\033[1;31m'
-	local colour_warning='\033[1;33m'
-	local colour_notice='\033[1;32m'
-	local colour_info='\033[1;37m'
 	local colour_debug='\033[1;30m'
+	local colour_err='\033[1;31m'
+	local colour_info='\033[1;37m'
+	local colour_notice='\033[1;32m'
 	local colour_reset='\033[0m'
+	local colour_warning='\033[1;33m'
 	local exit_code="${3:-0}"
 	local message="${2}"
 	local output_debug="${output_debug:-false}"
-	local output_verbose="${output_verbose:-false}"
 	local output_quiet="${output_quiet:-false}"
 	local output_silent="${output_silent:-false}"
+	local output_verbose="${output_verbose:-false}"
 	local prefix=""
-
 
 	if [[ ${monochrome} == true ]]
 	then
 		unset \
-			colour_err \
-			colour_warning \
-			colour_notice \
-			colour_info \
 			colour_debug \
-			colour_reset
+			colour_err \
+			colour_info \
+			colour_notice \
+			colour_reset \
+			colour_warning
 	fi
 
 	case "${type}" in
@@ -268,13 +267,13 @@ function main ()
 	local help
 	local monochrome="false"
 	local output_debug="false"
-	local output_verbose="false"
 	local output_quiet="false"
 	local output_silent="false"
+	local output_verbose="false"
 	local pid="1"
-	local signal="TERM"
-	local session_start
 	local session_end
+	local session_start
+	local signal="TERM"
 	local state_value
 	local timeout="0"
 	local wall_message
