@@ -1,6 +1,6 @@
 FROM centos:6.10
 
-ARG RELEASE_VERSION="1.11.0"
+ARG RELEASE_VERSION="1.11.1"
 
 # ------------------------------------------------------------------------------
 # - Import the RPM GPG keys for repositories

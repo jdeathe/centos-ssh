@@ -4,7 +4,7 @@
 
 Summary of release changes.
 
-### 1.11.1 - Unreleased
+### 1.11.1 - 2019-09-21
 
 - Deprecate Makefile target `logs-delayed`; replaced with `logsdef`.
 - Updates `test/health_status` helper script with for consistency.
