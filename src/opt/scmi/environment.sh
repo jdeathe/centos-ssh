@@ -24,9 +24,11 @@ STARTUP_TIME="${STARTUP_TIME:-2}"
 # ------------------------------------------------------------------------------
 # Application container configuration
 # ------------------------------------------------------------------------------
+ENABLE_REAPER="${ENABLE_REAPER:-false}"
 ENABLE_SSHD_BOOTSTRAP="${ENABLE_SSHD_BOOTSTRAP:-true}"
 ENABLE_SSHD_WRAPPER="${ENABLE_SSHD_WRAPPER:-true}"
 ENABLE_SUPERVISOR_STDOUT="${ENABLE_SUPERVISOR_STDOUT:-false}"
+REAPER_TIMEOUT="${REAPER_TIMEOUT:-0}"
 SSH_AUTHORIZED_KEYS="${SSH_AUTHORIZED_KEYS:-}"
 SSH_CHROOT_DIRECTORY="${SSH_CHROOT_DIRECTORY:-%h}"
 SSH_INHERIT_ENVIRONMENT="${SSH_INHERIT_ENVIRONMENT:-false}"

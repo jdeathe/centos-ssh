@@ -56,9 +56,11 @@ Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/opt/scmi/packages"
 Environment="DOCKER_IMAGE_TAG={{RELEASE_VERSION}}"
 Environment="DOCKER_PORT_MAP_TCP_22=2020"
 Environment="DOCKER_USER=jdeathe"
+Environment="ENABLE_REAPER=false"
 Environment="ENABLE_SSHD_BOOTSTRAP=true"
 Environment="ENABLE_SSHD_WRAPPER=true"
 Environment="ENABLE_SUPERVISOR_STDOUT=false"
+Environment="REAPER_TIMEOUT=0"
 Environment="SSH_AUTHORIZED_KEYS="
 Environment="SSH_CHROOT_DIRECTORY=%%h"
 Environment="SSH_INHERIT_ENVIRONMENT=false"
@@ -129,9 +131,11 @@ ExecStartPre=-/bin/bash -c \
 ExecStart=/bin/bash -c \
   "exec /usr/bin/docker run \
     --name %p.%i \
+    --env \"ENABLE_REAPER=${ENABLE_REAPER}\" \
     --env \"ENABLE_SSHD_BOOTSTRAP=${ENABLE_SSHD_BOOTSTRAP}\" \
     --env \"ENABLE_SSHD_WRAPPER=${ENABLE_SSHD_WRAPPER}\" \
     --env \"ENABLE_SUPERVISOR_STDOUT=${ENABLE_SUPERVISOR_STDOUT}\" \
+    --env \"REAPER_TIMEOUT=${REAPER_TIMEOUT}\" \
     --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
     --env \"SSH_CHROOT_DIRECTORY=${SSH_CHROOT_DIRECTORY}\" \
     --env \"SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT}\" \

@@ -31,6 +31,9 @@ Summary of release changes.
 - Adds exec proxy function to `sshd-wrapper` used to pass through nice.
 - Adds double quotes around value containing spaces.
 - Adds `/docs` directory for supplementary documentation and simplify README.
+- Adds feature to optionally exit the container after a specified timout period.
+- Adds `ENABLE_REAPER` with a default value of `false` to enable the `reaper` service.
+- Adds `REAPER_TIMEOUT` with a default value of `0` seconds (i.e no timeout delay).
 - Fixes validation failure of 0 second --timeout value in `test/health_status`.
 - Removes `ENABLE_SSHD_BOOTSTRAP` from docker-compose example configuration.
 - Removes `ENABLE_SSHD_WRAPPER` from docker-compose example configuration.

@@ -32,6 +32,7 @@ RUN rpm --rebuilddb \
 		openssl-1.0.2k-19.el7 \
 		python-setuptools-0.9.8-7.el7 \
 		sudo-1.8.23-4.el7 \
+		sysvinit-tools-2.88-14.dsf.el7 \
 		yum-plugin-versionlock-1.1.31-52.el7 \
 	&& yum versionlock add \
 		inotify-tools \
@@ -40,6 +41,7 @@ RUN rpm --rebuilddb \
 		openssh-clients \
 		python-setuptools \
 		sudo \
+		sysvinit-tools \
 		yum-plugin-versionlock \
 	&& yum clean all \
 	&& easy_install \
@@ -88,7 +90,7 @@ RUN ln -sf \
 	&& chmod 644 \
 		/etc/{supervisord.conf,supervisord.d/{20-sshd-bootstrap,50-sshd-wrapper}.conf} \
 	&& chmod 700 \
-		/usr/{bin/healthcheck,sbin/{scmi,sshd-{bootstrap,wrapper},system-{timezone,timezone-wrapper}}}
+		/usr/{bin/healthcheck,sbin/{reaper,scmi,sshd-{bootstrap,wrapper},system-{timezone,timezone-wrapper}}}
 
 EXPOSE 22
 
@@ -96,9 +98,11 @@ EXPOSE 22
 # Set default environment variables
 # ------------------------------------------------------------------------------
 ENV \
+	ENABLE_REAPER="false" \
 	ENABLE_SSHD_BOOTSTRAP="true" \
 	ENABLE_SSHD_WRAPPER="true" \
 	ENABLE_SUPERVISOR_STDOUT="false" \
+	REAPER_TIMEOUT="0" \
 	SSH_AUTHORIZED_KEYS="" \
 	SSH_CHROOT_DIRECTORY="%h" \
 	SSH_INHERIT_ENVIRONMENT="false" \

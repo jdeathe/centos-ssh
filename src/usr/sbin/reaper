@@ -1,0 +1,495 @@
+#!/usr/bin/env bash
+
+set -e
+
+function __cleanup ()
+{
+	__delete_lock
+}
+
+function __create_lock ()
+{
+	if [[ -n ${lock_file} ]]
+	then
+		touch "${lock_file}"
+	fi
+}
+
+function __create_state ()
+{
+	if [[ -n ${state_file} ]]
+	then
+		printf -- \
+			'%s %s\n' \
+			"${session_start}" \
+			"$(( ${session_start} + ${timeout} ))" \
+			> "${state_file}"
+	fi
+}
+
+function __delete_lock ()
+{
+	if [[ -f ${lock_file} ]]
+	then
+		rm -f "${lock_file}"
+	fi
+}
+
+function __print_message ()
+{
+	local -r type="${1}"
+
+	local colour_debug='\033[1;30m'
+	local colour_err='\033[1;31m'
+	local colour_info='\033[1;37m'
+	local colour_notice='\033[1;32m'
+	local colour_reset='\033[0m'
+	local colour_warning='\033[1;33m'
+	local exit_code="${3:-0}"
+	local message="${2}"
+	local output_debug="${output_debug:-false}"
+	local output_quiet="${output_quiet:-false}"
+	local output_silent="${output_silent:-false}"
+	local output_verbose="${output_verbose:-false}"
+	local prefix=""
+
+	if [[ ${monochrome} == true ]]
+	then
+		unset \
+			colour_debug \
+			colour_err \
+			colour_info \
+			colour_notice \
+			colour_reset \
+			colour_warning
+	fi
+
+	case "${type}" in
+		err|error)
+			prefix="$(
+				printf -- \
+					'%bERROR%b %s' \
+					"${colour_err}" \
+					"${colour_reset}" \
+					"${0##*/}"
+			)"
+			;;
+		warning|warn)
+			prefix="$(
+				printf -- \
+					'%bWARN%b %s' \
+					"${colour_warning}" \
+					"${colour_reset}" \
+					"${0##*/}"
+			)"
+			;;
+		notice)
+			prefix="$(
+				printf -- \
+					'%bNOTICE%b %s: ' \
+					"${colour_notice}" \
+					"${colour_reset}" \
+					"${0##*/}"
+			)"
+			;;
+		info)
+			prefix="$(
+				printf -- \
+					'%bINFO%b %s: ' \
+					"${colour_info}" \
+					"${colour_reset}" \
+					"${0##*/}"
+			)"
+			;;
+		debug)
+			prefix="$(
+				printf -- \
+					'%bDEBUG%b %s: ' \
+					"${colour_debug}" \
+					"${colour_reset}" \
+					"${0##*/}"
+			)"
+			;;
+		*)
+			message="${type}"
+			;;
+	esac
+
+	if [[ ${output_quiet} == true ]] \
+		&& [[ ! ${type} =~ ^(err|error|warning|warn)$ ]]
+	then
+		return 0
+	elif [[ ${output_silent} == true ]] \
+		&& [[ ! ${type} =~ ^(err|error)$ ]]
+	then
+		return 0
+	elif [[ ${output_silent} == true ]] \
+		&& [[ ${type} =~ ^(err|error)$ ]]
+	then
+		return 1
+	elif [[ ${type} =~ ^(err|error)$ ]]
+	then
+		logger \
+			--priority "err" \
+			--stderr \
+			--tag "${prefix}" \
+			-- \
+			"${message}"
+	elif [[ ${type} =~ ^(warning|warn)$ ]]
+	then
+		logger \
+			--priority "warning" \
+			--stderr \
+			--tag "${prefix}" \
+			-- \
+			"${message}"
+	elif [[ ${output_debug} != true ]] \
+		&& [[ ${type} == debug  ]]
+	then
+		return 0
+	elif [[ ${output_verbose} != true ]] \
+		&& [[ ${type} == info  ]]
+	then
+		return 0
+	else
+		printf -- \
+			'%s%s\n' \
+			"${prefix}" \
+			"${message}"
+	fi
+
+	if [[ ${exit_code} -gt 0 ]]
+	then
+		exit ${exit_code}
+	fi
+}
+
+function __is_valid_get ()
+{
+	local -r get_options='^(end|start|ttl)$'
+	local -r value="${1}"
+
+	if [[ ${value} =~ ${get_options} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_positive_integer ()
+{
+	local -r positive_integer='^[0-9]+$'
+	local -r value="${1}"
+
+	if [[ ${value} =~ ${positive_integer} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __is_valid_timeout ()
+{
+	__is_valid_positive_integer "${@}"
+}
+
+function __is_valid_wall_timeout ()
+{
+	__is_valid_positive_integer "${@}"
+}
+
+function __reap ()
+{
+	kill \
+		-s "${signal:-TERM}" \
+		"${pid:-1}"
+
+	__cleanup
+}
+
+function __usage ()
+{
+	local help="${help:-false}"
+	local output_quiet="${output_quiet:-false}"
+	local output_silent="${output_silent:-false}"
+
+	if [[ ${output_silent} != true ]] \
+		|| [[ ${help} == true ]]
+	then
+		cat <<-USAGE
+
+		Usage: ${0##*/} [OPTIONS]
+
+		Options:
+		  -g, --get KEY              Used to get values from a running ${0##*/}
+		                             process. The keys and values they return are:
+		                             - start : returns session start timestamp.
+		                             - end : returns session end timestamp.
+		                             - ttl : returns remaining session time to live.
+		  -h, --help                 Display help text and exit.
+		  --monochrome               Output colour is suppressed.
+		  -p, --pid PID              Send the termination signal to the process with
+		                             the pid value PID.
+		                             If not specified the default is pid 1.
+		  -q, --quiet                Do not output notice, info or debug messages.
+		  -qq, --silent              Do not output any messages.
+		  -s, --signal SIG           Send the signal SIG to the process.
+		                             If not specified the default is SIGTERM.
+		  -T, --wall-timeout SECONDS Set the time before session end to send the
+		                             wall message. The default is 30 seconds.
+		                             Set to 0 to disable sending a wall message.
+		  -t, --timeout SECONDS      Time in seconds to wait before sending the
+		                             signal to the process. The default is 0 seconds
+		                             which indicates no delay.
+		  -v, --verbose              Output info messages.
+		  -vv, --debug               Output debug messages.
+		  -w, --wall MESSAGE         Set a wall message to send before session end.
+		USAGE
+	fi
+
+	if [[ ${help} != true ]]
+	then
+		exit 1
+	fi
+
+	exit 0
+}
+
+function main ()
+{
+	local -r lock_file="/var/lock/subsys/reaper"
+	local -r state_file="/var/lib/misc/reaper"
+
+	local current_time
+	local get
+	local help
+	local monochrome="false"
+	local output_debug="false"
+	local output_quiet="false"
+	local output_silent="false"
+	local output_verbose="false"
+	local pid="1"
+	local session_end
+	local session_start
+	local signal="TERM"
+	local state_value
+	local timeout="0"
+	local wall_message
+	local wall_timeout="30"
+
+	if [[ ${EUID} -ne 0 ]]
+	then
+		__print_message \
+			"error" \
+			"must be run as root" \
+			1
+	fi
+
+	while [[ "${#}" -gt 0 ]]
+	do
+		case "${1}" in
+			--get=*)
+				get="${1#*=}"
+				shift 1
+				;;
+			-g|--get)
+				get="${2}"
+				shift 2 || break
+				;;
+			-h|--help)
+				help="true"
+				__usage
+				;;
+			--monochrome)
+				monochrome="true"
+				shift 1
+				;;
+			--pid=*)
+				pid="${1#*=}"
+				shift 1
+				;;
+			-p|--pid)
+				pid="${2}"
+				shift 2 || break
+				;;
+			-q|--quiet)
+				output_quiet="true"
+				shift 1
+				;;
+			-qq|--silent)
+				output_quiet="true"
+				output_silent="true"
+				shift 1
+				;;
+			--signal=*)
+				signal="${1#*=}"
+				shift 1
+				;;
+			-s|--signal)
+				signal="${2}"
+				shift 2 || break
+				;;
+			--timeout=*)
+				timeout="${1#*=}"
+				shift 1
+				;;
+			-t|--timeout)
+				timeout="${2}"
+				shift 2 || break
+				;;
+			-v|--verbose)
+				output_verbose="true"
+				shift 1
+				;;
+			-vv|--debug)
+				output_debug="true"
+				output_verbose="true"
+				shift 1
+				;;
+			--wall=*)
+				wall_message="${1#*=}"
+				shift 1
+				;;
+			-w|--wall)
+				wall_message="${2}"
+				shift 2 || break
+				;;
+			--wall-timeout=*)
+				wall_timeout="${1#*=}"
+				shift 1
+				;;
+			--wall-timeout)
+				wall_timeout="${2}"
+				shift 2 || break
+				;;
+			*)
+				__print_message \
+					"error" \
+					"unknown option ${1}"
+				__usage
+				;;
+		esac
+	done
+
+	if [[ -f ${lock_file} ]]
+	then
+		if [[ -n ${get} ]]
+		then
+			state_value="$(< "${state_file}")"
+			session_end="${state_value##* }"
+			session_start="${state_value%% *}"
+
+			case "${get}" in
+				end)
+					printf -- \
+						'%s\n' \
+						"${session_end}"
+					;;
+				start)
+					printf -- \
+						'%s\n' \
+						"${session_start}"
+					;;
+				ttl)
+					current_time="$(
+						date -u +%s
+					)"
+
+					printf -- \
+						'%s\n' \
+						"$(( ${session_end} - ${current_time} ))"
+					;;
+				*)
+					__print_message \
+						"error" \
+						"unknown get value ${get}"
+					__usage
+					;;
+			esac
+
+			exit 0
+		else
+			__print_message \
+				"error" \
+				"lock detected - aborting" \
+				1
+		fi
+	elif [[ -n ${get} ]]
+	then
+		__print_message \
+			"error" \
+			"is not running"
+		__usage
+	fi
+
+	trap __cleanup \
+		EXIT INT TERM
+	__create_lock
+
+	if ! __is_valid_timeout "${timeout}"
+	then
+		__print_message \
+			"error" \
+			"invalid --timeout"
+		__usage
+	fi
+
+	if ! __is_valid_wall_timeout "${wall_timeout}"
+	then
+		__print_message \
+			"error" \
+			"invalid --wall-timeout"
+		__usage
+	fi
+
+	if [[ -z ${wall_message} ]] \
+		|| (( timeout <= wall_timeout ))
+	then
+		wall_timeout="0"
+	fi
+
+	session_start="$(
+		date -u +%s
+	)"
+
+	trap __reap \
+		EXIT INT TERM
+
+	__create_state
+
+	if (( timeout > 0 ))
+	then
+		__print_message \
+			"info" \
+			"session will expire after ${timeout} seconds"
+
+		if coproc read -t "$(( ${timeout} - ${wall_timeout} ))"
+		then
+			wait "${!}" || :
+
+			if (( wall_timeout > 0 ))
+			then
+				wall "${wall_message}" || :
+
+				if coproc read -t "${wall_timeout}"
+				then
+					wait "${!}" || :
+				fi
+			fi
+		fi
+	fi
+
+	__print_message \
+		"info" \
+		"expiring session after ${timeout} seconds"
+
+	__print_message \
+		"warn" \
+		"expiring session"
+
+	exit 0
+}
+
+main "${@}"
