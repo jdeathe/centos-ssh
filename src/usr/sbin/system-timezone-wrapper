@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+
+set -e
+
+function __cleanup ()
+{
+	local -r exit_code="${?}"
+
+	__delete_lock
+
+	if [[ ${exit_code} -eq 0 ]]
+	then
+		__create_state
+	fi
+}
+
+function __create_lock ()
+{
+	if [[ -n ${lock_file} ]]
+	then
+		touch "${lock_file}"
+	fi
+}
+
+function __create_state ()
+{
+	if [[ -n ${state_file} ]]
+	then
+		touch "${state_file}"
+	fi
+}
+
+function __delete_lock ()
+{
+	if [[ -f ${lock_file} ]]
+	then
+		rm -f "${lock_file}"
+	fi
+}
+
+function __get_system_timezone ()
+{
+	local -r default_value="${1:-UTC}"
+
+	local value="${SYSTEM_TIMEZONE}"
+
+	if ! __is_valid_system_timezone "${value}"
+	then
+		value="${default_value}"
+	fi
+
+	printf -- '%s' "${value}"
+}
+
+function __get_options ()
+{
+	local -r zone="${1:-"$(
+		__get_system_timezone
+	)"}"
+
+	printf -- \
+		'--silent --zone %s' \
+		"${zone}"
+}
+
+function __get_timer_total ()
+{
+	local -r timer_end="$(
+		date -u +%s.%N
+	)"
+	local -r timer_start="${1}"
+
+	if [[ -z ${timer_start} ]] \
+		|| [[ ${timer_start//.} -gt ${timer_end//.} ]]
+	then
+		>&2 printf -- \
+			'ERROR: %s invalid timer start: %s\n' \
+			"${0##*/}" \
+			"${timer_start}"
+		printf -- \
+			'0.000000'
+	else
+		awk \
+			-v timer_end="${timer_end}" \
+			-v timer_start="${timer_start}" \
+			'BEGIN { print \
+				timer_end - timer_start;
+			}'
+	fi
+}
+
+function __is_valid_system_timezone ()
+{
+	__is_valid_zone "${@}"
+}
+
+function __is_valid_zone ()
+{
+	local zone="${1}"
+
+	if [[ -n ${zone} ]] \
+		&& [[ -f /usr/share/zoneinfo/${zone} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function main ()
+{
+	local -r bin="/usr/sbin/system-timezone"
+	local -r lock_file="/var/lock/subsys/system-timezone-wrapper"
+	local -r state_file="/var/lib/misc/system-timezone-wrapper"
+	local -r timer_start="$(
+		date -u +%s.%N
+	)"
+
+	local system_timezone
+	local options
+	local timer_total
+	local verbose="false"
+
+	while [[ "${#}" -gt 0 ]]
+	do
+		case "${1}" in
+			-v|--verbose)
+				verbose="true"
+				shift 1
+				;;
+		esac
+	done
+
+	if [[ -f ${state_file} ]]
+	then
+		if [[ ${verbose} == true ]]
+		then
+			printf -- \
+				'INFO: %s finished - skipping\n' \
+				"${0##*/}"
+		fi
+		exit 0
+	fi
+
+	if [[ -f ${lock_file} ]]
+	then
+		>&2 printf -- \
+			'ERROR: %s lock detected - aborting\n' \
+			"${0##*/}"
+		exit 1
+	fi
+
+	trap "__cleanup" \
+		EXIT INT TERM
+	__create_lock
+
+	if [[ ${verbose} == true ]]
+	then
+		system_timezone="$(
+			__get_system_timezone
+		)"
+
+		options="$(
+			__get_options \
+				"${system_timezone}"
+		)"
+	else
+		options="$(
+			__get_options
+		)"
+	fi
+
+	if ! ${bin} \
+		${options}
+	then
+		>&2 printf -- \
+			'ERROR: %s failed setting zone: %s\n' \
+			"${bin##*/}" \
+			"${system_timezone}"
+		exit 1
+	fi
+
+	if [[ ${verbose} == true ]]
+	then
+		timer_total="$(
+			__get_timer_total \
+				"${timer_start}"
+		)"
+
+		cat \
+			<<-EOT
+
+			================================================================================
+			System Time Zone Details
+			--------------------------------------------------------------------------------
+			timezone : ${system_timezone}
+			--------------------------------------------------------------------------------
+			${timer_total}
+
+		EOT
+	fi
+
+	exit 0
+}
+
+main "${@}"

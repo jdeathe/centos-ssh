@@ -1,0 +1,268 @@
+#!/usr/bin/env bash
+
+set -e
+
+function __cleanup ()
+{
+	local -r exit_code="${?}"
+
+	__delete_lock
+}
+
+function __create_lock ()
+{
+	if [[ -n ${lock_file} ]]
+	then
+		touch "${lock_file}"
+	fi
+}
+
+function __delete_lock ()
+{
+	if [[ -f ${lock_file} ]]
+	then
+		rm -f "${lock_file}"
+	fi
+}
+
+function __get_timezone ()
+{
+	local -r link_name="/etc/localtime"
+
+	local localtime="$(
+		readlink -f "${link_name}"
+	)"
+	local zone="${localtime/"/usr/share/zoneinfo/"/}"
+
+	if [[ ! -h ${link_name} ]] \
+		|| ! __is_valid_zone "${zone}"
+	then
+		__print_message \
+			"error" \
+			"corrupt/invalid symbolic link: ${link_name}"
+		exit 1
+	fi
+
+	printf -- \
+		'%s\n' \
+		"${zone}"
+}
+
+function __is_valid_zone ()
+{
+	local zone="${1}"
+
+	if [[ -n ${zone} ]] \
+		&& [[ -f /usr/share/zoneinfo/${zone} ]]
+	then
+		return 0
+	fi
+
+	return 1
+}
+
+function __print_message ()
+{
+	local -r type="${1}"
+
+	local message="${2}"
+	local prefix=""
+	local quiet="${quiet:-false}"
+	local silent="${silent:-false}"
+
+	case "${type}" in
+		error)
+			prefix="ERROR: "
+			;;
+		info)
+			prefix="INFO: "
+			;;
+		*)
+			message="${type}"
+			;;
+	esac
+
+	if [[ ${quiet} == true ]] \
+		|| [[ ${silent} == true ]] \
+		&& [[ ${type} != error ]]
+	then
+		return 0
+	elif [[ ${silent} == true ]] \
+		&& [[ ${type} == error ]]
+	then
+		return 1
+	elif [[ ${type} == error ]]
+	then
+		>&2 printf -- \
+			'%s%s\n' \
+			"${prefix}" \
+			"${message}"
+	else
+		printf -- \
+			'%s%s\n' \
+			"${prefix}" \
+			"${message}"
+	fi
+}
+
+function __set_timezone ()
+{
+	local zone="${1}"
+
+	if ! __is_valid_zone "${zone}"
+	then
+		return 1
+	fi
+
+	if [[ -f /etc/sysconfig/clock ]]
+	then
+		sed -r -i \
+			-e "s~^(ZONE=).*$~\1${zone}~" \
+			/etc/sysconfig/clock
+	fi
+
+	ln -sf \
+		/usr/share/zoneinfo/"${zone}" \
+		/etc/localtime
+}
+
+function __usage ()
+{
+	local help="${help:-false}"
+	local quiet="${quiet:-false}"
+	local silent="${silent:-false}"
+
+	if [[ ${silent} != true ]] \
+		|| [[ ${help} == true ]]
+	then
+		cat <<-USAGE
+
+		Usage: ${0##*/} [OPTIONS]
+		       ${0##*/} [-h|--help]
+
+		${0##*/} is a utility to manage the system time zone.
+		It will output the current system time zone if run without options.
+
+		Options:
+		  -h, --help                 Show this help and exit.
+		  -q, --quiet                Do not print information message output.
+		  -qq, --silent              Do not print error message output.
+		  -z, --zone ZONE            Set the system time zone. e.g:
+		                             'UTC', 'Europe/London' etc.
+
+		USAGE
+	fi
+
+	if [[ ${help} != true ]]
+	then
+		exit 1
+	fi
+
+	exit 0
+}
+
+function main ()
+{
+	local -r lock_file="/var/lock/subsys/system-timezone"
+
+	local help
+	local quiet="false"
+	local silent="false"
+	local system_zone
+	local zone
+
+	if [[ ${EUID} -ne 0 ]]
+	then
+		__print_message \
+			"error" \
+			"${0##*/} must be run as root"
+		exit 1
+	fi
+
+	while [[ "${#}" -gt 0 ]]
+	do
+		case "${1}" in
+			-h|--help)
+				help="true"
+				__usage
+				break
+				;;
+			-z|--zone)
+				zone="${2}"
+				if [[ -z ${zone} ]]
+				then
+					__usage
+				fi
+				shift 2 || break
+				;;
+			--zone=*)
+				zone="${1#*=}"
+				if [[ -z ${zone} ]]
+				then
+					__usage
+				fi
+				shift 1
+				;;
+			-q|--quiet)
+				quiet="true"
+				shift 1
+				;;
+			-qq|--silent)
+				quiet="true"
+				silent="true"
+				shift 1
+				;;
+			*)
+				__usage
+				;;
+		esac
+	done
+
+	if [[ -f ${lock_file} ]]
+	then
+		__print_message \
+			"error" \
+			"${0##*/} lock detected - aborting"
+		exit 1
+	fi
+
+	trap "__cleanup" \
+		EXIT INT TERM
+	__create_lock
+
+	if [[ -z ${zone} ]]
+	then
+		__get_timezone
+		exit 0
+	fi
+
+	if ! __is_valid_zone "${zone}"
+	then
+		__print_message \
+			"error" \
+			"${0##*/} invalid zone: ${zone}"
+		exit 1
+	else
+		__print_message \
+			"info" \
+			"${0##*/} setting zone: ${zone}"
+
+		__set_timezone "${zone}"
+
+		system_zone="$(
+			__get_timezone
+		)"
+
+		if [[ ${system_zone} != "${zone}" ]]
+		then
+			__print_message \
+				"error" \
+				"${0##*/} failed setting zone: ${zone}"
+			exit 1
+		fi
+	fi
+
+	exit 0
+}
+
+main "${@}"

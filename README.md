@@ -1,40 +1,36 @@
-centos-ssh
-==========
+## Tags and respective `Dockerfile` links
 
-Docker Images of CentOS-6 6.10 x86_64 / CentOS-7 7.6.1810 x86_64
+- [`2.6.1`](https://github.com/jdeathe/centos-ssh/releases/tag/2.6.1),`centos-7` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
+- [`1.11.1`](https://github.com/jdeathe/centos-ssh/releases/tag/1.11.1),`centos-6` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
 
-Includes public key authentication, Automated password generation and supports custom configuration via environment variables.
+## Overview
 
-## Overview & links
+Included in the build are the [EPEL](http://fedoraproject.org/wiki/EPEL), [IUS](https://ius.io) and [SCL](https://www.softwarecollections.org/) repositories. Installed packages include [inotify-tools](https://github.com/rvoicilas/inotify-tools/wiki), [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/), [vim-minimal](http://www.vim.org/), python-setuptools, [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
 
-The latest CentOS-6 / CentOS-7 based releases can be pulled from the `centos-6` / `centos-7` Docker tags respectively. For production use it is recommended to select a specific release tag - the convention is `centos-6-1.10.1` OR `1.10.1` for the [1.10.1](https://github.com/jdeathe/centos-ssh/tree/1.10.1) release tag and `centos-7-2.5.1` OR `2.5.1` for the [2.5.1](https://github.com/jdeathe/centos-ssh/tree/2.5.1) release tag.
-
-### Tags and respective `Dockerfile` links
-
-- `centos-7`,`centos-7-2.5.1`,`2.5.1` [(centos-7/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-7/Dockerfile)
-- `centos-6`,`centos-6-1.10.1`,`1.10.1` [(centos-6/Dockerfile)](https://github.com/jdeathe/centos-ssh/blob/centos-6/Dockerfile)
-
-The Dockerfile can be used to build a base image that is the bases for several other docker images.
-
-Included in the build are the [SCL](https://www.softwarecollections.org/), [EPEL](http://fedoraproject.org/wiki/EPEL) and [IUS](https://ius.io) repositories. Installed packages include [OpenSSH](http://www.openssh.com/portable.html) secure shell, [Sudo](http://www.courtesan.com/sudo/) and [vim-minimal](http://www.vim.org/) are along with [supervisor](http://supervisord.org/) and [supervisor-stdout](https://github.com/coderanger/supervisor-stdout).
-
-[Supervisor](http://supervisord.org/) is used to start and the sshd daemon when a docker container based on this image is run.
+[Supervisor](http://supervisord.org/) is used to start the `sshd` daemon when a docker container based on this image is run.
 
 SSH access is by public key authentication and, by default, the [Vagrant](http://www.vagrantup.com/) [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant) is required.
 
-### SSH Alternatives
+### Image variants
+
+- [OpenSSH 7.4 / Supervisor 4.0 / EPEL/IUS/SCL Repositories - CentOS-7](https://github.com/jdeathe/centos-ssh/tree/centos-7)
+- [OpenSSH 5.3 / Supervisor 3.4 / EPEL/IUS/SCL Repositories - CentOS-6](https://github.com/jdeathe/centos-ssh/tree/centos-6)
+
+### SSH alternatives
 
 SSH is not required in order to access a terminal for the running container. The simplest method is to use the docker exec command to run bash (or sh) as follows:
 
 ```
-$ docker exec -it {container-name-or-id} bash
+$ docker exec -it {{container-name-or-id}} bash
 ```
 
-For cases where access to docker exec is not possible the preferred method is to use Command Keys and the nsenter command. See [command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-7/command-keys.md) for details on how to set this up.
+For cases where access to docker exec is not possible the preferred method is to use Command Keys and the nsenter command. See [docs/command-keys.md](https://github.com/jdeathe/centos-ssh/blob/centos-7/docs/command-keys.md) for details on how to set this up.
 
-## Quick Example
+## Quick start
 
-### SSH Mode
+> For production use, it is recommended to select a specific release tag as shown in the examples.
+
+### SSH mode
 
 Run up an SSH container named 'ssh.1' from the docker image 'jdeathe/centos-ssh' on port 2020 of your docker host.
 
@@ -42,7 +38,7 @@ Run up an SSH container named 'ssh.1' from the docker image 'jdeathe/centos-ssh'
 $ docker run -d \
   --name ssh.1 \
   -p 2020:22 \
-  jdeathe/centos-ssh:2.5.1
+  jdeathe/centos-ssh:2.6.1
 ```
 
 Check the logs for the password (required for sudo).
@@ -51,23 +47,31 @@ Check the logs for the password (required for sudo).
 $ docker logs ssh.1
 ```
 
-Download the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant) and set permissions to 600.
+#### Private key setup
+
+Download the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant).
 
 ```
 $ curl -LSs \
   https://raw.githubusercontent.com/mitchellh/vagrant/master/keys/vagrant \
   > id_rsa_insecure
+```
+
+Set restrictive permissions on the private key.
+
+```
 $ chmod 600 id_rsa_insecure
 ```
+#### Connecting
 
 Connect using the `ssh` command line client with the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant).
 
 ```
 $ ssh -p 2020 -i id_rsa_insecure \
-  app-admin@{docker-host-ip}
+  app-admin@{{docker-host-ip}}
 ```
 
-### SFTP Mode
+### SFTP mode
 
 Run up an SFTP container named 'sftp.1' from the docker image 'jdeathe/centos-ssh' on port 2021 of your docker host.
 
@@ -76,8 +80,10 @@ $ docker run -d \
   --name sftp.1 \
   -p 2021:22 \
   -e SSH_USER_FORCE_SFTP=true \
-  jdeathe/centos-ssh:2.5.1
+  jdeathe/centos-ssh:2.6.1
 ```
+
+#### Connecting
 
 Connect using the `sftp` command line client with the [insecure private key](https://github.com/mitchellh/vagrant/blob/master/keys/vagrant).
 
@@ -86,163 +92,37 @@ $ sftp \
   -o Port=2021 \
   -o StrictHostKeyChecking=no \
   -i id_rsa_insecure \
-  app-admin@{docker-host-ip}
+  app-admin@{{docker-host-ip}}
 ```
 
 ## Instructions
 
 ### Running
 
-To run the a docker container from this image you can use the standard docker commands. Alternatively, you can use the embedded (Service Container Manager Interface) [scmi](https://github.com/jdeathe/centos-ssh/blob/centos-7/src/usr/sbin/scmi) that is included in the image since `1.7.2` / `2.1.2` or, if you have a checkout of the [source repository](https://github.com/jdeathe/centos-ssh), and have make installed the Makefile provides targets to build, install, start, stop etc. where environment variables can be used to configure the container options and set custom docker run parameters.
+To run the a docker container from this image you can use the standard docker commands. Alternatively, there's a [docker-compose.yml](https://github.com/jdeathe/centos-ssh/blob/centos-7/docker-compose.yml) example.
 
-#### SCMI Installation Examples
+For production use, it is recommended to select a specific release tag as shown in the examples.
 
-The following example uses docker to run the SCMI install command to create and start a container named `ssh.1`. To use SCMI it requires the use of the `--privileged` docker run parameter and the docker host's root directory mounted as a volume with the container's mount directory also being set in the `scmi` `--chroot` option. The `--setopt` option is used to add extra parameters to the default docker run command template; in the following example a named configuration volume is added which allows the SSH host keys to persist after the first container initialisation. Not that the placeholder `{{NAME}}` can be used in this option and is replaced with the container's name.
+#### Using scmi
 
-##### SCMI Install
+For advanced use-cases, there's an embedded installer (Service Container Manager Interface) [scmi](https://github.com/jdeathe/centos-ssh/blob/centos-7/docs/scmi.md).
 
-```
-$ docker run \
-  --rm \
-  --privileged \
-  --volume /:/media/root \
-  jdeathe/centos-ssh:2.5.1 \
-  /usr/sbin/scmi install \
-    --chroot=/media/root \
-    --tag=2.5.1 \
-    --name=ssh.1 \
-    --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
-```
+#### Using make
 
-##### SCMI Uninstall
-
-To uninstall the previous example simply run the same docker run command with the scmi `uninstall` command.
-
-```
-$ docker run \
-  --rm \
-  --privileged \
-  --volume /:/media/root \
-  jdeathe/centos-ssh:2.5.1 \
-  /usr/sbin/scmi uninstall \
-    --chroot=/media/root \
-    --tag=2.5.1 \
-    --name=ssh.1 \
-    --setopt="--volume {{NAME}}.config-ssh:/etc/ssh"
-```
-
-##### SCMI Systemd Support
-
-If your docker host has systemd (and optionally etcd) installed then `scmi` provides a method to install the container as a systemd service unit. This provides some additional features for managing a group of instances on a single docker host and has the option to use an etcd backed service registry. Using a systemd unit file allows the System Administrator to use a Drop-In to override the settings of a unit-file template used to create service instances. To use the systemd method of installation use the `-m` or `--manager` option of `scmi` and to include the optional etcd register companion unit use the `--register` option.
-
-```
-$ docker run \
-  --rm \
-  --privileged \
-  --volume /:/media/root \
-  jdeathe/centos-ssh:2.5.1 \
-  /usr/sbin/scmi install \
-    --chroot=/media/root \
-    --tag=2.5.1 \
-    --name=ssh.1 \
-    --manager=systemd \
-    --register \
-    --env='SSH_SUDO="ALL=(ALL) NOPASSWD:ALL"' \
-    --env='SSH_USER="centos"' \
-    --setopt='--volume {{NAME}}.config-ssh:/etc/ssh'
-```
-
-##### SCMI Image Information
-
-Since release tags `1.7.2` / `2.1.2` the install template has been added to the image metadata. Using docker inspect you can access `scmi` to simplify install/uninstall tasks.
-
-_NOTE:_ A prerequisite of the following examples is that the image has been pulled (or loaded from the release package).
-
-```
-$ docker pull jdeathe/centos-ssh:2.5.1
-```
-
-To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
-
-```
-$ eval "sudo -E $(
-    docker inspect \
-    -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:2.5.1
-  ) --info"
-```
-
-To perform an installation using the docker name `ssh.2` simply use the `--name` or `-n` option.
-
-```
-$ eval "sudo -E $(
-    docker inspect \
-    -f "{{.ContainerConfig.Labels.install}}" \
-    jdeathe/centos-ssh:2.5.1
-  ) --name=ssh.2"
-```
-
-To uninstall use the *same command* that was used to install but with the `uninstall` Label.
-
-```
-$ eval "sudo -E $(
-    docker inspect \
-    -f "{{.ContainerConfig.Labels.uninstall}}" \
-    jdeathe/centos-ssh:2.5.1
-  ) --name=ssh.2"
-```
-
-##### SCMI on Atomic Host
-
-With the addition of install/uninstall image labels it is possible to use [Project Atomic's](http://www.projectatomic.io/) `atomic install` command to simplify install/uninstall tasks on [CentOS Atomic](https://wiki.centos.org/SpecialInterestGroup/Atomic) Hosts.
-
-To see detailed information about the image run `scmi` with the `--info` option. To see all available `scmi` options run with the `--help` option.
-
-```
-$ sudo -E atomic install \
-  -n ssh.3 \
-  jdeathe/centos-ssh:2.5.1 \
-  --info
-```
-
-To perform an installation using the docker name `ssh.3` simply use the `-n` option of the `atomic install` command.
-
-```
-$ sudo -E atomic install \
-  -n ssh.3 \
-  jdeathe/centos-ssh:2.5.1
-```
-
-Alternatively, you could use the `scmi` options `--name` or `-n` for naming the container.
-
-```
-$ sudo -E atomic install \
-  jdeathe/centos-ssh:2.5.1 \
-  --name ssh.3
-```
-
-To uninstall use the *same command* that was used to install but with the `uninstall` Label.
-
-```
-$ sudo -E atomic uninstall \
-  -n ssh.3 \
-  jdeathe/centos-ssh:2.5.1
-```
+If you have a checkout of the [source repository](https://github.com/jdeathe/centos-ssh), and have `make` installed the Makefile provides targets to build, install, start, stop etc; run `make help` for instructions.
 
 #### Using environment variables
 
 The following example overrides the default "app-admin" SSH username, (and corresponding home directory path), with "centos" and "/home/centos" respectively via the `SSH_USER` environment variable.
 
-*Note:* Settings applied by environment variables will override those set within configuration volumes from release 1.3.1. Existing installations that use the sshd-bootstrap.conf saved on a configuration "data" volume will not allow override by the environment variables. Also users can update sshd-bootstrap.conf to prevent the value being replaced by that set using the environment variable.
-
 ```
-$ docker stop ssh.1 \
-  && docker rm ssh.1 \
-  ; docker run -d \
+$ docker stop ssh.1 && \
+  docker rm ssh.1; \
+  docker run -d \
   --name ssh.1 \
   -p :22 \
   --env "SSH_USER=centos" \
-  jdeathe/centos-ssh:2.5.1
+  jdeathe/centos-ssh:2.6.1
 ```
 
 To identify the `SSH_USER` user's sudoer password, inspect the container's logs as follows:
@@ -254,43 +134,74 @@ $ docker logs ssh.1
 The output of the logs will show the auto-generated password for the user specified by `SSH_USER` on first run.
 
 ```
-2019-01-17 18:56:09,093 WARN No file matches via include "/etc/supervisord.d/*.ini"
-2019-01-17 18:56:09,093 INFO Included extra file "/etc/supervisord.d/sshd-bootstrap.conf" during parsing
-2019-01-17 18:56:09,093 INFO Included extra file "/etc/supervisord.d/sshd-wrapper.conf" during parsing
-2019-01-17 18:56:09,093 INFO Set uid to user 0 succeeded
-2019-01-17 18:56:09,098 INFO supervisord started with pid 1
-2019-01-17 18:56:10,064 INFO spawned: 'supervisor_stdout' with pid 16
-2019-01-17 18:56:10,066 INFO spawned: 'sshd-bootstrap' with pid 17
-2019-01-17 18:56:10,067 INFO spawned: 'sshd-wrapper' with pid 18
-2019-01-17 18:56:10,089 INFO success: supervisor_stdout entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-2019-01-17 18:56:10,089 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
-2019-01-17 18:56:10,089 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-06-20 00:10:35,306 WARN No file matches via include "/etc/supervisord.d/*.ini"
+2019-06-20 00:10:35,306 INFO Included extra file "/etc/supervisord.d/00-supervisor_stdout.conf" during parsing
+2019-06-20 00:10:35,307 INFO Included extra file "/etc/supervisord.d/10-system-timezone-wrapper.conf" during parsing
+2019-06-20 00:10:35,307 INFO Included extra file "/etc/supervisord.d/20-sshd-bootstrap.conf" during parsing
+2019-06-20 00:10:35,307 INFO Included extra file "/etc/supervisord.d/50-sshd-wrapper.conf" during parsing
+2019-06-20 00:10:35,307 INFO Set uid to user 0 succeeded
+2019-06-20 00:10:35,310 INFO supervisord started with pid 1
+2019-06-20 00:10:36,315 INFO spawned: 'system-timezone-wrapper' with pid 9
+2019-06-20 00:10:36,318 INFO spawned: 'sshd-bootstrap' with pid 10
+2019-06-20 00:10:36,320 INFO spawned: 'sshd-wrapper' with pid 11
+INFO: sshd-wrapper waiting on sshd-bootstrap
+2019-06-20 00:10:36,328 INFO success: system-timezone-wrapper entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+2019-06-20 00:10:36,328 INFO success: sshd-bootstrap entered RUNNING state, process has stayed up for > than 0 seconds (startsecs)
+
+================================================================================
+System Time Zone Details
+--------------------------------------------------------------------------------
+timezone : UTC
+--------------------------------------------------------------------------------
+0.00640178
+
+2019-06-20 00:10:36,346 INFO exited: system-timezone-wrapper (exit status 0; expected)
 
 ================================================================================
 SSH Details
 --------------------------------------------------------------------------------
-user : centos
-password : YNT8fPEbpqrMJdpx
-password authentication : no
-id : 500:500
-home : /home/centos
 chroot path : N/A
-shell : /bin/bash
-sudo : ALL=(ALL) ALL
+home : /home/app-admin
+id : 500:500
 key fingerprints :
 dd:3b:b8:2e:85:04:06:e9:ab:ff:a8:0a:c0:04:6e:d6 (insecure key)
+password : uIEqLkiacCvxaN45
+password authentication : no
+rsa private key fingerprint :
+N/A
 rsa host key fingerprint :
-d0:8e:c7:b4:9b:ce:10:a6:a0:38:78:74:c5:68:cc:a8
-timezone : UTC
+7d:6f:d2:e8:7e:84:dd:ff:98:05:5e:6f:35:66:51:53
+shell : /bin/bash
+sudo : ALL=(ALL) ALL
+user : app-admin
 --------------------------------------------------------------------------------
-0.485003
+0.516901
 
-2019-01-17 18:56:10,568 INFO exited: sshd-bootstrap (exit status 0; expected)
+INFO: sshd-wrapper starting sshd
+2019-06-20 00:10:36,852 INFO exited: sshd-bootstrap (exit status 0; expected)
+Server listening on 0.0.0.0 port 22.
+Server listening on :: port 22.
+2019-06-20 00:10:41,872 INFO success: sshd-wrapper entered RUNNING state, process has stayed up for > than 5 seconds (startsecs)
 ```
 
-#### Environment Variables
+#### Environment variables
 
 There are several environmental variables defined at runtime these allow the operator to customise the running container.
+
+##### ENABLE_SSHD_BOOTSTRAP & ENABLE_SSHD_WRAPPER
+
+It may be desirable to prevent the startup of the sshd-bootstrap script and/or sshd daemon. For example, when using an image built from this Dockerfile as the source for another Dockerfile you could disable both sshd-booststrap and sshd from startup by setting `ENABLE_SSHD_BOOTSTRAP` and `ENABLE_SSHD_WRAPPER` to `false`. The benefit of this is to reduce the number of running processes in the final container.
+
+```
+...
+  --env "ENABLE_SSHD_BOOTSTRAP=false" \
+  --env "ENABLE_SSHD_WRAPPER=false" \
+...
+```
+
+##### ENABLE_SUPERVISOR_STDOUT
+
+This image has `supervisor_stdout` installed which can be used to allow a process controlled by supervisord to send output to both a log file and stdout. It is recommended to simply output to stdout in order to reduce the number of running processes to a minimum. Setting `ENABLE_SUPERVISOR_STDOUT` to "false" will prevent the startup of `supervisor_stdout`. Where an image requires this feature for its logging output `ENABLE_SUPERVISOR_STDOUT` should be set to "true".
 
 ##### SSH_AUTHORIZED_KEYS
 
@@ -305,7 +216,7 @@ ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqmLedI2mEJimvIm1OzT1EYJCMwegL/jfsXARLnYkZvJl
 ...
 ```
 
-*Note:* The `base64` command on Mac OSX will encode a file without line breaks by default but if using the command on Linux you need to include use the `-w` option to prevent wrapping lines at 80 characters. i.e. `base64 -w 0 -i {key-path}`.
+> **Note:** The `base64` command on Mac OSX will encode a file without line breaks by default but if using the command on Linux you need to include use the `-w` option to prevent wrapping lines at 80 characters. i.e. `base64 -w 0 -i {{key-path}}`.
 
 ```
 ...
@@ -322,21 +233,6 @@ Using `SSH_AUTHORIZED_KEYS` with a container file path allows for the authorized
   --env "SSH_AUTHORIZED_KEYS=/var/run/config/authorized_keys"
 ...
 ```
-
-##### SSH_AUTOSTART_SSHD & SSH_AUTOSTART_SSHD_BOOTSTRAP
-
-It may be desirable to prevent the startup of the sshd daemon and/or sshd-bootstrap script. For example, when using an image built from this Dockerfile as the source for another Dockerfile you could disable both sshd and sshd-booststrap from startup by setting `SSH_AUTOSTART_SSHD` and `SSH_AUTOSTART_SSHD_BOOTSTRAP` to `false`. The benefit of this is to reduce the number of running processes in the final container.
-
-```
-...
-  --env "SSH_AUTOSTART_SSHD=false" \
-  --env "SSH_AUTOSTART_SSHD_BOOTSTRAP=false" \
-...
-```
-
-##### SSH_AUTOSTART_SUPERVISOR_STDOUT
-
-This image has `supervisor_stdout` installed which can be used to allow a process controlled by supervisord to send output to both a log file and stdout. It is recommended to simply output to stdout in order to reduce the number of running processes to a minimum. Setting `SSH_AUTOSTART_SUPERVISOR_STDOUT` to "false" will prevent the startup of `supervisor_stdout`. Where an image requires this feature for its logging output `SSH_AUTOSTART_SUPERVISOR_STDOUT` should be set to "true".
 
 ##### SSH_CHROOT_DIRECTORY
 
@@ -375,16 +271,6 @@ On first run the SSH user is created with a the sudo rule `ALL=(ALL)  ALL` which
 ```
 ...
   --env "SSH_SUDO=ALL=(ALL) NOPASSWD:ALL" \
-...
-```
-
-##### SSH_TIMEZONE
-
-If you require a locale based system time zone `SSH_TIMEZONE` can be used when running the container.
-
-```
-...
-  --env "SSH_TIMEZONE=Europe/London" \
 ...
 ```
 
@@ -447,11 +333,21 @@ If setting a password for the SSH user you might not want to store the plain tex
 ...
 ```
 
+###### Generating a crypt SHA-512 password hash
+
+To generate a hashed password string for the password `Passw0rd!`, use the following method.
+
+```
+$ docker run --rm jdeathe/centos-ssh \
+  env PASSWORD=Passw0rd! \
+  python -c "import crypt,os; print crypt.crypt(os.environ.get('PASSWORD'))"
+```
+
 ##### SSH_USER_PRIVATE_KEY
 
 Use `SSH_USER_PRIVATE_KEY` to set an RSA private key for `SSH_USER`. It is recommended to use a container file path in combination with a secrets feature of your orchestration system e.g. Docker Swarm secrets. Alternatively, a container file path in combination with a bind mounted file or base64 encode the value (without line-breaks).
 
-*Note:* Setting a value has no effect if `SSH_USER_FORCE_SFTP` is set to "true" (i.e. running in SFTP mode).
+> **Note:** Setting a value has no effect if `SSH_USER_FORCE_SFTP` is set to "true" (i.e. running in SFTP mode).
 
 If set to a valid container file path the value will be read from the file - this allows for setting the value securely when combined with an orchestration feature such as Docker Swarm secrets.
 
@@ -461,7 +357,7 @@ If set to a valid container file path the value will be read from the file - thi
 ...
 ```
 
-*Note:* The `base64` command on Mac OSX will encode a file without line breaks by default but if using the command on Linux you need to include use the `-w` option to prevent wrapping lines at 80 characters. i.e. `base64 -w 0 -i {key-path}`.
+> **Note:** The `base64` command on Mac OSX will encode a file without line breaks by default but if using the command on Linux you need to include use the `-w` option to prevent wrapping lines at 80 characters. i.e. `base64 -w 0 -i {{key-path}}`.
 
 ```
 ...
@@ -469,16 +365,6 @@ If set to a valid container file path the value will be read from the file - thi
     base64 -i ${HOME}/.ssh/id_rsa
   )" \
 ...
-```
-
-###### Generating a crypt SHA-512 password hash
-
-To generate a hashed password string for the password `Passw0rd!`, use the following method.
-
-```
-$ docker run --rm jdeathe/centos-ssh \
-  env PASSWORD=Passw0rd! \
-  python -c "import crypt,os; print crypt.crypt(os.environ.get('PASSWORD'))"
 ```
 
 ##### SSH_USER_SHELL
@@ -503,11 +389,21 @@ This may be useful when running an SFTP container and mounting data volumes from
 ...
 ```
 
+##### SYSTEM_TIMEZONE
+
+If you require a locale based system time zone `SYSTEM_TIMEZONE` can be used when running the container.
+
+```
+...
+  --env "SYSTEM_TIMEZONE=Europe/London" \
+...
+```
+
 ### Connect to the running container using SSH
 
 #### PasswordAuthentication disabled (default)
 
-*NOTE:* This documents the process of connecting with a known private key which is insecure but the default. It is recommended that an alternative private/public key pair is created and used in place of the default value if running a container outside of a local test environment.
+> **Note:** This documents the process of connecting with a known private key which is **insecure by default**. It is recommended that an alternative private/public key pair is created and used in place of the default value if running a container outside of a local test environment.
 
 Create the .ssh directory in your home directory with the permissions required by SSH.
 
@@ -535,10 +431,10 @@ To connect to the running container use the following, where "app-admin" is the 
 
 ```
 $ ssh \
-  -o Port={container-port} \
+  -o Port={{container-port}} \
   -o StrictHostKeyChecking=no \
   -i ~/.ssh/id_rsa_insecure \
-  app-admin@{docker-host-ip}
+  app-admin@{{docker-host-ip}}
 ```
 
 #### PasswordAuthentication enabled
@@ -547,8 +443,8 @@ If connecting to a container running with `SSH_PASSWORD_AUTHENTICATION` set to "
 
 ```
 $ ssh \
-  -o Port={container-port} \
+  -o Port={{container-port}} \
   -o StrictHostKeyChecking=no \
   -o UserKnownHostsFile=/dev/null \
-  app-admin@{docker-host-ip}
+  app-admin@{{docker-host-ip}}
 ```

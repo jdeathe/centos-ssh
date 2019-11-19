@@ -56,15 +56,14 @@ Environment="DOCKER_IMAGE_PACKAGE_PATH=/var/opt/scmi/packages"
 Environment="DOCKER_IMAGE_TAG={{RELEASE_VERSION}}"
 Environment="DOCKER_PORT_MAP_TCP_22=2020"
 Environment="DOCKER_USER=jdeathe"
+Environment="ENABLE_SSHD_BOOTSTRAP=true"
+Environment="ENABLE_SSHD_WRAPPER=true"
+Environment="ENABLE_SUPERVISOR_STDOUT=false"
 Environment="SSH_AUTHORIZED_KEYS="
-Environment="SSH_AUTOSTART_SSHD=true"
-Environment="SSH_AUTOSTART_SSHD_BOOTSTRAP=true"
-Environment="SSH_AUTOSTART_SUPERVISOR_STDOUT=true"
 Environment="SSH_CHROOT_DIRECTORY=%%h"
 Environment="SSH_INHERIT_ENVIRONMENT=false"
 Environment="SSH_PASSWORD_AUTHENTICATION=false"
 Environment="SSH_SUDO=ALL=(ALL) ALL"
-Environment="SSH_TIMEZONE=UTC"
 Environment="SSH_USER=app-admin"
 Environment="SSH_USER_FORCE_SFTP=false"
 Environment="SSH_USER_HOME=/home/%%u"
@@ -73,6 +72,7 @@ Environment="SSH_USER_PASSWORD="
 Environment="SSH_USER_PASSWORD_HASHED=false"
 Environment="SSH_USER_PRIVATE_KEY="
 Environment="SSH_USER_SHELL=/bin/bash"
+Environment="SYSTEM_TIMEZONE=UTC"
 
 # Initialisation: Load image from local storage if available, otherwise pull.
 ExecStartPre=/bin/bash -c \
@@ -85,7 +85,7 @@ ExecStartPre=/bin/bash -c \
   then \
     if [[ -f ${DOCKER_IMAGE_PACKAGE_PATH}/${DOCKER_USER}/${DOCKER_IMAGE_NAME}.${DOCKER_IMAGE_TAG}.tar.xz ]]; \
     then \
-      /usr/bin/printf -- '%%s/%%s/%%s.%%s.tar.xz\n' \
+      printf -- '%%s/%%s/%%s.%%s.tar.xz\n' \
         \"${DOCKER_IMAGE_PACKAGE_PATH}\" \
         \"${DOCKER_USER}\" \
         \"${DOCKER_IMAGE_NAME}\" \
@@ -93,7 +93,7 @@ ExecStartPre=/bin/bash -c \
       | /usr/bin/xargs /usr/bin/xz -dc \
       | /usr/bin/docker load; \
     else \
-      /usr/bin/printf -- '%%s/%%s:%%s\n' \
+      printf -- '%%s/%%s:%%s\n' \
         \"${DOCKER_USER}\" \
         \"${DOCKER_IMAGE_NAME}\" \
         \"${DOCKER_IMAGE_TAG}\" \
@@ -129,15 +129,15 @@ ExecStartPre=-/bin/bash -c \
 ExecStart=/bin/bash -c \
   "exec /usr/bin/docker run \
     --name %p.%i \
+    --env \"ENABLE_SSHD_BOOTSTRAP=${ENABLE_SSHD_BOOTSTRAP}\" \
+    --env \"ENABLE_SSHD_WRAPPER=${ENABLE_SSHD_WRAPPER}\" \
+    --env \"ENABLE_SUPERVISOR_STDOUT=${ENABLE_SUPERVISOR_STDOUT}\" \
     --env \"SSH_AUTHORIZED_KEYS=${SSH_AUTHORIZED_KEYS}\" \
-    --env \"SSH_AUTOSTART_SSHD=${SSH_AUTOSTART_SSHD}\" \
-    --env \"SSH_AUTOSTART_SSHD_BOOTSTRAP=${SSH_AUTOSTART_SSHD_BOOTSTRAP}\" \
-    --env \"SSH_AUTOSTART_SUPERVISOR_STDOUT=${SSH_AUTOSTART_SUPERVISOR_STDOUT}\" \
     --env \"SSH_CHROOT_DIRECTORY=${SSH_CHROOT_DIRECTORY}\" \
     --env \"SSH_INHERIT_ENVIRONMENT=${SSH_INHERIT_ENVIRONMENT}\" \
     --env \"SSH_PASSWORD_AUTHENTICATION=${SSH_PASSWORD_AUTHENTICATION}\" \
     --env \"SSH_SUDO=${SSH_SUDO}\" \
-    --env \"SSH_TIMEZONE=${SSH_TIMEZONE}\" \
+    --env \"SYSTEM_TIMEZONE=${SYSTEM_TIMEZONE}\" \
     --env \"SSH_USER=${SSH_USER}\" \
     --env \"SSH_USER_FORCE_SFTP=${SSH_USER_FORCE_SFTP}\" \
     --env \"SSH_USER_HOME=${SSH_USER_HOME}\" \
@@ -155,7 +155,7 @@ ExecStart=/bin/bash -c \
           '^.+\.[0-9]+(\.[0-9]+)?$' \
           <<< %p.%i; \
       then \
-        /usr/bin/printf -- '--publish %%s%%s:22' \
+        printf -- '--publish %%s%%s:22' \
           $(\
             /bin/grep -o \
               '^[0-9\.]*:' \
@@ -175,7 +175,7 @@ ExecStart=/bin/bash -c \
             - 1 \
           )); \
       else \
-        /usr/bin/printf -- '--publish %%s:22' \
+        printf -- '--publish %%s:22' \
           \"${DOCKER_PORT_MAP_TCP_22}\"; \
       fi; \
     fi) \

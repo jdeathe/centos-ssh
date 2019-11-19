@@ -1,15 +1,70 @@
 # Change Log
 
-## centos-7
+## 2 - centos-7
 
-Summary of release changes for Version 2 - CentOS-7
+Summary of release changes.
 
-### 2.6.0 - Unreleased
+### 2.6.1 - 2019-09-21
 
+- Deprecate Makefile target `logs-delayed`; replaced with `logsdef`.
+- Updates `openssh` package to 7.4p1-21.el7.
+- Updates `openssl` package to 1.0.2k-19.el7.
+- Updates `sudo` package to 1.8.23-4.el7.
+- Updates `yum-plugin-versionlock` package to 1.1.31-52.el7.
+- Updates supervisord to 4.0.4.
+- Updates `test/health_status` helper script with for consistency.
+- Updates Makefile target `logs` to accept `[OPTIONS]` (e.g `make -- logs -ft`).
+- Updates `healthcheck` script; state file existence confirms bootstrap completion.
+- Updates `system-timezone-wrapper` to improve timer accuracy.
+- Updates scripts to explicitly check for a file when handling lock/state files.
+- Updates method used for returning current script.
+- Updates info/error output for consistency.
+- Updates healthcheck failure messages to remove EOL character that is rendered in status response.
+- Updates wrapper script; only emit "waiting on" info message if bootstrap hasn't completed.
+- Updates CHANGELOG.md to simplify maintenance.
+- Updates README.md to simplify contents and improve readability.
+- Updates README-short.txt to apply to all image variants.
+- Updates Dockerfile `org.deathe.description` metadata LABEL for consistency.
+- Updates ordering of Tags and respective Dockerfile links in README.md for readability.
+- Adds improved test workflow; added `test-setup` target to Makefile.
+- Adds Makefile target `logsdef` to handle deferred logs output within a target chain.
+- Adds exec proxy function to `sshd-wrapper` used to pass through nice.
+- Adds double quotes around value containing spaces.
+- Adds `/docs` directory for supplementary documentation and simplify README.
+- Fixes validation failure of 0 second --timeout value in `test/health_status`.
+- Removes `ENABLE_SSHD_BOOTSTRAP` from docker-compose example configuration.
+- Removes `ENABLE_SSHD_WRAPPER` from docker-compose example configuration.
+
+### 2.6.0 - 2019-06-20
+
+- Deprecates `SSH_AUTOSTART_SSHD`, replaced with `ENABLE_SSHD_WRAPPER`.
+- Deprecates `SSH_AUTOSTART_SSHD_BOOTSTRAP`, replaced with `ENABLE_SSHD_BOOTSTRAP`.
+- Deprecates `SSH_AUTOSTART_SUPERVISOR_STDOUT`, replaced with `ENABLE_SUPERVISOR_STDOUT`.
+- Deprecates `SSH_TIMEZONE`, replaced with `SYSTEM_TIMEZONE`.
 - Updates source tag to CentOS 7.6.1810.
+- Updates supervisord to 4.0.3.
+- Updates default value of `ENABLE_SUPERVISOR_STDOUT` to false.
+- Updates `sshd-bootstrap` and `sshd-wrapper` configuration to send error log output to stderr.
+- Updates order of values in SSH/SFTP Details log output.
+- Updates bootstrap timer to use UTC date timestamps.
+- Updates bootstrap supervisord configuration file/priority to `20-sshd-bootstrap.conf`/`20`.
+- Updates wrapper supervisord configuration file/priority to `50-sshd-wrapper.conf`/`50`.
+- Adds reference to `python-setuptools` in README; removed in error.
+- Adds `inspect`, `reload` and `top` Makefile targets.
+- Adds improved lock/state file implementation in bootstrap and wrapper scripts.
+- Adds improved `clean` Makefile target; includes exited containers and dangling images.
+- Adds improved wait on bootstrap completion in wrapper script.
+- Adds `system-timezone` and `system-timezone-wrapper` to handle system time zone setup.
+- Adds system time zone validation to healthcheck.
 - Fixes port incrementation failures when installing systemd units via `scmi`.
 - Fixes etcd port registration failures when installing systemd units via `scmi` with the `--register` option.
 - Fixes binary paths in systemd unit files for compatibility with both EL and Ubuntu hosts.
+- Fixes use of printf binary instead of builtin in systemd unit files.
+- Fixes docker host connection status check in Makefile.
+- Fixes make clean error thrown when removing exited containers.
+- Removes support for long image tags (i.e. centos-7-2.x.x).
+- Removes system time zone setup from `sshd-bootstrap`.
+- Removes redundant directory test from `sshd-bootstrap`; state file ensures it's a one-shot process.
 
 ### 2.5.1 - 2019-02-28
 
